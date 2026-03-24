@@ -26,8 +26,9 @@ service cloud.firestore {
       allow read: if isAuth() && (isOwner(uid) || isBasasistan());
       allow create: if isAuth() && isOwner(uid);
       allow update: if isAuth() && (
-        isOwner(uid) ||   // kendi kaydını güncelleyebilir
-        isBasasistan()    // başasistan rol değiştirebilir
+        (isOwner(uid) && !('role' in request.resource.data &&
+          request.resource.data.role != resource.data.role)) ||
+        isBasasistan()
       );
       allow delete: if isBasasistan();
     }
