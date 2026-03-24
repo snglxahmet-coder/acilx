@@ -484,7 +484,7 @@ body {
   position: absolute; bottom: 28px;
   font-size: 10px; color: var(--w4); letter-spacing: .3px;
 }
-/* ── AUTH GATE: CPR SPLASH ── */
+/* ── AUTH GATE: HEART SPLASH ── */
 #authGate {
   position:fixed;inset:0;z-index:999999;background:#000;
   overflow:hidden;transition:opacity .6s ease;
@@ -492,144 +492,59 @@ body {
 }
 #authGate.fade-out { opacity:0; pointer-events:none; }
 
-/* Logo üstte */
-.ag-logo {
-  margin-bottom:40px;text-align:center;
+/* Kalp ikonu */
+.ag-heart {
+  margin-bottom:24px;
+  animation:agHeartbeat 3s ease-in-out infinite;
+  filter:drop-shadow(0 0 12px rgba(232,87,42,0.4));
 }
-.ag-logo-text {
-  font-family:'DM Mono',monospace;font-size:32px;font-weight:900;letter-spacing:8px;
-  background:linear-gradient(135deg,#E8572A,#F0A040);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;
-}
-.ag-logo-sub {
-  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
-  text-transform:uppercase;color:rgba(232,87,42,0.35);margin-top:6px;
-}
-
-/* CPR Stick Figure */
-.ag-cpr-scene { position:relative;width:120px;height:140px;margin-bottom:32px; }
-
-/* Hasta (yatan kişi) */
-.ag-patient {
-  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
-}
-.ag-patient-head {
-  width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);
-  position:absolute;right:-20px;bottom:14px;
-}
-.ag-patient-body {
-  width:60px;height:2px;background:rgba(255,255,255,0.25);
-  border-radius:1px;
-}
-.ag-patient-legs {
-  position:absolute;left:-14px;bottom:-6px;
-  width:18px;height:2px;background:rgba(255,255,255,0.25);
-  border-radius:1px;transform:rotate(-20deg);
-}
-.ag-patient-legs2 {
-  position:absolute;left:-14px;bottom:2px;
-  width:18px;height:2px;background:rgba(255,255,255,0.25);
-  border-radius:1px;transform:rotate(10deg);
-}
-
-/* Doktor (CPR yapan stick figure) */
-.ag-doctor {
-  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
-  animation:agCprBounce 0.7s ease-in-out infinite;
-}
-.ag-doc-head {
-  width:14px;height:14px;border-radius:50%;border:2px solid #E8572A;
-  margin:0 auto 2px;
-}
-.ag-doc-torso {
-  width:2px;height:28px;background:#E8572A;margin:0 auto;
-  border-radius:1px;
-}
-.ag-doc-arms {
-  position:absolute;top:20px;left:50%;transform:translateX(-50%);
-  width:36px;height:2px;background:#E8572A;border-radius:1px;
-  transform-origin:center bottom;
-  animation:agCprArms 0.7s ease-in-out infinite;
-}
-.ag-doc-lleg {
-  position:absolute;bottom:-16px;left:calc(50% - 10px);
-  width:2px;height:18px;background:#E8572A;border-radius:1px;
-  transform:rotate(15deg);transform-origin:top center;
-}
-.ag-doc-rleg {
-  position:absolute;bottom:-16px;left:calc(50% + 8px);
-  width:2px;height:18px;background:#E8572A;border-radius:1px;
-  transform:rotate(-15deg);transform-origin:top center;
-}
-/* Eller (basma noktası) */
-.ag-doc-hands {
-  position:absolute;top:20px;left:50%;transform:translateX(-50%);
-  width:8px;height:8px;border-radius:50%;
-  background:rgba(232,87,42,0.5);
-  animation:agCprHands 0.7s ease-in-out infinite;
-  box-shadow:0 0 12px rgba(232,87,42,0.4);
-}
-
-@keyframes agCprBounce {
-  0%,100% { transform:translateX(-50%) translateY(0); }
-  50%     { transform:translateX(-50%) translateY(8px); }
-}
-@keyframes agCprArms {
-  0%,100% { transform:translateX(-50%) rotate(-5deg); }
-  50%     { transform:translateX(-50%) rotate(5deg); }
-}
-@keyframes agCprHands {
-  0%,100% { transform:translateX(-50%) scale(1); opacity:.5; }
-  50%     { transform:translateX(-50%) scale(1.4); opacity:1; }
+@keyframes agHeartbeat {
+  0%   { transform:scale(1); }
+  4%   { transform:scale(1.18); }
+  8%   { transform:scale(1); }
+  12%  { transform:scale(1.22); }
+  18%  { transform:scale(1); }
+  100% { transform:scale(1); }
 }
 
 /* EKG çizgisi */
 .ag-ekg-wrap {
-  width:min(320px,75vw);height:48px;margin-bottom:32px;overflow:hidden;
+  width:min(200px,60vw);height:32px;margin-bottom:28px;overflow:hidden;
 }
 .ag-ekg-svg { width:100%;height:100%; }
 .ag-ekg-line {
-  fill:none;stroke:#E8572A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
-  filter:drop-shadow(0 0 4px rgba(232,87,42,0.5));
-  stroke-dasharray:500;stroke-dashoffset:500;
-  animation:agEkgDraw 2s ease-in-out infinite;
-}
-.ag-ekg-glow {
-  fill:none;stroke:rgba(232,87,42,0.15);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
-  filter:blur(3px);
-  stroke-dasharray:500;stroke-dashoffset:500;
-  animation:agEkgDraw 2s ease-in-out infinite;
+  fill:none;stroke:#E8572A;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 3px rgba(232,87,42,0.4));
+  stroke-dasharray:400;stroke-dashoffset:400;
+  animation:agEkgDraw 3s ease-in-out infinite;
 }
 @keyframes agEkgDraw {
-  0%   { stroke-dashoffset:500; opacity:0; }
-  10%  { opacity:1; }
-  50%  { stroke-dashoffset:0; opacity:1; }
-  75%  { stroke-dashoffset:0; opacity:.3; }
+  0%   { stroke-dashoffset:400; opacity:0; }
+  5%   { opacity:.8; }
+  50%  { stroke-dashoffset:0; opacity:.8; }
+  70%  { stroke-dashoffset:0; opacity:.2; }
   100% { stroke-dashoffset:0; opacity:0; }
+}
+
+/* Logo */
+.ag-logo { text-align:center; }
+.ag-logo-text {
+  font-family:'DM Mono',monospace;font-size:24px;font-weight:900;letter-spacing:6px;
+  background:linear-gradient(135deg,#E8572A,#F0A040);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
 }
 
 /* Yükleme durumu */
 .ag-status {
-  font-family:'DM Mono',monospace;font-size:11px;
-  color:rgba(232,87,42,0.6);letter-spacing:1px;text-align:center;
-  animation:agStatusPulse 2s ease-in-out infinite;
+  font-family:'DM Mono',monospace;font-size:10px;
+  color:rgba(232,87,42,0.4);letter-spacing:1px;text-align:center;
+  margin-top:12px;
+  animation:agStatusPulse 3s ease-in-out infinite;
 }
 @keyframes agStatusPulse {
-  0%,100% { opacity:.5; }
-  50%     { opacity:1; }
-}
-
-/* Alt progress bar */
-.ag-progress {
-  position:absolute;bottom:0;left:0;right:0;height:2px;
-  background:rgba(255,255,255,0.03);
-}
-.ag-progress-bar {
-  height:100%;width:0;
-  background:linear-gradient(90deg,#E8572A,#F0A040);
-  transition:width .4s ease;
-  box-shadow:0 0 6px rgba(232,87,42,0.4);
+  0%,100% { opacity:.3; }
+  50%     { opacity:.7; }
 }
 </style>
 </head>
@@ -638,47 +553,26 @@ body {
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="authGate">
 
-  <!-- Logo üstte -->
-  <div class="ag-logo">
-    <div class="ag-logo-text">ACiLX</div>
-    <div class="ag-logo-sub">Acil Tip Platformu</div>
-  </div>
-
-  <!-- CPR yapan stick figure -->
-  <div class="ag-cpr-scene">
-    <!-- Hasta (yatan) -->
-    <div class="ag-patient">
-      <div class="ag-patient-head"></div>
-      <div class="ag-patient-body"></div>
-      <div class="ag-patient-legs"></div>
-      <div class="ag-patient-legs2"></div>
-    </div>
-    <!-- Doktor (CPR yapan) -->
-    <div class="ag-doctor">
-      <div class="ag-doc-head"></div>
-      <div class="ag-doc-torso"></div>
-      <div class="ag-doc-arms"></div>
-      <div class="ag-doc-hands"></div>
-      <div class="ag-doc-lleg"></div>
-      <div class="ag-doc-rleg"></div>
-    </div>
-  </div>
+  <!-- Kalp ikonu -->
+  <svg class="ag-heart" width="40" height="36" viewBox="0 0 40 36" fill="none">
+    <path d="M20 36 C20 36 0 22 0 11 A10 10 0 0 1 20 8 A10 10 0 0 1 40 11 C40 22 20 36 20 36Z" fill="#E8572A"/>
+  </svg>
 
   <!-- EKG çizgisi -->
   <div class="ag-ekg-wrap">
-    <svg class="ag-ekg-svg" viewBox="0 0 320 48">
-      <path class="ag-ekg-glow" d="M0,24 L60,24 L80,24 L90,22 L98,26 L106,20 L112,24 L120,24 L128,6 L134,42 L142,4 L148,36 L154,18 L160,24 L200,24 L220,24 L228,22 L234,26 L240,20 L246,24 L254,24 L260,8 L266,40 L272,6 L278,34 L284,20 L290,24 L320,24"/>
-      <path class="ag-ekg-line" d="M0,24 L60,24 L80,24 L90,22 L98,26 L106,20 L112,24 L120,24 L128,6 L134,42 L142,4 L148,36 L154,18 L160,24 L200,24 L220,24 L228,22 L234,26 L240,20 L246,24 L254,24 L260,8 L266,40 L272,6 L278,34 L284,20 L290,24 L320,24"/>
+    <svg class="ag-ekg-svg" viewBox="0 0 200 32">
+      <path class="ag-ekg-line" d="M0,16 L50,16 L60,16 L68,14 L74,18 L80,12 L84,16 L90,16 L96,4 L102,28 L108,2 L114,26 L118,12 L122,16 L150,16 L158,14 L164,18 L168,12 L172,16 L200,16"/>
     </svg>
+  </div>
+
+  <!-- Logo -->
+  <div class="ag-logo">
+    <div class="ag-logo-text">ACiLX</div>
   </div>
 
   <!-- Yükleme durumu -->
   <div class="ag-status" id="agStatus">Sisteme baglaniyor...</div>
 
-  <!-- Alt progress bar -->
-  <div class="ag-progress">
-    <div class="ag-progress-bar" id="agProgressBar"></div>
-  </div>
 </div>
 
 <script>
