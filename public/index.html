@@ -484,115 +484,152 @@ body {
   position: absolute; bottom: 28px;
   font-size: 10px; color: var(--w4); letter-spacing: .3px;
 }
-/* ── AUTH GATE: VITAL SIGNS LOADING ── */
+/* ── AUTH GATE: CPR SPLASH ── */
 #authGate {
-  position:fixed;inset:0;z-index:999999;background:#0A0908;
+  position:fixed;inset:0;z-index:999999;background:#000;
   overflow:hidden;transition:opacity .6s ease;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
 #authGate.fade-out { opacity:0; pointer-events:none; }
 
-/* Arka plan vital dalga kanalları */
-.ag-bg-waves {
-  position:absolute;inset:0;overflow:hidden;opacity:.12;
-}
-.ag-wave-row {
-  position:absolute;left:0;right:0;height:40px;
-}
-.ag-wave-row:nth-child(1){top:12%}
-.ag-wave-row:nth-child(2){top:32%}
-.ag-wave-row:nth-child(3){top:75%}
-.ag-wave-svg {
-  width:200%;height:100%;
-  animation:agWaveScroll 8s linear infinite;
-}
-.ag-wave-row:nth-child(2) .ag-wave-svg { animation-duration:10s; animation-direction:reverse; }
-.ag-wave-row:nth-child(3) .ag-wave-svg { animation-duration:12s; }
-@keyframes agWaveScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
-
-/* Ana EKG ortada */
-.ag-ekg-wrap {
-  position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);
-  width:min(380px,80vw);height:80px;
-}
-.ag-ekg-svg { width:100%;height:100%; }
-.ag-ekg-line {
-  fill:none;stroke:#E8572A;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
-  filter:drop-shadow(0 0 6px rgba(232,87,42,0.5));
-  stroke-dasharray:600;stroke-dashoffset:600;
-  animation:agEkgDraw 2.4s ease-in-out infinite;
-}
-.ag-ekg-glow {
-  fill:none;stroke:rgba(232,87,42,0.2);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
-  filter:blur(4px);
-  stroke-dasharray:600;stroke-dashoffset:600;
-  animation:agEkgDraw 2.4s ease-in-out infinite;
-}
-@keyframes agEkgDraw {
-  0%   { stroke-dashoffset:600; opacity:0; }
-  8%   { opacity:1; }
-  55%  { stroke-dashoffset:0; opacity:1; }
-  80%  { stroke-dashoffset:0; opacity:.3; }
-  100% { stroke-dashoffset:0; opacity:0; }
-}
-
-/* Logo */
+/* Logo üstte */
 .ag-logo {
-  position:absolute;top:50%;left:50%;transform:translate(-50%,36px);
-  text-align:center;
+  margin-bottom:40px;text-align:center;
 }
 .ag-logo-text {
-  font-family:'DM Mono',monospace;font-size:28px;font-weight:900;letter-spacing:6px;
+  font-family:'DM Mono',monospace;font-size:32px;font-weight:900;letter-spacing:8px;
   background:linear-gradient(135deg,#E8572A,#F0A040);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
 .ag-logo-sub {
   font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
-  text-transform:uppercase;color:rgba(232,87,42,0.4);margin-top:4px;
+  text-transform:uppercase;color:rgba(232,87,42,0.35);margin-top:6px;
 }
 
-/* Sağ üst vital değerler */
-.ag-vitals {
-  position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));
-  font-family:'DM Mono',monospace;text-align:right;
-}
-.ag-vital-row {
-  display:flex;align-items:baseline;justify-content:flex-end;gap:6px;
-  margin-bottom:4px;opacity:.7;
-}
-.ag-vital-label { font-size:9px;color:#888;letter-spacing:.5px; }
-.ag-vital-val {
-  font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;
-  min-width:44px;text-align:right;
-}
-.ag-vital-unit { font-size:9px;color:#666; }
-.ag-v-hr .ag-vital-val { color:#4AE88A; }
-.ag-v-spo2 .ag-vital-val { color:#4AC8E8; }
-.ag-v-bp .ag-vital-val { color:#E8E84A;font-size:14px; }
+/* CPR Stick Figure */
+.ag-cpr-scene { position:relative;width:120px;height:140px;margin-bottom:32px; }
 
-/* Sol alt yükleme adımları */
-.ag-steps {
-  position:absolute;bottom:calc(48px + env(safe-area-inset-bottom,0px));left:calc(20px + env(safe-area-inset-left,0px));
-  font-family:'DM Mono',monospace;
+/* Hasta (yatan kişi) */
+.ag-patient {
+  position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
 }
-.ag-step {
-  font-size:11px;color:rgba(232,87,42,0.5);
-  height:18px;overflow:hidden;
-  transition:color .3s,opacity .3s;
+.ag-patient-head {
+  width:16px;height:16px;border-radius:50%;border:2px solid rgba(255,255,255,0.25);
+  position:absolute;right:-20px;bottom:14px;
 }
-.ag-step.active { color:rgba(232,87,42,0.9); }
-.ag-step.done { color:rgba(80,180,80,0.6); }
+.ag-patient-body {
+  width:60px;height:2px;background:rgba(255,255,255,0.25);
+  border-radius:1px;
+}
+.ag-patient-legs {
+  position:absolute;left:-14px;bottom:-6px;
+  width:18px;height:2px;background:rgba(255,255,255,0.25);
+  border-radius:1px;transform:rotate(-20deg);
+}
+.ag-patient-legs2 {
+  position:absolute;left:-14px;bottom:2px;
+  width:18px;height:2px;background:rgba(255,255,255,0.25);
+  border-radius:1px;transform:rotate(10deg);
+}
+
+/* Doktor (CPR yapan stick figure) */
+.ag-doctor {
+  position:absolute;bottom:24px;left:50%;transform:translateX(-50%);
+  animation:agCprBounce 0.7s ease-in-out infinite;
+}
+.ag-doc-head {
+  width:14px;height:14px;border-radius:50%;border:2px solid #E8572A;
+  margin:0 auto 2px;
+}
+.ag-doc-torso {
+  width:2px;height:28px;background:#E8572A;margin:0 auto;
+  border-radius:1px;
+}
+.ag-doc-arms {
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  width:36px;height:2px;background:#E8572A;border-radius:1px;
+  transform-origin:center bottom;
+  animation:agCprArms 0.7s ease-in-out infinite;
+}
+.ag-doc-lleg {
+  position:absolute;bottom:-16px;left:calc(50% - 10px);
+  width:2px;height:18px;background:#E8572A;border-radius:1px;
+  transform:rotate(15deg);transform-origin:top center;
+}
+.ag-doc-rleg {
+  position:absolute;bottom:-16px;left:calc(50% + 8px);
+  width:2px;height:18px;background:#E8572A;border-radius:1px;
+  transform:rotate(-15deg);transform-origin:top center;
+}
+/* Eller (basma noktası) */
+.ag-doc-hands {
+  position:absolute;top:20px;left:50%;transform:translateX(-50%);
+  width:8px;height:8px;border-radius:50%;
+  background:rgba(232,87,42,0.5);
+  animation:agCprHands 0.7s ease-in-out infinite;
+  box-shadow:0 0 12px rgba(232,87,42,0.4);
+}
+
+@keyframes agCprBounce {
+  0%,100% { transform:translateX(-50%) translateY(0); }
+  50%     { transform:translateX(-50%) translateY(8px); }
+}
+@keyframes agCprArms {
+  0%,100% { transform:translateX(-50%) rotate(-5deg); }
+  50%     { transform:translateX(-50%) rotate(5deg); }
+}
+@keyframes agCprHands {
+  0%,100% { transform:translateX(-50%) scale(1); opacity:.5; }
+  50%     { transform:translateX(-50%) scale(1.4); opacity:1; }
+}
+
+/* EKG çizgisi */
+.ag-ekg-wrap {
+  width:min(320px,75vw);height:48px;margin-bottom:32px;overflow:hidden;
+}
+.ag-ekg-svg { width:100%;height:100%; }
+.ag-ekg-line {
+  fill:none;stroke:#E8572A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 4px rgba(232,87,42,0.5));
+  stroke-dasharray:500;stroke-dashoffset:500;
+  animation:agEkgDraw 2s ease-in-out infinite;
+}
+.ag-ekg-glow {
+  fill:none;stroke:rgba(232,87,42,0.15);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;
+  filter:blur(3px);
+  stroke-dasharray:500;stroke-dashoffset:500;
+  animation:agEkgDraw 2s ease-in-out infinite;
+}
+@keyframes agEkgDraw {
+  0%   { stroke-dashoffset:500; opacity:0; }
+  10%  { opacity:1; }
+  50%  { stroke-dashoffset:0; opacity:1; }
+  75%  { stroke-dashoffset:0; opacity:.3; }
+  100% { stroke-dashoffset:0; opacity:0; }
+}
+
+/* Yükleme durumu */
+.ag-status {
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:rgba(232,87,42,0.6);letter-spacing:1px;text-align:center;
+  animation:agStatusPulse 2s ease-in-out infinite;
+}
+@keyframes agStatusPulse {
+  0%,100% { opacity:.5; }
+  50%     { opacity:1; }
+}
 
 /* Alt progress bar */
 .ag-progress {
-  position:absolute;bottom:0;left:0;right:0;height:3px;
+  position:absolute;bottom:0;left:0;right:0;height:2px;
   background:rgba(255,255,255,0.03);
 }
 .ag-progress-bar {
   height:100%;width:0;
   background:linear-gradient(90deg,#E8572A,#F0A040);
   transition:width .4s ease;
-  box-shadow:0 0 8px rgba(232,87,42,0.4);
+  box-shadow:0 0 6px rgba(232,87,42,0.4);
 }
 </style>
 </head>
@@ -600,63 +637,43 @@ body {
 
 <!-- ══ LOGIN SCREEN ══ -->
 <div id="authGate">
-  <!-- Arka plan vital dalga kanalları -->
-  <div class="ag-bg-waves">
-    <div class="ag-wave-row">
-      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
-        <path d="M0,20 L60,20 L70,8 L80,32 L90,14 L100,26 L110,20 L200,20 L210,8 L220,32 L230,14 L240,26 L250,20 L340,20 L350,8 L360,32 L370,14 L380,26 L390,20 L460,20 L470,8 L480,32 L490,14 L500,26 L510,20 L600,20 L610,8 L620,32 L630,14 L640,26 L650,20 L740,20 L750,8 L760,32 L770,14 L780,26 L790,20 L800,20" fill="none" stroke="#E8572A" stroke-width="1" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="ag-wave-row">
-      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
-        <path d="M0,28 Q40,28 80,10 Q120,28 160,28 Q200,28 240,10 Q280,28 320,28 Q360,28 400,10 Q440,28 480,28 Q520,28 560,10 Q600,28 640,28 Q680,28 720,10 Q760,28 800,28" fill="none" stroke="#4AC8E8" stroke-width="1" stroke-linecap="round"/>
-      </svg>
-    </div>
-    <div class="ag-wave-row">
-      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
-        <path d="M0,20 L100,20 L110,20 L120,12 L130,20 L140,20 L250,20 L260,20 L270,12 L280,20 L290,20 L400,20 L410,20 L420,12 L430,20 L440,20 L550,20 L560,20 L570,12 L580,20 L590,20 L700,20 L710,20 L720,12 L730,20 L740,20 L800,20" fill="none" stroke="#E8E84A" stroke-width="1" stroke-linecap="round"/>
-      </svg>
-    </div>
-  </div>
 
-  <!-- Ana EKG animasyonu -->
-  <div class="ag-ekg-wrap">
-    <svg class="ag-ekg-svg" viewBox="0 0 380 80">
-      <path class="ag-ekg-glow" d="M0,40 L80,40 L100,40 L115,40 L125,38 L135,42 L145,36 L150,40 L158,40 L165,20 L170,70 L178,10 L186,58 L192,32 L198,40 L220,40 L300,40 L310,40 L318,36 L325,44 L332,38 L336,40 L345,40 L350,28 L356,52 L362,24 L368,48 L374,40 L380,40"/>
-      <path class="ag-ekg-line" d="M0,40 L80,40 L100,40 L115,40 L125,38 L135,42 L145,36 L150,40 L158,40 L165,20 L170,70 L178,10 L186,58 L192,32 L198,40 L220,40 L300,40 L310,40 L318,36 L325,44 L332,38 L336,40 L345,40 L350,28 L356,52 L362,24 L368,48 L374,40 L380,40"/>
-    </svg>
-  </div>
-
-  <!-- Logo -->
+  <!-- Logo üstte -->
   <div class="ag-logo">
-    <div class="ag-logo-text">ACILX</div>
+    <div class="ag-logo-text">ACiLX</div>
     <div class="ag-logo-sub">Acil Tip Platformu</div>
   </div>
 
-  <!-- Sağ üst vital değerler -->
-  <div class="ag-vitals">
-    <div class="ag-vital-row ag-v-hr">
-      <span class="ag-vital-label">HR</span>
-      <span class="ag-vital-val" id="agHr">--</span>
-      <span class="ag-vital-unit">bpm</span>
+  <!-- CPR yapan stick figure -->
+  <div class="ag-cpr-scene">
+    <!-- Hasta (yatan) -->
+    <div class="ag-patient">
+      <div class="ag-patient-head"></div>
+      <div class="ag-patient-body"></div>
+      <div class="ag-patient-legs"></div>
+      <div class="ag-patient-legs2"></div>
     </div>
-    <div class="ag-vital-row ag-v-spo2">
-      <span class="ag-vital-label">SpO2</span>
-      <span class="ag-vital-val" id="agSpo2">--</span>
-      <span class="ag-vital-unit">%</span>
-    </div>
-    <div class="ag-vital-row ag-v-bp">
-      <span class="ag-vital-label">BP</span>
-      <span class="ag-vital-val" id="agBp">--/--</span>
+    <!-- Doktor (CPR yapan) -->
+    <div class="ag-doctor">
+      <div class="ag-doc-head"></div>
+      <div class="ag-doc-torso"></div>
+      <div class="ag-doc-arms"></div>
+      <div class="ag-doc-hands"></div>
+      <div class="ag-doc-lleg"></div>
+      <div class="ag-doc-rleg"></div>
     </div>
   </div>
 
-  <!-- Sol alt yükleme adımları -->
-  <div class="ag-steps">
-    <div class="ag-step active" id="agStep0">Sisteme baglaniyor...</div>
-    <div class="ag-step" id="agStep1">Kullanici dogrulaniyor...</div>
-    <div class="ag-step" id="agStep2">Veriler yukleniyor...</div>
+  <!-- EKG çizgisi -->
+  <div class="ag-ekg-wrap">
+    <svg class="ag-ekg-svg" viewBox="0 0 320 48">
+      <path class="ag-ekg-glow" d="M0,24 L60,24 L80,24 L90,22 L98,26 L106,20 L112,24 L120,24 L128,6 L134,42 L142,4 L148,36 L154,18 L160,24 L200,24 L220,24 L228,22 L234,26 L240,20 L246,24 L254,24 L260,8 L266,40 L272,6 L278,34 L284,20 L290,24 L320,24"/>
+      <path class="ag-ekg-line" d="M0,24 L60,24 L80,24 L90,22 L98,26 L106,20 L112,24 L120,24 L128,6 L134,42 L142,4 L148,36 L154,18 L160,24 L200,24 L220,24 L228,22 L234,26 L240,20 L246,24 L254,24 L260,8 L266,40 L272,6 L278,34 L284,20 L290,24 L320,24"/>
+    </svg>
   </div>
+
+  <!-- Yükleme durumu -->
+  <div class="ag-status" id="agStatus">Sisteme baglaniyor...</div>
 
   <!-- Alt progress bar -->
   <div class="ag-progress">
@@ -665,73 +682,29 @@ body {
 </div>
 
 <script>
-// ── Vital değerler animasyonu ──
-(function(){
-  var hrEl=document.getElementById('agHr');
-  var spo2El=document.getElementById('agSpo2');
-  var bpEl=document.getElementById('agBp');
-  var hr=72,spo2=98,bpS=120,bpD=80;
-  function tick(){
-    hr=Math.max(60,Math.min(100,hr+Math.round((Math.random()-0.5)*4)));
-    spo2=Math.max(95,Math.min(100,spo2+Math.round((Math.random()-0.5)*2)));
-    bpS=Math.max(110,Math.min(135,bpS+Math.round((Math.random()-0.5)*4)));
-    bpD=Math.max(70,Math.min(90,bpD+Math.round((Math.random()-0.5)*3)));
-    if(hrEl) hrEl.textContent=hr;
-    if(spo2El) spo2El.textContent=spo2;
-    if(bpEl) bpEl.textContent=bpS+'/'+bpD;
-  }
-  tick();
-  var iv=setInterval(tick,1200);
-  window._agVitalInterval=iv;
-})();
-
-// ── Loading adımları yönetimi ──
+// ── Splash status yönetimi ──
+var _agSteps=['Sisteme baglaniyor...','Kullanici dogrulaniyor...','Veriler yukleniyor...'];
 function agSetStep(n){
-  for(var i=0;i<3;i++){
-    var el=document.getElementById('agStep'+i);
-    if(!el) continue;
-    if(i<n){ el.className='ag-step done'; }
-    else if(i===n){ el.className='ag-step active'; }
-    else { el.className='ag-step'; }
-  }
+  var el=document.getElementById('agStatus');
+  if(el&&_agSteps[n]) el.textContent=_agSteps[n];
   var bar=document.getElementById('agProgressBar');
   if(bar) bar.style.width=Math.min(100,Math.round((n+1)/3*100))+'%';
 }
 function agFadeOut(){
   var gate=document.getElementById('authGate');
-  if(!gate) return;
+  if(!gate||gate.style.display==='none') return;
   var bar=document.getElementById('agProgressBar');
   if(bar) bar.style.width='100%';
   setTimeout(function(){
     gate.classList.add('fade-out');
-    clearInterval(window._agVitalInterval);
     setTimeout(function(){ gate.style.display='none'; },600);
-  },300);
+  },200);
 }
 </script>
 
 <div class="screen" id="loginScreen" style="opacity:0;transition:opacity .3s ease">
-  <!-- Splash ekranı -->
-  <div id="loginSplash" style="position:absolute;inset:0;background:#0E0D0C;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;transition:opacity .5s ease">
-    <div class="nlo-icon-wrap" style="margin-bottom:20px">
-      <div class="nlo-ring"></div>
-      <div class="nlo-ring2"></div>
-      <div class="nlo-center"><div class="nlo-cross"></div></div>
-    </div>
-    <svg class="nlo-ekg" width="120" height="32" viewBox="0 0 120 32" style="margin-bottom:20px">
-      <path class="nlo-ekg-path" d="M0,16 L28,16 L34,4 L40,28 L46,10 L52,22 L58,16 L92,16 L98,4 L104,28 L110,10 L116,22 L120,16" fill="none" stroke="rgba(232,87,42,0.8)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <div style="font-size:22px;font-weight:900;letter-spacing:4px;color:#F2EEE8;font-family:'DM Mono',monospace">ACİLX</div>
-    <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,87,42,0.55);font-family:'DM Mono',monospace;margin-top:4px">Acil Tıp Platformu</div>
-  </div>
-  <!-- Arka plan video -->
-  <video autoplay muted loop playsinline id="bgVideo"
-    style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0;filter:brightness(0.3) blur(2px);opacity:0;transition:opacity 1s"
-    oncanplaythrough="hideSplash()">
-    <source src="bg.mp4" type="video/mp4">
-  </video>
   <div class="login-glow"></div>
-  <div class="login-card" id="loginCard" style="opacity:0;transition:opacity .5s;position:relative;z-index:10">
+  <div class="login-card" id="loginCard" style="position:relative;z-index:10">
     <div class="login-bar"></div>
     <div class="login-body">
 
@@ -1040,27 +1013,8 @@ function agFadeOut(){
 
 <!-- Splash JS -->
 <script>
-let _splashHidden = false;
-let _splashTimer = null;
-function startSplash(){ /* splash artık CSS animasyonu */ }
-
-function hideSplash(){
-  if(_splashHidden) return;
-  _splashHidden = true;
-  clearInterval(_splashTimer);
-  const splash = document.getElementById('loginSplash');
-  const video  = document.getElementById('bgVideo');
-  const card   = document.getElementById('loginCard');
-  if(video)  video.style.opacity = '1';
-  if(splash){ splash.style.opacity='0'; setTimeout(()=>{ if(splash) splash.style.display='none'; }, 650); }
-  if(card)   card.style.opacity  = '1';
-}
-
-window.addEventListener('load', ()=>{
-  startSplash();
-  // 2 saniyede video gelmediyse splash kaldır
-  setTimeout(hideSplash, 2000);
-});
+function startSplash(){}
+function hideSplash(){} // Artık authGate splash görevini üstleniyor
 </script>
 
 <script>
@@ -1076,43 +1030,65 @@ const FIREBASE_CONFIG = {
 
 let app, auth, db;
 
-// ── Auth state debounce — 300ms içinde birden fazla tetikleme olursa sadece sonuncusu ──
+// ── Auth state yönetimi — ilk çözümden sonra ekran geçişi yapma ──
 let _authDebounceTimer = null;
-let _authResolved = false; // İlk auth sonucu geldi mi?
-let _authGateTimer = null; // 2sn max bekleme
+let _authResolved = false;   // İlk auth sonucu geldi mi?
+let _authGateTimer = null;   // 2sn max bekleme
+let _lastAuthUser = undefined; // Son bilinen auth durumu
 
 function _debouncedAuthHandler(user) {
   clearTimeout(_authDebounceTimer);
   _authDebounceTimer = setTimeout(() => {
-    _authResolved = true;
     clearTimeout(_authGateTimer);
 
-    if (!user) {
-      // ── GİRİŞ YOK ──
+    // İlk auth çözümü — splash'ten çık, doğru ekranı göster
+    if (!_authResolved) {
+      _authResolved = true;
+      _lastAuthUser = user;
+      if (!user) {
+        // Giriş yok — splash kapat, login göster
+        agFadeOut();
+        const loginEl = document.getElementById('loginScreen');
+        if(loginEl){
+          loginEl.style.display = '';
+          loginEl.style.cssText = '';
+          loginEl.classList.remove('hidden');
+          requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
+        }
+        hideSplash();
+      } else {
+        // Giriş var — splash kapat, app göster
+        agSetStep(2);
+        const loginEl = document.getElementById('loginScreen');
+        if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
+        const appEl = document.getElementById('appScreen');
+        if(appEl) appEl.classList.remove('hidden');
+      }
+      onAuthChange(user);
+      return;
+    }
+
+    // Sonraki auth değişimleri — sadece logout'ta ekran geçişi yap
+    if (!user && _lastAuthUser) {
+      // Logout oldu — login'e dön
+      _lastAuthUser = null;
       nobetFrameLoaded = false;
       window._iframeReadyBound = false;
       const fr = document.getElementById('nobetFrame');
       if (fr) { fr.onload = null; }
       if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
-      agFadeOut();
-      const loginEl = document.getElementById('loginScreen');
-      if(loginEl){
-        loginEl.style.display = '';
-        loginEl.style.cssText = '';
-        loginEl.classList.remove('hidden');
-        requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
-      }
-      hideSplash();
-    } else {
-      // ── GİRİŞ VAR — hemen app'e geç, skeleton göster ──
-      agSetStep(2);
+      onAuthChange(null);
+    } else if (user && !_lastAuthUser) {
+      // Login oldu (login ekranından) — app'e geç
+      _lastAuthUser = user;
       const loginEl = document.getElementById('loginScreen');
       if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
       const appEl = document.getElementById('appScreen');
       if(appEl) appEl.classList.remove('hidden');
+      onAuthChange(user);
     }
-    onAuthChange(user);
-  }, 150); // 150ms debounce — hızlı ama çift tetiklemeyi önler
+    // user→user (token yenileme vb.) → ekran geçişi yok, sessizce geç
+  }, 150);
 }
 
 window.addEventListener('load', async () => {
