@@ -1683,52 +1683,54 @@ function renderMinConf(){
       migrateKidemKurallari(a.id);
     }
 
-    // Kıdem kuralları kartları — her kıdem için tek kart
-    const kidemKartHtml=[1,2,3,4,5].map(k=>{
-      const kural=r.kidemKurallari[k]||{yalnizTutamaz:false};
-      // Eski yapı migration: yaninda+kosul → yanindaGruplar
-      if(kural.yalnizTutamaz&&!kural.yanindaGruplar&&kural.yaninda&&kural.yaninda.length){
-        kural.yanindaGruplar=[{kidemler:[...kural.yaninda],kosul:kural.kosul||'enAz1'}];
-        delete kural.yaninda; delete kural.kosul; save();
+    // ── BÖLÜM 1: Yalnız tutamaz kuralı (her kıdem için) ──
+    // Migration: eski yanindaGruplar → yeni yanindaKidemler+enAzKac
+    [1,2,3,4,5].forEach(k=>{
+      const kural=r.kidemKurallari[k];
+      if(!kural) return;
+      // Eski yapı migration: yaninda/yanindaGruplar → yanindaKidemler+enAzKac
+      if(kural.yanindaGruplar&&kural.yanindaGruplar.length&&!kural.yanindaKidemler){
+        const g0=kural.yanindaGruplar[0];
+        kural.yanindaKidemler=g0.kidemler||[];
+        kural.enAzKac=(g0.kosul==='hepsi'?(g0.kidemler||[]).length:1);
+        // Kalan grupları alan bazlı kidemGrupKurallari'na taşı
+        if(!r.kidemGrupKurallari) r.kidemGrupKurallari=[];
+        for(let gi=1;gi<kural.yanindaGruplar.length;gi++){
+          const gg=kural.yanindaGruplar[gi];
+          r.kidemGrupKurallari.push({kidemler:gg.kidemler||[],enAzKac:gg.kosul==='hepsi'?(gg.kidemler||[]).length:1});
+        }
+        delete kural.yanindaGruplar;
+        delete kural.yaninda; delete kural.kosul;
+        save();
+      } else if(kural.yaninda&&kural.yaninda.length&&!kural.yanindaKidemler){
+        kural.yanindaKidemler=kural.yaninda;
+        kural.enAzKac=1;
+        delete kural.yaninda; delete kural.kosul; delete kural.yanindaGruplar;
+        save();
       }
+    });
+
+    const yalnizTutamazHtml=[1,2,3,4,5].map(k=>{
+      const kural=r.kidemKurallari[k]||{yalnizTutamaz:false};
       const yalniz=kural.yalnizTutamaz;
-      const gruplar=kural.yanindaGruplar||[];
+      const yanindaKidemler=kural.yanindaKidemler||[];
+      const enAzKac=kural.enAzKac||1;
       let detayHtml='';
       if(yalniz){
-        const grupKartlar=gruplar.map((g,gi)=>{
-          const gCbs=[1,2,3,4,5].map(k2=>`
-            <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
-              <input type="checkbox" ${(g.kidemler||[]).includes(k2)?'checked':''} style="accent-color:#4ade80"
-                onchange="toggleGrupKidem2('${a.id}',${k},${gi},${k2},this.checked)">
-              <span class="kt ${KIDEM_CLS[k2]}" style="font-size:9px;padding:1px 4px">K${k2}</span>
-            </label>`).join('');
-          const gKosul=g.kosul||'enAz1';
-          return `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:5px;padding:6px 8px;margin-bottom:4px">
-            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">
-              <span style="font-size:9px;color:#4ade80;font-weight:700">${gi+1}.</span>
-              ${gCbs}
-              <button onclick="silYanindaGrup('${a.id}',${k},${gi})" style="margin-left:auto;background:none;border:none;color:var(--w4);cursor:pointer;font-size:11px;padding:1px 4px" title="Grubu sil">&#10005;</button>
-            </div>
-            <div style="display:flex;gap:6px;align-items:center">
-              <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
-                <input type="radio" name="gkosul_${a.id}_${k}_${gi}" value="enAz1" ${gKosul==='enAz1'?'checked':''} style="accent-color:#4ade80;width:12px;height:12px"
-                  onchange="setGrupKosul2('${a.id}',${k},${gi},'enAz1')">
-                <span style="font-size:9px;color:var(--w3)">En az 1</span>
-              </label>
-              <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
-                <input type="radio" name="gkosul_${a.id}_${k}_${gi}" value="hepsi" ${gKosul==='hepsi'?'checked':''} style="accent-color:#4ade80;width:12px;height:12px"
-                  onchange="setGrupKosul2('${a.id}',${k},${gi},'hepsi')">
-                <span style="font-size:9px;color:var(--w3)">Hepsi</span>
-              </label>
-            </div>
-          </div>`;
-        }).join('');
-        detayHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--bord)">
-          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-            <span style="font-size:10px;color:#4ade80;font-weight:600">Yanında olması gerekenler:</span>
-            <button onclick="ekleYanindaGrup('${a.id}',${k})" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(74,222,128,0.3);background:rgba(74,222,128,0.06);color:#4ade80;cursor:pointer;font-family:var(--font-sans)">+ Grup</button>
-          </div>
-          ${grupKartlar||'<div style="font-size:10px;color:var(--w4);padding:2px 0">Grup ekleyerek koşul belirleyin</div>'}
+        const cbHtml=[1,2,3,4,5].map(k2=>`<label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
+            <input type="checkbox" ${yanindaKidemler.includes(k2)?'checked':''} style="accent-color:#4ade80"
+              onchange="toggleYanindaKidem('${a.id}',${k},${k2},this.checked)">
+            <span class="kt ${KIDEM_CLS[k2]}" style="font-size:9px;padding:1px 4px">K${k2}</span>
+          </label>`).join('');
+        const maxOpt=Math.max(yanindaKidemler.length,1);
+        const optHtml=Array.from({length:maxOpt},(_,i)=>i+1).map(n=>`<option value="${n}" ${enAzKac===n?'selected':''}>${n}</option>`).join('');
+        detayHtml=`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;padding-top:6px;border-top:1px dashed var(--bord);flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--w3)">Yanında:</span>
+          ${cbHtml}
+          <span style="font-size:10px;color:var(--w3);margin-left:4px">en az</span>
+          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg2);color:var(--w2);font-family:var(--font-sans)"
+            onchange="setYanindaEnAz('${a.id}',${k},parseInt(this.value))">${optHtml}</select>
+          <span style="font-size:10px;color:var(--w3)">kişi</span>
         </div>`;
       }
       return `<div style="background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:4px">
@@ -1743,6 +1745,41 @@ function renderMinConf(){
         ${detayHtml}
       </div>`;
     }).join('');
+
+    // ── BÖLÜM 2: Kıdem grupları (alan bazında) ──
+    if(!r.kidemGrupKurallari) r.kidemGrupKurallari=[];
+    const grupKurallariHtml=r.kidemGrupKurallari.map((g,gi)=>{
+      const cbHtml=[1,2,3,4,5].map(k=>`<label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
+          <input type="checkbox" ${(g.kidemler||[]).includes(k)?'checked':''} style="accent-color:#60a5fa"
+            onchange="toggleKidemGrupKidem('${a.id}',${gi},${k},this.checked)">
+          <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
+        </label>`).join('');
+      const maxOpt=Math.max((g.kidemler||[]).length,1);
+      const optHtml=Array.from({length:maxOpt},(_,i)=>i+1).map(n=>`<option value="${n}" ${(g.enAzKac||1)===n?'selected':''}>${n}</option>`).join('');
+      return `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:5px;padding:6px 8px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          ${cbHtml}
+          <span style="font-size:10px;color:var(--w3);margin-left:4px">en az</span>
+          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:var(--w2);font-family:var(--font-sans)"
+            onchange="setKidemGrupEnAz('${a.id}',${gi},parseInt(this.value))">${optHtml}</select>
+          <span style="font-size:10px;color:var(--w3)">kişi</span>
+          <button onclick="silKidemGrupKurali('${a.id}',${gi})" style="margin-left:auto;background:none;border:none;color:var(--w4);cursor:pointer;font-size:11px;padding:1px 4px" title="Grubu sil">&#10005;</button>
+        </div>
+      </div>`;
+    }).join('');
+
+    const kidemKartHtml=`
+      <div style="margin-bottom:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--w2);margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bord)">Yalnız Tutamaz Kuralı</div>
+        ${yalnizTutamazHtml}
+      </div>
+      <div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid var(--bord)">
+          <span style="font-size:11px;font-weight:700;color:var(--w2)">Kıdem Grupları</span>
+          <button onclick="ekleKidemGrupKurali('${a.id}')" style="font-size:9px;padding:2px 8px;border-radius:4px;border:1px solid rgba(96,165,250,0.3);background:rgba(96,165,250,0.06);color:#60a5fa;cursor:pointer;font-family:var(--font-sans)">+ Grup ekle</button>
+        </div>
+        ${grupKurallariHtml||'<div style="font-size:10px;color:var(--w4);padding:2px 0">Henüz grup eklenmedi</div>'}
+      </div>`;
 
     const advId='alanAdv_'+a.id.replace(/[^a-zA-Z0-9]/g,'_');
     html+=`<div class="eg-card">
@@ -2397,7 +2434,7 @@ function migrateKidemKurallari(aId){
   const r=S.defaultDayMin[aId];
   if(!r) return;
   if(!r.kidemKurallari) r.kidemKurallari={};
-  // Eski kidemBagimliligi → yeni kidemKurallari
+  // Eski kidemBagimliligi → yeni kidemKurallari (yanindaKidemler+enAzKac format)
   if(r.kidemBagimliligi&&r.kidemBagimliligi.length){
     r.kidemBagimliligi.forEach(b=>{
       const bagimli=b.bagimli||[];
@@ -2405,117 +2442,138 @@ function migrateKidemKurallari(aId){
       bagimli.forEach(k=>{
         if(!r.kidemKurallari[k]) r.kidemKurallari[k]={yalnizTutamaz:false};
         r.kidemKurallari[k].yalnizTutamaz=true;
-        r.kidemKurallari[k].yaninda=refans.filter(rk=>rk!==k);
-        // Aynı kıdem refansta varsa → kendisinden de 1 olmalı, yanında listesine ekleme
-        if(refans.includes(k)&&!r.kidemKurallari[k].yaninda.length){
-          // K3 yalnız tutamaz, yanında K3 olmalı → aynı kıdemden 2 kişi olmalı anlamına gelir
-          // Yeni sistemde: "Yalnız tutamaz" + yanında hiçbiri seçili değilse → "aynı kıdemden en az 2" demek
-        }
-        r.kidemKurallari[k].kosul='enAz1';
+        r.kidemKurallari[k].yanindaKidemler=refans.filter(rk=>rk!==k);
+        r.kidemKurallari[k].enAzKac=1;
       });
     });
   }
   // Eski yapıyı temizle
   delete r.kidemGruplari;
   delete r.kidemBagimliligi;
+  if(!r.kidemGrupKurallari) r.kidemGrupKurallari=[];
   save();
 }
 
+// ── BÖLÜM 1 fonksiyonları: Yalnız tutamaz ──
 function toggleKidemYalniz(aId,k,checked){
   const r=S.defaultDayMin[aId];
   if(!r.kidemKurallari) r.kidemKurallari={};
   if(!r.kidemKurallari[k]) r.kidemKurallari[k]={yalnizTutamaz:false};
   r.kidemKurallari[k].yalnizTutamaz=checked;
-  if(checked&&!r.kidemKurallari[k].yanindaGruplar) r.kidemKurallari[k].yanindaGruplar=[];
+  if(checked&&!r.kidemKurallari[k].yanindaKidemler) r.kidemKurallari[k].yanindaKidemler=[];
+  if(checked&&!r.kidemKurallari[k].enAzKac) r.kidemKurallari[k].enAzKac=1;
   // Eski yapıyı temizle
-  delete r.kidemKurallari[k].yaninda;
-  delete r.kidemKurallari[k].kosul;
+  delete r.kidemKurallari[k].yaninda; delete r.kidemKurallari[k].kosul; delete r.kidemKurallari[k].yanindaGruplar;
   save();showSaved('minSaved');renderMinConf();
 }
-
-function ekleYanindaGrup(aId,k){
+function toggleYanindaKidem(aId,k,k2,checked){
   const r=S.defaultDayMin[aId];
-  if(!r.kidemKurallari||!r.kidemKurallari[k]) return;
-  if(!r.kidemKurallari[k].yanindaGruplar) r.kidemKurallari[k].yanindaGruplar=[];
-  r.kidemKurallari[k].yanindaGruplar.push({kidemler:[],kosul:'enAz1'});
+  const kural=r.kidemKurallari[k]; if(!kural) return;
+  if(!kural.yanindaKidemler) kural.yanindaKidemler=[];
+  if(checked){if(!kural.yanindaKidemler.includes(k2))kural.yanindaKidemler.push(k2);}
+  else{kural.yanindaKidemler=kural.yanindaKidemler.filter(x=>x!==k2);}
+  // enAzKac, seçili kidem sayısını aşamaz
+  if(kural.enAzKac>kural.yanindaKidemler.length) kural.enAzKac=Math.max(1,kural.yanindaKidemler.length);
   save();showSaved('minSaved');renderMinConf();
 }
-
-function silYanindaGrup(aId,k,gi){
+function setYanindaEnAz(aId,k,val){
   const r=S.defaultDayMin[aId];
-  if(!r.kidemKurallari||!r.kidemKurallari[k]||!r.kidemKurallari[k].yanindaGruplar) return;
-  r.kidemKurallari[k].yanindaGruplar.splice(gi,1);
-  save();showSaved('minSaved');renderMinConf();
-}
-
-function toggleGrupKidem2(aId,k,gi,k2,checked){
-  const r=S.defaultDayMin[aId];
-  const g=r.kidemKurallari[k].yanindaGruplar[gi];
-  if(!g) return;
-  if(!g.kidemler) g.kidemler=[];
-  if(checked){if(!g.kidemler.includes(k2))g.kidemler.push(k2);}
-  else{g.kidemler=g.kidemler.filter(x=>x!==k2);}
-  save();showSaved('minSaved');renderMinConf();
-}
-
-function setGrupKosul2(aId,k,gi,kosul){
-  const r=S.defaultDayMin[aId];
-  const g=r.kidemKurallari[k].yanindaGruplar[gi];
-  if(!g) return;
-  g.kosul=kosul;
+  const kural=r.kidemKurallari[k]; if(!kural) return;
+  kural.enAzKac=Math.max(1,val);
   save();showSaved('minSaved');
 }
 
-// Kıdem kuralı ihlal kontrolü (grup bazlı sistem)
+// ── BÖLÜM 2 fonksiyonları: Kıdem grupları ──
+function ekleKidemGrupKurali(aId){
+  const r=S.defaultDayMin[aId];
+  if(!r.kidemGrupKurallari) r.kidemGrupKurallari=[];
+  r.kidemGrupKurallari.push({kidemler:[],enAzKac:1});
+  save();showSaved('minSaved');renderMinConf();
+}
+function silKidemGrupKurali(aId,gi){
+  const r=S.defaultDayMin[aId];
+  if(!r.kidemGrupKurallari) return;
+  r.kidemGrupKurallari.splice(gi,1);
+  save();showSaved('minSaved');renderMinConf();
+}
+function toggleKidemGrupKidem(aId,gi,k,checked){
+  const r=S.defaultDayMin[aId];
+  const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
+  if(!g.kidemler) g.kidemler=[];
+  if(checked){if(!g.kidemler.includes(k))g.kidemler.push(k);}
+  else{g.kidemler=g.kidemler.filter(x=>x!==k);}
+  if(g.enAzKac>g.kidemler.length) g.enAzKac=Math.max(1,g.kidemler.length);
+  save();showSaved('minSaved');renderMinConf();
+}
+function setKidemGrupEnAz(aId,gi,val){
+  const r=S.defaultDayMin[aId];
+  const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
+  g.enAzKac=Math.max(1,val);
+  save();showSaved('minSaved');
+}
+
+// Kıdem kuralı ihlal kontrolü (2 bölümlü sistem)
 function kidemKuralIhlali(d, aId){
   const r=S.defaultDayMin[aId];
-  if(!r||!r.kidemKurallari) return [];
+  if(!r) return [];
   const ihlaller=[];
   const atananlar=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId);
   if(!atananlar.length) return [];
   const atananKidemler=atananlar.map(ast=>ast.kidem);
-  Object.keys(r.kidemKurallari).forEach(kStr=>{
-    const k=parseInt(kStr);
-    const kural=r.kidemKurallari[k];
-    if(!kural||!kural.yalnizTutamaz) return;
-    if(!atananKidemler.includes(k)) return;
 
-    // Eski yapı uyumluluğu: yaninda+kosul varsa gruplar gibi değerlendir
-    const gruplar=kural.yanindaGruplar||
-      (kural.yaninda&&kural.yaninda.length?[{kidemler:kural.yaninda,kosul:kural.kosul||'enAz1'}]:[]);
+  function kidemSayisi(k){ return atananKidemler.filter(ak=>ak===k).length; }
 
-    function yanindaVar(yk){
-      if(yk===k) return atananKidemler.filter(ak=>ak===k).length>=2;
-      return atananKidemler.includes(yk);
-    }
+  // ── BÖLÜM 1: Yalnız tutamaz kuralı ──
+  if(r.kidemKurallari){
+    Object.keys(r.kidemKurallari).forEach(kStr=>{
+      const k=parseInt(kStr);
+      const kural=r.kidemKurallari[k];
+      if(!kural||!kural.yalnizTutamaz) return;
+      if(!atananKidemler.includes(k)) return;
 
-    if(!gruplar.length){
-      // Hiç grup yok → aynı kıdemden en az 2 kişi olmalı
-      if(atananKidemler.filter(ak=>ak===k).length===1){
-        ihlaller.push({kidem:k,yanpiında:[],gruplar:[],msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
+      const yanindaKidemler=kural.yanindaKidemler||
+        (kural.yaninda&&kural.yaninda.length?kural.yaninda:[]);
+      const enAzKac=kural.enAzKac||1;
+
+      if(!yanindaKidemler.length){
+        // Hiç yanında kidem seçilmemiş → aynı kıdemden en az 2 kişi olmalı
+        if(kidemSayisi(k)===1){
+          ihlaller.push({tip:'yalniz',kidem:k,msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
+        }
+        return;
       }
-      return;
-    }
 
-    // Her grup ayrı kontrol edilir — HER grup karşılanmalı
-    gruplar.forEach((g,gi)=>{
-      const gKidemler=g.kidemler||[];
-      if(!gKidemler.length) return;
-      const gKosul=g.kosul||'enAz1';
-
-      if(gKosul==='hepsi'){
-        const eksikler=gKidemler.filter(yk=>!yanindaVar(yk));
-        if(eksikler.length>0){
-          ihlaller.push({kidem:k,grupIdx:gi,gruplar,msg:'K'+k+' yalnız — yanında K'+eksikler.join('/K')+' olmalı (hepsi)'});
-        }
-      } else {
-        const varMi=gKidemler.some(yk=>yanindaVar(yk));
-        if(!varMi){
-          ihlaller.push({kidem:k,grupIdx:gi,gruplar,msg:'K'+k+' yalnız — yanında K'+gKidemler.join('/K')+"'ten en az 1 olmalı"});
-        }
+      // Yanındaki kidemlerden kaç tanesi mevcut?
+      let bulunan=0;
+      for(const yk of yanindaKidemler){
+        if(yk===k){ if(kidemSayisi(k)>=2) bulunan++; }
+        else{ if(atananKidemler.includes(yk)) bulunan++; }
+      }
+      if(bulunan<enAzKac){
+        const eksik=enAzKac-bulunan;
+        ihlaller.push({tip:'yalniz',kidem:k,yanindaKidemler,enAzKac,
+          msg:'K'+k+' yalnız — yanında K'+yanindaKidemler.join('/K')+"'ten en az "+enAzKac+' kişi olmalı ('+eksik+' eksik)'});
       }
     });
-  });
+  }
+
+  // ── BÖLÜM 2: Kıdem grupları ──
+  if(r.kidemGrupKurallari&&r.kidemGrupKurallari.length){
+    r.kidemGrupKurallari.forEach((g,gi)=>{
+      const gKidemler=g.kidemler||[];
+      if(!gKidemler.length) return;
+      const enAzKac=g.enAzKac||1;
+      // Bu gruptan kaç kişi atanmış?
+      let bulunan=0;
+      for(const yk of gKidemler){ bulunan+=kidemSayisi(yk); }
+      if(bulunan<enAzKac){
+        const eksik=enAzKac-bulunan;
+        ihlaller.push({tip:'grup',grupIdx:gi,kidemler:gKidemler,enAzKac,
+          msg:'K'+gKidemler.join('+K')+' grubundan en az '+enAzKac+' kişi olmalı ('+eksik+' eksik)'});
+      }
+    });
+  }
+
   return ihlaller;
 }
 
@@ -3157,8 +3215,7 @@ function _showGenAnaliz(){
       const k=parseInt(kStr);
       const kural=r.kidemKurallari[k];
       if(!kural||!kural.yalnizTutamaz) return;
-      const gruplar=kural.yanindaGruplar||(kural.yaninda&&kural.yaninda.length?[{kidemler:kural.yaninda,kosul:kural.kosul||'enAz1'}]:[]);
-      const tumYaninda=[...new Set(gruplar.flatMap(g=>g.kidemler||[]))];
+      const tumYaninda=[...new Set(kural.yanindaKidemler||kural.yaninda||[])];
       if(!tumYaninda.length){
         const astSayi=kidemAstSayi[k]||0;
         if(astSayi<2){
@@ -4173,7 +4230,7 @@ function autoGen(){
       }
     }
 
-    // Strateji 3: Kıdem kuralı ihlallerini swap ile düzelt
+    // Strateji 3: Kıdem kuralı ihlallerini düzelt (yalnız tutamaz + kıdem grupları)
     for(let d=1;d<=days&&repairIter<REPAIR_LIMIT;d++){
       for(const area of AREAS){
         const aId=area.id;
@@ -4182,11 +4239,15 @@ function autoGen(){
         const ih=kidemKuralIhlali(d,aId);
         if(!ih.length) continue;
         repairIter++;
-        // İhlaldeki kıdem için uygun arkadaş bul ve ekle
         for(const viol of ih){
-          const gerekli=viol.gruplar&&viol.gruplar.length
-            ? [].concat(...viol.gruplar.map(g=>g.kidemler||[]))
-            : [viol.kidem];
+          // Gerekli kıdemleri belirle
+          let gerekli=[];
+          if(viol.tip==='yalniz'){
+            gerekli=viol.yanindaKidemler&&viol.yanindaKidemler.length
+              ? viol.yanindaKidemler : [viol.kidem];
+          } else if(viol.tip==='grup'){
+            gerekli=viol.kidemler||[];
+          }
           const maxD=getDayRule(d,aId).max||99;
           if(dCnt(d,aId)>=maxD) continue;
           for(let i=0;i<N;i++){
@@ -5387,11 +5448,11 @@ function buildContext(){
     const r=S.defaultDayMin[a.id];
     alanKurallari[a.name]={
       gunlukMin:r.min,gunlukMax:r.max,
-      kidemKurallari:Object.keys(r.kidemKurallari||{}).filter(k=>(r.kidemKurallari[k]||{}).yalnizTutamaz).map(k=>{
+      yalnizTutamaz:Object.keys(r.kidemKurallari||{}).filter(k=>(r.kidemKurallari[k]||{}).yalnizTutamaz).map(k=>{
         const kural=r.kidemKurallari[k];
-        const gruplar=kural.yanindaGruplar||(kural.yaninda&&kural.yaninda.length?[{kidemler:kural.yaninda,kosul:kural.kosul||'enAz1'}]:[]);
-        return {kidem:'K'+k,yalnizTutamaz:true,gruplar:gruplar.map(g=>({kidemler:(g.kidemler||[]).map(y=>'K'+y),kosul:g.kosul||'enAz1'}))};
+        return {kidem:'K'+k,yaninda:(kural.yanindaKidemler||[]).map(y=>'K'+y),enAzKac:kural.enAzKac||1};
       }),
+      kidemGruplari:(r.kidemGrupKurallari||[]).map(g=>({kidemler:(g.kidemler||[]).map(y=>'K'+y),enAzKac:g.enAzKac||1})),
       kapaliGunSayisi:Object.keys(S.kapaliGunler||{}).filter(k=>k.endsWith('_'+a.id)).reduce((s,k)=>(S.kapaliGunler[k]||[]).length+s,0)
     };
   });
