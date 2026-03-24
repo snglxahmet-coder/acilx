@@ -357,13 +357,12 @@ function niStep(btn,delta){
 </div>
 <div class="tabs" style="border-bottom:none;margin-bottom:0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none">
   <div class="tab active" id="tab-btn-takvim" onclick="switchTab(this,'takvim')">Takvim</div>
-  <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">Profilim</div>
-  <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">Ayarlar</div>
-  <!-- Gizli tablar — JS erişimi için mevcut, menüde gösterilmez -->
-  <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')" style="display:none">Özet</div>
-  <div class="tab" onclick="switchTab(this,'nobet_dagilim')" style="display:none">Nöbet Dağılımı</div>
-  <div class="tab" onclick="switchTab(this,'minconf')" style="display:none">Alanlar</div>
-  <div class="tab" id="tab-btn-egitim" onclick="switchTab(this,'egitim')" style="display:none">Eğitim Günleri</div>
+  <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">👤 Profilim</div>
+  <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
+  <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
+  <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
+  <div class="tab" id="tab-btn-egitim" onclick="switchTab(this,'egitim')">Eğitim Günleri</div>
+  <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">⚙ Ayarlar</div>
 </div>
 </div>
 </div>
@@ -429,46 +428,56 @@ function niStep(btn,delta){
       <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
     </div>
     <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      <button id="olusturBtn" onclick="nobetOlustur()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:none;background:var(--red);color:#fff;cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:.3px;transition:opacity .15s">Nobet Olustur</button>
-      <button id="silBtn" onclick="nobetSil()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(232,87,42,0.3);background:rgba(232,87,42,0.08);color:var(--red);cursor:pointer;font-family:var(--font-sans)">Sil</button>
-      <button id="tercihBtn" onclick="toggleTercihDonem()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans);display:none">Tercih Ac</button>
-      <button id="yayinlaBtn" onclick="nobetYayinla()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(80,180,80,0.4);background:rgba(80,180,80,0.08);color:#80B840;cursor:pointer;font-family:var(--font-sans);font-weight:700;display:none">Yayinla</button>
-      <button id="yayindanKaldirBtn" onclick="nobetYayindanKaldir()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans)">Kaldir</button>
-      <button onclick="exportPDF()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(55,138,221,0.4);background:rgba(55,138,221,0.08);color:#378ADD;cursor:pointer;font-family:var(--font-sans);font-weight:600">PDF</button>
+      <button id="olusturBtn" class="btn btn-g" onclick="nobetOlustur()" style="font-size:11px;padding:5px 9px">↺ Oluştur</button>
+      <button id="silBtn" onclick="nobetSil()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(232,87,42,0.3);background:rgba(232,87,42,0.08);color:var(--red);cursor:pointer;font-family:var(--font-sans)">🗑 Sil</button>
+      <button id="tercihBtn" onclick="toggleTercihDonem()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans);display:none">📋 Tercih Aç</button>
+      <button id="yayinlaBtn" onclick="nobetYayinla()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(80,180,80,0.4);background:rgba(80,180,80,0.08);color:#80B840;cursor:pointer;font-family:var(--font-sans);font-weight:700;display:none">✓ Yayınla</button>
+      <button id="yayindanKaldirBtn" onclick="nobetYayindanKaldir()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans)">⊘ Kaldır</button>
+      <button onclick="exportPDF()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(55,138,221,0.4);background:rgba(55,138,221,0.08);color:#378ADD;cursor:pointer;font-family:var(--font-sans);font-weight:600">📄 PDF</button>
     </div>
   </div>
 
-  <!-- TAKAS MODU BANNER -->
-  <div id="swapModeBanner" style="display:none;background:rgba(240,160,64,0.1);border:1px solid rgba(240,160,64,0.3);border-radius:8px;padding:8px 14px;margin-bottom:8px;font-size:12px;color:var(--orange);display:none">
-    <span id="swapModeText">Takas: ilk hucreyi sec...</span>
-    <button onclick="cancelSwapMode()" style="float:right;background:none;border:1px solid rgba(240,160,64,0.4);border-radius:4px;color:var(--orange);cursor:pointer;font-size:11px;padding:2px 8px;font-family:var(--font-sans)">Iptal</button>
-  </div>
-
-  <!-- İSTATİSTİK BARLARI (sadece ihlal varsa küçük uyarı) -->
+  <!-- İSTATİSTİK BARLARI -->
   <div id="takStats" style="display:flex;gap:8px;margin-bottom:0;flex-wrap:wrap"></div>
+  <!-- Kıdem hedef sapma barı -->
   <div id="takHedefBar"></div>
-  <!-- Uyarı kutusu — sadece kural ihlali varsa görünür -->
+  <!-- Uyarı kutusu -->
   <div id="alertBox"></div>
   <!-- Tercih dönemi banner (asistan için) -->
   <div id="tercihBannerTakvim" style="display:none;background:rgba(240,160,64,0.08);border:1px solid rgba(240,160,64,0.2);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:var(--orange)">
-    <b>Tercih donemi acik</b> — Profilim sekmesinden tercihlerinizi girebilirsiniz.
+    📋 <b>Tercih dönemi açık</b> — Profilim sekmesinden tercihlerinizi girebilirsiniz.
   </div>
 
   <!-- Renk paleti açıklaması -->
   <div id="calLegend" style="display:none;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:var(--bg2);border:1px solid var(--bord);border-radius:7px;align-items:center">
     <span style="font-size:9px;font-weight:700;color:var(--w4);text-transform:uppercase;letter-spacing:.5px">Takvim:</span>
     <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--red)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(232,87,42,0.35);display:inline-block;border:1px solid rgba(232,87,42,0.6)"></span>Min eksik</span>
-    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--orange)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(240,160,64,0.35);display:inline-block;border:1px solid rgba(240,160,64,0.6)"></span>Max asim</span>
-    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#9B7AE0"><span style="width:8px;height:8px;border-radius:2px;background:rgba(155,122,224,0.35);display:inline-block;border:1px solid rgba(155,122,224,0.6)"></span>Kidem grubu eksik</span>
+    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--orange)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(240,160,64,0.35);display:inline-block;border:1px solid rgba(240,160,64,0.6)"></span>Max aşım</span>
+    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#9B7AE0"><span style="width:8px;height:8px;border-radius:2px;background:rgba(155,122,224,0.35);display:inline-block;border:1px solid rgba(155,122,224,0.6)"></span>Kıdem grubu eksik</span>
   </div>
 
-  <!-- YZ Panel gizli tutuldu, erişim Ayarlar sekmesinden -->
-  <div id="yzPanel" style="display:none!important"></div>
+  <!-- YZ Sohbet -->
+  <div id="yzPanel" style="display:none!important;display:none;margin-bottom:10px;background:var(--bg2);border:1px solid var(--bord-r);border-radius:8px;overflow:hidden">
+    <div style="padding:8px 12px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:8px">
+      <span style="font-size:12px;font-weight:600;color:var(--w1)">🤖 YZ Asistan</span>
+      <input id="apiKeyInput" type="password" placeholder="API Key (sk-ant-...)" style="padding:3px 7px;border:1px solid var(--bord);border-radius:5px;background:var(--bg3);color:var(--w1);font-size:10px;width:140px;font-family:monospace;margin-left:auto" oninput="saveApiKey(this.value)">
+      <button onclick="document.getElementById('yzPanel').style.display='none'" style="background:none;border:none;color:var(--w3);cursor:pointer;font-size:14px;flex-shrink:0">✕</button>
+    </div>
+    <div id="yzMesajlar" style="max-height:160px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:6px;min-height:40px">
+      <div style="font-size:11px;color:var(--w3);font-style:italic">Değişiklik yapmak için yazın...</div>
+    </div>
+    <div style="padding:6px 8px;border-top:1px solid var(--bord);display:flex;gap:6px">
+      <input id="yzInput" type="text" placeholder="Örn: Süleyman'a daha az kırmızı nöbet yaz..."
+        style="flex:1;padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--bg3);color:var(--w1);font-family:var(--font-sans);font-size:11px"
+        onkeydown="if(event.key==='Enter')yzGonder()">
+      <button onclick="yzGonder()" id="yzGonderBtn" class="btn btn-p" style="padding:6px 12px;font-size:11px">Gönder</button>
+    </div>
+  </div>
 
-  <!-- GÖRÜNÜM: Takvim varsayılan, Asistan görünümü gizli -->
+  <!-- GÖRÜNÜM SEÇİCİ -->
   <div style="display:flex;gap:4px;margin-bottom:10px">
-    <button id="vBtn0" onclick="setNewView(0)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--red);color:#fff;font-family:var(--font-sans)">Takvim</button>
-    <button id="vBtn1" onclick="setNewView(1)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--bg3);color:var(--w3);font-family:var(--font-sans)">Asistan</button>
+    <button id="vBtn0" onclick="setNewView(0)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--red);color:#fff;font-family:var(--font-sans)">📅 Takvim</button>
+    <button id="vBtn1" onclick="setNewView(1)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--bg3);color:var(--w3);font-family:var(--font-sans)">👤 Asistan</button>
   </div>
 
   <!-- TAKVİM GÖRÜNÜMÜ (Aylık grid) -->
@@ -1015,75 +1024,6 @@ function niStep(btn,delta){
 
 let _swapAst = null; // {i, d, alanId}
 
-/* ── İKİ TIKLA TAKAS MODU ── */
-// Gün detayından iki nöbetçiye tıkla → otomatik takas
-let _swapModeFirst = null; // {astIdx, d, alanId} — ilk seçim
-function enterSwapMode(astIdx, d, alanId) {
-  if(!_swapModeFirst) {
-    // İlk tıklama
-    _swapModeFirst = {astIdx, d, alanId};
-    const banner = document.getElementById('swapModeBanner');
-    if(banner) {
-      banner.style.display = 'block';
-      document.getElementById('swapModeText').textContent =
-        ASSISTANTS[astIdx].name + ' (' + d + ' ' + MONTHS[S.currentDate.m] + ') secildi — simdi takas edilecek hucreye tikla';
-    }
-    // İlk seçilen hücreyi vurgula
-    _highlightSwapCell(d, true);
-  } else {
-    // İkinci tıklama — takası yap
-    const A = _swapModeFirst;
-    const B = {astIdx, d, alanId};
-
-    if(A.astIdx === B.astIdx && A.d === B.d) {
-      // Aynı hücre — iptal
-      cancelSwapMode();
-      return;
-    }
-
-    // Takası uygula
-    const keyA = gk(A.astIdx, A.d);
-    const keyB = gk(B.astIdx, B.d);
-    const valA = S.schedule[keyA];
-    const valB = S.schedule[keyB];
-
-    // Çapraz takas: A alır B'nin yerini, B alır A'nin yerini
-    if(valB) S.schedule[gk(A.astIdx, B.d)] = valB; else delete S.schedule[gk(A.astIdx, B.d)];
-    if(valA) S.schedule[gk(B.astIdx, A.d)] = valA; else delete S.schedule[gk(B.astIdx, A.d)];
-    // Eski atamaları temizle (eğer farklı asistanlarsa)
-    if(A.astIdx !== B.astIdx) {
-      delete S.schedule[keyA];
-      delete S.schedule[keyB];
-    }
-
-    // Anında kaydet
-    saveImmediate();
-    renderNewCal();
-    if(typeof renderTakStats === 'function') renderTakStats();
-    showToast('Takas yapildi');
-    cancelSwapMode();
-    // Gün detayını güncelle
-    if(typeof openDayDetail === 'function') openDayDetail(B.d);
-  }
-}
-
-function cancelSwapMode() {
-  if(_swapModeFirst) _highlightSwapCell(_swapModeFirst.d, false);
-  _swapModeFirst = null;
-  const banner = document.getElementById('swapModeBanner');
-  if(banner) banner.style.display = 'none';
-}
-
-function _highlightSwapCell(d, on) {
-  const cells = document.querySelectorAll('#newCalGrid > div');
-  cells.forEach(cell => {
-    if(cell.dataset && cell.dataset.gun === String(d)) {
-      cell.style.outline = on ? '2px solid var(--orange)' : '';
-      cell.style.outlineOffset = on ? '-2px' : '';
-    }
-  });
-}
-
 function openSwapModal(astIdx, d, alanId){
   _swapAst = {i:astIdx, d, alanId};
   const ast = ASSISTANTS[astIdx];
@@ -1213,10 +1153,12 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
   S.schedule[gk(iA,dB)] = alanB;  // A, B'nin alanına gider
   S.schedule[gk(iB,dA)] = alanA;  // B, A'nın alanına gider
 
-  saveImmediate();
-  renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
+  save();
+  renderSchedule(); renderTakStats(); renderUyarilar();
   closeSwapModal();
+  // Takas sonrası: dA günü açık kalsın (kullanıcının baktığı gün)
   openDayDetail(dA);
+  // Her iki günü de flash ile vurgula
   [dA, dB].filter((g,i,a)=>a.indexOf(g)===i).forEach(gFlash=>{
     const el = document.querySelector('[data-gun="'+gFlash+'"]');
     if(el){
@@ -1224,7 +1166,7 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
       setTimeout(()=>{ el.style.outline=''; },1400);
     }
   });
-  showToast('Takas uygulandi');
+  showToast('Değişim uygulandı ✓');
 }
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1733,16 +1675,6 @@ function save(){
       save._rafPending=false;
       try{ refreshUI(); }catch(e){ console.warn('[ACİLX] save→refreshUI:',e); }
     });
-  }
-}
-
-// Anında Firestore'a kaydet — debounce atlanır, kritik işlemler için
-function saveImmediate() {
-  save(); // localStorage + debounced Firestore
-  // Debounce'u atla, Firestore'a hemen yaz
-  if(_db && window._fsReady && window._assistantsLoaded && window.ACILX_ROLE === 'basasistan') {
-    clearTimeout(_fsSaveTimer);
-    _fsSaveNow().catch(e => console.warn('[ACİLX] saveImmediate hata:', e));
   }
 }
 
@@ -2739,10 +2671,10 @@ function openDayDetail(d){
           const isMe = astI===myAstIdx;
           return `<div style="display:flex;align-items:center;gap:4px;background:${isMe?'rgba(232,87,42,0.12)':'var(--bg4)'};border:1px solid ${isMe?'rgba(232,87,42,0.4)':'var(--bord)'};border-radius:5px;padding:3px 8px;">
             <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 3px">K${ast.kidem}</span>
-            <span style="font-size:11px;font-weight:600;color:${isMe?'var(--w1)':'var(--w2)'}">${shortName(ast.name)}</span>
-            ${isBasasistan?`<span style="font-size:10px;color:var(--orange);cursor:pointer" onclick="enterSwapMode(${astI},${d},'${a.id}')" title="Takas icin sec">&#8644;</span>`:''}
-            ${isBasasistan?`<span style="font-size:10px;color:var(--w4);cursor:pointer" onclick="removeAssign(${astI},${d},'${a.id}')" title="Kaldir">&#10005;</span>`:''}
-            ${isMe?'<span style="font-size:8px;color:var(--acc)">&#9679;</span>':''}
+            <span style="font-size:11px;font-weight:600;color:${isMe?'var(--w1)':'var(--w2)'};${isBasasistan?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" 
+              ${isBasasistan?`onclick="openSwapModal(${astI},${d},'${a.id}')" title="Değişim yap"`:''}>${shortName(ast.name)}</span>
+            ${isBasasistan?`<span style="font-size:10px;color:var(--w4);cursor:pointer" onclick="removeAssign(${astI},${d},'${a.id}')" title="Kaldır">✕</span>`:''}
+            ${isMe?'<span style="font-size:8px;color:var(--acc)">●</span>':''}
           </div>`;
         }).join(''):`<span style="font-size:10px;color:var(--w4)">Nöbetçi yok</span>`}
       </div>
@@ -2789,8 +2721,8 @@ function removeAssign(astIdx, d, aId){
   const key = gk(astIdx,d);
   if(S.schedule[key]===aId){
     delete S.schedule[key];
-    saveImmediate();
-    renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
+    save();
+    renderSchedule(); renderTakStats(); renderUyarilar();
     openDayDetail(d);
   }
 }
@@ -2799,8 +2731,8 @@ function quickAssign(astIdxStr, d, aId){
   if(!astIdxStr) return;
   const astIdx = parseInt(astIdxStr);
   S.schedule[gk(astIdx,d)] = aId;
-  saveImmediate();
-  renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
+  save();
+  renderSchedule(); renderTakStats(); renderUyarilar();
   openDayDetail(d);
 }
 
@@ -3359,45 +3291,33 @@ function updateTercihUI() {
 
 /* ── NÖBET OLUŞTUR / SİL / YAYINLA ── */
 async function nobetOlustur(){
-  showSpinner();
   autoGen();
-  // Anında kaydet — localStorage + Firestore
+  // ── KRİTİK: listeyi HEMEN kaydet ──────────────────────────────
+  // 1. localStorage'a yaz (anında)
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
+  // 2. Firestore'a HEMEN yaz — AWAIT ile (sayfa kapansa bile yazılmış olsun)
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
     window._pendingSave = true;
-    try { await _fsSaveNow(); } catch(e) { console.warn('nobetOlustur kayit:', e); }
+    try { await _fsSaveNow(); } catch(e) { console.warn('nobetOlustur kayıt:', e); }
     window._pendingSave = false;
   }
   updateTercihUI();
-  hideSpinner();
 
-  // Sadece kural ihlali varsa uyarı göster
-  const {y,m} = S.currentDate;
-  const days = daysInMonth(y,m);
-  let ihlalSayisi = 0;
-  for(let d=1; d<=days; d++) {
-    AREAS.forEach(a => {
-      const rule = getDayRule(d, a.id);
-      if(!rule.aktif || rule.min === 0) return;
-      const cnt = getAreaCount(d, a.id);
-      if(cnt < rule.min) ihlalSayisi++;
-    });
-  }
-  if(ihlalSayisi > 0) {
-    showToast('Nobet olusturuldu — ' + ihlalSayisi + ' kural ihlali var');
-  } else {
-    showToast('Nobet olusturuldu — sorun yok');
-  }
+  // ── Hedefi dolmamış asistanları tespit et ve başasistana sun ──
+  _checkHedefEksikleri();
+
+  showToast('Nöbet oluşturuldu ve kaydedildi');
 }
 
 async function nobetSil(){
-  if(!confirm('Bu ayin nobet listesini silmek istediginizden emin misiniz?')) return;
+  if(!confirm('Bu ayın nöbet listesini silmek istediğinden emin misin?')) return;
   S.schedule = {};
   S.dayOverride = {};
   S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
-  // Anında kaydet
+  // localStorage'a da yaz
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
+  // Firestore'a hemen yaz — AWAIT ile
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
     window._pendingSave = true;
     try { await _fsSaveNow(); } catch(e) {}
@@ -3405,7 +3325,11 @@ async function nobetSil(){
   }
   renderNewCal();
   updateTercihUI();
-  showToast('Nobet listesi silindi');
+  const uyEl = document.getElementById('uyarilarContent');
+  if(uyEl) uyEl.innerHTML = '';
+  const uyTab = document.getElementById('tab-uyarilar');
+  if(uyTab && uyTab.style.display !== 'none') renderUyarilar();
+  showToast('Nöbet listesi silindi');
 }
 
 async function nobetYayindanKaldir(){
@@ -4604,29 +4528,39 @@ function openCellModal(i,d){
   const we=isWE(y,mo,d);
   const egt=getEgtStatus(y,mo,d,ast.kidem);
   document.getElementById('cmTitle').textContent=`${ast.name} · ${d} ${MONTHS[mo]}`;
-  document.getElementById('cmSub').textContent=`K${ast.kidem} · ${DAYS_TR[dw]}${we?' · HaftaSonu':''}${egt?' · '+egt.name:''}`;
+  document.getElementById('cmSub').textContent=`Kıdem ${ast.kidem} · ${DAYS_TR[dw]}${we?' · Hafta sonu':''}${egt?' · '+egt.name:''}`;
   let html='';
   if(egt&&egt.type==='full'){
-    html+=`<div class="alert al-e">Tam gun egitim — nobet atanamaz.</div>`;
+    html+=`<div class="alert al-e">&#9888; Tam gün eğitim bloğu — nöbet ataması yapılamaz.</div>`;
     document.getElementById('cmSaveBtn').style.display='none';
   } else {
-    document.getElementById('cmSaveBtn').style.display='none'; // Otomatik kayıt — buton gerekmez
-    if(egt&&egt.type==='half') html+=`<div class="info-box">Yarim gun egitim. Nobet atanabilir.</div>`;
+    document.getElementById('cmSaveBtn').style.display='';
+    if(egt&&egt.type==='half') html+=`<div class="info-box">&#9432; Yarım gün eğitim (${egt.name}). Nöbet atanabilir.</div>`;
     const cur=S.schedule[gk(i,d)]||'';
-    // Dropdown — onChange ile anında kaydet
-    html+=`<div class="field"><label>Alan atamasi (sec = aninda kaydet)</label><select id="cmSel" onchange="saveCellModal()"><option value="">— Bos —</option>`;
+    html+=`<div class="field"><label>Alan ataması</label><select id="cmSel"><option value="">— Boş —</option>`;
     AREAS.forEach(a=>{
       const q=(S.quota[a.id]||{})[ast.kidem]||0;
       const cnt=countArea(i,a.id);
+      const mn=(S.minNobet[a.id]||{})[ast.kidem]||0;
       const dis=q===0?'disabled':'';
-      const hint=q===0?'(giremez)':cnt>=q?'(dolu)':`${cnt}/${q}`;
+      const hint=q===0?'(giremez)':cnt>=q?'(kota doldu)':`${cnt}/${q}${mn>0?' min'+mn:''}`;
       html+=`<option value="${a.id}" ${cur===a.id?'selected':''} ${dis}>${a.name} ${hint}</option>`;
     });
     html+=`</select></div>`;
   }
-  // Kısa doluluk özeti
+  html+=`<div style="background:var(--bg3);border-radius:var(--border-radius-md);padding:10px;font-size:12px">
+    <div style="font-weight:500;margin-bottom:8px;color:var(--w1)">Alan doluluk — ${d} ${MONTHS[mo]}</div>`;
+  AREAS.forEach(a=>{
+    const rule=getDayRule(d,a.id);
+    const cnt=getAreaCount(d,a.id);
+    const pct=rule.max>0?Math.min(100,Math.round(cnt/rule.max*100)):0;
+    const col=cnt<rule.min?'#E24B4A':cnt>=rule.max?'#BA7517':'#378ADD';
+    html+=`<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--w3)">${a.name}</span><span style="font-weight:500;color:${col}">${cnt}<span style="font-size:10px;font-weight:400"> min${rule.min}–max${rule.max}</span></span></div>
+    <div class="pb-wrap" style="margin-bottom:5px"><div class="pb-fill" style="width:${pct}%;background:${col}"></div></div>`;
+  });
   const th=countAll(i)*24,mh=S.maxHours[ast.kidem];
-  html+=`<div style="font-size:11px;color:var(--w3);margin-top:6px">Toplam: ${th}/${mh}s</div>`;
+  html+=`<div style="padding-top:6px;border-top:0.5px solid var(--bord)"><span style="color:var(--w3)">Saat: </span><span style="font-weight:500;color:${th>=mh?'#A32D2D':'var(--w1)'}">${th}/${mh}s</span>
+    <div class="pb-wrap" style="margin-top:2px"><div class="pb-fill" style="width:${Math.min(100,Math.round(th/mh*100))}%;background:${th>=mh?'#E24B4A':'#378ADD'}"></div></div></div></div>`;
   document.getElementById('cmBody').innerHTML=html;
   document.getElementById('cellModal')._cell={i,d};
   document.getElementById('cellModal').classList.add('open');
@@ -4640,13 +4574,9 @@ function saveCellModal(){
   const v=sel.value;
   const k=gk(c.i,c.d);
   if(!v) delete S.schedule[k]; else S.schedule[k]=v;
-  // Anında kaydet — Firestore dahil
-  saveImmediate();
-  closeCellModal();
-  renderNewCal(); if(typeof renderTakStats==='function') renderTakStats();
-  if(_newView===1 && typeof renderAsstList==='function') renderAsstList();
-  // Gün detayını güncelle
-  if(document.getElementById('dayDetailPanel').style.display!=='none') openDayDetail(c.d);
+  save();closeCellModal();
+  renderNewCal(); renderTakStats(); renderUyarilar();
+  if(_newView===1) renderAsstList();
 }
 document.getElementById('cellModal').addEventListener('click',function(e){if(e.target===this)closeCellModal();});
 
@@ -4874,22 +4804,21 @@ function _renderOzetBasasistan(){
 }
 
 let _changeMonthLock = false;
-// Arka planda bekleyen eski-ay Firestore kayıtlarını takip et
-// Anahtar: "y_m", Değer: Promise — fsLoadState geri dönüşte bunu bekler
-let _pendingMonthSaves = {};
-
-function changeMonth(dir){
-  if(_changeMonthLock) return;
+async function changeMonth(dir){
+  // Hızlı ardışık tıklamayı engelle — önceki geçiş tamamlanmadan yenisi başlamasın
+  if(_changeMonthLock) {
+    console.warn('[ACİLX] changeMonth: önceki geçiş devam ediyor, atlandı');
+    return;
+  }
   _changeMonthLock = true;
 
-  // Bekleyen debounce'u iptal et — snapshot alacağız
+  // ── KRİTİK: Mevcut ayın verilerini KAYBOLMADAN kaydetmemiz lazım ──
+
+  // Önce bekleyen debounce'lu Firestore kaydını iptal et — snapshot zaten alacağız
   clearTimeout(_fsSaveTimer);
 
   const oldY = S.currentDate.y;
   const oldM = S.currentDate.m;
-  const oldKey = oldY + '_' + oldM;
-
-  // Snapshot al (senkron, anında)
   const oldSchedule          = JSON.parse(JSON.stringify(S.schedule || {}));
   const oldDayOverride       = JSON.parse(JSON.stringify(S.dayOverride || {}));
   const oldMonthOverride     = JSON.parse(JSON.stringify(S.monthOverride || {}));
@@ -4897,76 +4826,88 @@ function changeMonth(dir){
   const oldPrevMonthLastDay  = JSON.parse(JSON.stringify(S.prevMonthLastDay || {}));
   const oldNextMonthFirstDay = JSON.parse(JSON.stringify(S.nextMonthFirstDay || {}));
   const oldAstProfiles       = JSON.parse(JSON.stringify(S.astProfiles || {}));
-  const oldEgBlocks          = JSON.parse(JSON.stringify(S.egBlocks || []));
-  const oldDefaultDayMin     = JSON.parse(JSON.stringify(S.defaultDayMin || {}));
-  const oldMinNobet          = JSON.parse(JSON.stringify(S.minNobet || {}));
-  const oldQuota             = JSON.parse(JSON.stringify(S.quota || {}));
-  const oldMaxHours          = JSON.parse(JSON.stringify(S.maxHours || {}));
-  const oldListName          = S.listName;
-  const oldAlgoConfig        = JSON.parse(JSON.stringify(S.algoConfig || {}));
 
-  // 1) localStorage'a anında yedekle (senkron, <1ms)
+  // ── localStorage'a ay-bazlı yedekle (offline + hız için) ──
   try {
-    localStorage.setItem(LS_KEY + '_' + oldKey, JSON.stringify({
-      schedule: oldSchedule, dayOverride: oldDayOverride,
-      monthOverride: oldMonthOverride, kapaliGunler: oldKapaliGunler,
-      prevMonthLastDay: oldPrevMonthLastDay, nextMonthFirstDay: oldNextMonthFirstDay,
-      astProfiles: oldAstProfiles, egBlocks: oldEgBlocks,
-      defaultDayMin: oldDefaultDayMin, minNobet: oldMinNobet,
-      quota: oldQuota, maxHours: oldMaxHours,
-      listName: oldListName, algoConfig: oldAlgoConfig
+    const lsMonthKey = LS_KEY + '_' + oldY + '_' + oldM;
+    localStorage.setItem(lsMonthKey, JSON.stringify({
+      schedule: oldSchedule,
+      dayOverride: oldDayOverride,
+      monthOverride: oldMonthOverride,
+      kapaliGunler: oldKapaliGunler,
+      prevMonthLastDay: oldPrevMonthLastDay,
+      nextMonthFirstDay: oldNextMonthFirstDay,
+      astProfiles: oldAstProfiles,
+      egBlocks: S.egBlocks,
+      defaultDayMin: S.defaultDayMin,
+      minNobet: S.minNobet,
+      quota: S.quota,
+      maxHours: S.maxHours,
+      listName: S.listName,
+      algoConfig: S.algoConfig
     }));
-  } catch(e) {}
+  } catch(e) { console.warn('[ACİLX] localStorage ay yedek hatası:', e); }
 
-  // 2) Firestore'a ARKA PLANDA kaydet — await yok, kullanıcı beklemez
+  // Mevcut ayı Firestore'a kaydet (başasistan ise) — AWAIT ile bekle!
+  // Böylece geri dönüldüğünde fsLoadState güncel veriyi yükler.
   if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded) {
+    showSpinner();
     const gId = window.ACILX_GROUP || 'default';
-    const savePromise = _db.collection('groups').doc(gId)
-      .collection('schedule').doc(oldKey).set({
-        schedule: oldSchedule, egBlocks: oldEgBlocks,
-        defaultDayMin: oldDefaultDayMin, minNobet: oldMinNobet,
-        quota: oldQuota, maxHours: oldMaxHours,
-        dayOverride: oldDayOverride, monthOverride: oldMonthOverride,
-        kapaliGunler: oldKapaliGunler, prevMonthLastDay: oldPrevMonthLastDay,
-        nextMonthFirstDay: oldNextMonthFirstDay, listName: oldListName,
-        astProfiles: oldAstProfiles, algoConfig: oldAlgoConfig,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: window.ACILX_UID
-      }, {merge: true}).then(function() {
-        delete _pendingMonthSaves[oldKey];
-      }).catch(function(err) {
-        console.error('[ACİLX] changeMonth arka plan kayıt hatası:', err);
-        delete _pendingMonthSaves[oldKey];
-      });
-    _pendingMonthSaves[oldKey] = savePromise;
+    try {
+      await _db.collection('groups').doc(gId).collection('schedule').doc(oldY + '_' + oldM).set({
+        schedule:          oldSchedule,
+        egBlocks:          S.egBlocks,
+        defaultDayMin:     S.defaultDayMin,
+        minNobet:          S.minNobet,
+        quota:             S.quota,
+        maxHours:          S.maxHours,
+        dayOverride:       oldDayOverride,
+        monthOverride:     oldMonthOverride,
+        kapaliGunler:      oldKapaliGunler,
+        prevMonthLastDay:  oldPrevMonthLastDay,
+        nextMonthFirstDay: oldNextMonthFirstDay,
+        listName:          S.listName,
+        astProfiles:       oldAstProfiles,
+        algoConfig:        S.algoConfig,
+        updatedAt:         firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy:         window.ACILX_UID
+      }, {merge: true});
+      console.log('[ACİLX] changeMonth: eski ay kaydedildi (' + oldY + '/' + (oldM+1) + '), schedule:', Object.keys(oldSchedule).length);
+    } catch(err) {
+      console.error('[ACİLX] changeMonth: eski ay kayıt hatası:', err);
+    }
   }
 
-  // 3) Ay HEMEN değişir — kullanıcı beklemez
+  // Ay değiştir
   S.currentDate.m += dir;
   if(S.currentDate.m > 11){ S.currentDate.m = 0; S.currentDate.y++; }
   if(S.currentDate.m < 0){ S.currentDate.m = 11; S.currentDate.y--; }
 
+  // Firestore yazımını geçici dondur — boş schedule Firestore'a gitmesin
   window._fsReady = false;
 
+  // Yeni ay için schedule/override sıfırla (aylar bağımsız)
   S.schedule          = {};
   S.dayOverride       = {};
   S.monthOverride     = {};
   S.prevMonthLastDay  = {};
   S.nextMonthFirstDay = {};
 
+  // Tercih/yayin durumunu sıfırla — yeni ayın kendi ayarları yüklenecek
   window._tercihAcik   = false;
   window._nobetYayinda = false;
   window._tercihAy     = null;
 
+  // Yeni ayın koordinatları
   const {y,m} = S.currentDate;
-  const newKey = y + '_' + m;
   const lbl = document.getElementById('monthLbl');
   if(lbl) lbl.textContent = MONTHS[m] + ' ' + y;
 
-  // 4) localStorage cache'den anında göster
+  // ── Önce localStorage'dan ay-bazlı cache'i dene (anlık görünüm) ──
   let lsCacheLoaded = false;
   try {
-    const cached = localStorage.getItem(LS_KEY + '_' + newKey);
+    const lsMonthKey = LS_KEY + '_' + y + '_' + m;
+    const cached = localStorage.getItem(lsMonthKey);
     if(cached){
       const data = JSON.parse(cached);
       ['schedule','dayOverride','monthOverride','kapaliGunler',
@@ -4976,65 +4917,69 @@ function changeMonth(dir){
         if(data[k] !== undefined) S[k] = data[k];
       });
       lsCacheLoaded = Object.keys(S.schedule||{}).length > 0;
+      if(lsCacheLoaded){
+        try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+        try { renderNewCal(); } catch(e) {}
+        updateTercihUI();
+      }
     }
   } catch(e) {}
 
-  // 5) Anında render — localStorage verisini göster
-  try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
-  try { renderNewCal(); } catch(e) {}
-  updateTercihUI();
-  _changeMonthLock = false;
-
-  // 6) Firestore'dan arka planda güncelle (kullanıcı takvimi zaten görüyor)
+  // Firestore'dan yeni ayı yükle
   if(_db) {
-    // Eğer bu ay için bekleyen bir kayıt varsa önce onu bekle
-    const pending = _pendingMonthSaves[newKey];
-    const loadFromFs = function() {
-      return Promise.all([
+    if(!lsCacheLoaded) showSpinner();
+    try {
+      const [loaded, settSnap] = await Promise.all([
         fsLoadState(y, m),
-        (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(function(){return null}) : Promise.resolve(null); })()
-      ]).then(function(results) {
-        var loaded = results[0], settSnap = results[1];
-        // Ay hâlâ aynı mı? (hızlı geçiş koruması)
-        if(S.currentDate.y !== y || S.currentDate.m !== m) return;
+        (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(()=>null) : Promise.resolve(null); })()
+      ]);
 
-        if(settSnap && settSnap.exists) {
-          var data = settSnap.data();
-          window._tercihAcik   = data.tercihAcik  || false;
-          window._nobetYayinda = data.nobetYayinda || false;
-          window._tercihAy     = data.tercihAy     || null;
-        }
-        window._fsReady = true;
-        // localStorage cache güncelle
-        try {
-          localStorage.setItem(LS_KEY + '_' + newKey, JSON.stringify({
-            schedule: S.schedule, dayOverride: S.dayOverride,
-            monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
-            prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
-            astProfiles: S.astProfiles, egBlocks: S.egBlocks,
-            defaultDayMin: S.defaultDayMin, minNobet: S.minNobet,
-            quota: S.quota, maxHours: S.maxHours,
-            listName: S.listName, algoConfig: S.algoConfig
-          }));
-        } catch(e) {}
-        // Re-render sadece Firestore'dan yeni veri geldiyse
-        if(loaded) {
-          try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
-          try { renderNewCal(); } catch(e) {}
-          updateTercihUI();
-        }
-      }).catch(function() {
-        if(S.currentDate.y === y && S.currentDate.m === m) {
-          window._fsReady = true;
-        }
-      });
-    };
+      // Ay hâlâ aynı mı kontrol et (hızlı geçiş koruması)
+      if(S.currentDate.y !== y || S.currentDate.m !== m) {
+        console.warn('[ACİLX] changeMonth: ay geçiş sırasında değişti, sonuçlar atıldı');
+        _changeMonthLock = false;
+        return;
+      }
 
-    // Bekleyen kayıt varsa önce onu bekle, sonra yükle
-    (pending ? pending.then(loadFromFs) : loadFromFs());
+      if(lbl) lbl.textContent = MONTHS[S.currentDate.m] + ' ' + S.currentDate.y;
+      if(settSnap && settSnap.exists) {
+        const data = settSnap.data();
+        window._tercihAcik   = data.tercihAcik  || false;
+        window._nobetYayinda = data.nobetYayinda || false;
+        window._tercihAy     = data.tercihAy     || null;
+      }
+      window._fsReady = true; // Firestore yüklendi — artık kayıt güvenli
+      // localStorage ay cache'ini Firestore verisiyle güncelle
+      try {
+        const lsMonthKey = LS_KEY + '_' + y + '_' + m;
+        localStorage.setItem(lsMonthKey, JSON.stringify({
+          schedule: S.schedule, dayOverride: S.dayOverride,
+          monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
+          prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
+          astProfiles: S.astProfiles, egBlocks: S.egBlocks,
+          defaultDayMin: S.defaultDayMin, minNobet: S.minNobet,
+          quota: S.quota, maxHours: S.maxHours,
+          listName: S.listName, algoConfig: S.algoConfig
+        }));
+      } catch(e) {}
+      try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+      try { renderNewCal(); } catch(e) {}
+      updateTercihUI();
+    } catch(err) {
+      window._fsReady = true; // Hata olsa bile kilidi aç
+      try { renderNewCal(); } catch(e) {}
+      updateTercihUI();
+    } finally {
+      hideSpinner();
+      _changeMonthLock = false;
+    }
   } else {
+    // Firestore yok — localStorage cache zaten yüklendi, yoksa boş kalır
     window._fsReady = true;
+    try { renderNewCal(); } catch(e) {}
+    updateTercihUI();
   }
+  _changeMonthLock = false;
 }
 // YZ FONKSIYONLARI
 function saveApiKey(val){
@@ -6856,11 +6801,9 @@ function _sapmaModalYenile(astIdx){
 
 
 function ddSorunTikla(idx){
-  // Basitlestirildi: kural ihlali tiklayinca sadece gun detayinda gosterilir
   const cache = window._ddSorunlarCache;
   if(!cache || !cache[idx]) return;
-  const s = cache[idx];
-  showToast(s.msg);
+  openUyariOneriModal(cache[idx]);
 }
 
 function uyariGunCoz(d){
