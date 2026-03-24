@@ -958,13 +958,64 @@ const FIREBASE_CONFIG = {
 
 let app, auth, db;
 
+// ── PWA algılama ──
+const _isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+const _isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+console.log('[ACİLX] Mod:', _isPWA ? 'PWA standalone' : _isMobile ? 'Mobil tarayıcı' : 'Desktop', '| UA:', navigator.userAgent.substring(0,60));
+
+// ── IndexedDB flag — sessionStorage PWA'da güvenilmez ──
+function _idbSet(key,val){
+  try{
+    var r=indexedDB.open('acilx_flags',1);
+    r.onupgradeneeded=function(e){e.target.result.createObjectStore('f')};
+    r.onsuccess=function(e){
+      try{e.target.result.transaction('f','readwrite').objectStore('f').put(val,key)}catch(x){}
+    };
+  }catch(e){}
+}
+function _idbGet(key,cb){
+  try{
+    var r=indexedDB.open('acilx_flags',1);
+    r.onupgradeneeded=function(e){e.target.result.createObjectStore('f')};
+    r.onsuccess=function(e){
+      try{
+        var tx=e.target.result.transaction('f','readonly').objectStore('f').get(key);
+        tx.onsuccess=function(){cb(tx.result)};
+        tx.onerror=function(){cb(null)};
+      }catch(x){cb(null)}
+    };
+    r.onerror=function(){cb(null)};
+  }catch(e){cb(null)}
+}
+function _idbDel(key){
+  try{
+    var r=indexedDB.open('acilx_flags',1);
+    r.onupgradeneeded=function(e){e.target.result.createObjectStore('f')};
+    r.onsuccess=function(e){
+      try{e.target.result.transaction('f','readwrite').objectStore('f').delete(key)}catch(x){}
+    };
+  }catch(e){}
+}
+
+// Redirect flag — hem sessionStorage hem IndexedDB
+function _setRedirectFlag(){
+  try{sessionStorage.setItem('acilx_redirect','1')}catch(e){}
+  _idbSet('redirect','1');
+  console.log('[ACİLX] Redirect flag SET');
+}
+function _clearRedirectFlag(){
+  try{sessionStorage.removeItem('acilx_redirect')}catch(e){}
+  _idbDel('redirect');
+}
+
 // ── Auth state yönetimi ──
 let _authResolved = false;
 let _authGateTimer = null;
 let _lastAuthUser = undefined;
 
 // Yardımcı: Login ekranını göster
-function _showLogin(){
+function _showLogin(reason){
+  console.log('[ACİLX] _showLogin:', reason||'');
   agFadeOut();
   hideSplash();
   const loginEl = document.getElementById('loginScreen');
@@ -977,7 +1028,8 @@ function _showLogin(){
 }
 
 // Yardımcı: App ekranını göster
-function _showApp(){
+function _showApp(reason){
+  console.log('[ACİLX] _showApp:', reason||'');
   agFadeOut();
   const loginEl = document.getElementById('loginScreen');
   if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
@@ -986,6 +1038,7 @@ function _showApp(){
 }
 
 function _handleAuth(user){
+  console.log('[ACİLX] onAuthStateChanged:', user ? user.email : 'null', '| resolved:', _authResolved);
   clearTimeout(_authGateTimer);
 
   // İlk auth çözümü
@@ -993,13 +1046,10 @@ function _handleAuth(user){
     _authResolved = true;
     _lastAuthUser = user;
     if(user){
-      // Auth cached — sessionStorage'a işaretle
-      try{ sessionStorage.setItem('acilx_authed','1'); }catch(e){}
       agSetStep(2);
-      _showApp();
+      _showApp('auth-initial-user');
     } else {
-      try{ sessionStorage.removeItem('acilx_authed'); }catch(e){}
-      _showLogin();
+      _showLogin('auth-initial-no-user');
     }
     onAuthChange(user);
     return;
@@ -1009,7 +1059,6 @@ function _handleAuth(user){
   if(!user && _lastAuthUser){
     // Logout
     _lastAuthUser = null;
-    try{ sessionStorage.removeItem('acilx_authed'); }catch(e){}
     nobetFrameLoaded = false;
     window._iframeReadyBound = false;
     const fr = document.getElementById('nobetFrame');
@@ -1017,66 +1066,84 @@ function _handleAuth(user){
     if(typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
     onAuthChange(null);
   } else if(user && !_lastAuthUser){
-    // Login (giriş ekranından)
+    // Login (giriş ekranından veya redirect dönüşü)
     _lastAuthUser = user;
-    try{ sessionStorage.setItem('acilx_authed','1'); }catch(e){}
-    _showApp();
+    _showApp('auth-login');
     onAuthChange(user);
   }
   // user→user (token refresh) → sessiz geç
 }
 
 window.addEventListener('load', async () => {
+  console.log('[ACİLX] === SAYFA YÜKLENDİ ===', new Date().toISOString());
+  console.log('[ACİLX] PWA:', _isPWA, '| Mobile:', _isMobile, '| URL:', location.href);
+
   try {
     // ADIM 0: Firebase başlat
     agSetStep(0);
+    console.log('[ACİLX] Firebase init başlıyor...');
     app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth(app);
     db   = firebase.firestore(app);
+    console.log('[ACİLX] Firebase app OK');
 
-    // Persistence — LOCAL (PWA/mobil için kritik)
+    // Persistence — LOCAL (IndexedDB tabanlı, PWA için güvenilir)
+    console.log('[ACİLX] Persistence ayarlanıyor...');
     await Promise.all([
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
-      db.enablePersistence({synchronizeTabs:true}).catch(()=>{})
+      db.enablePersistence({synchronizeTabs:true}).catch(e => console.warn('[ACİLX] Firestore persistence:', e.code))
     ]);
+    console.log('[ACİLX] Persistence OK');
 
     agSetStep(1);
 
-    // ── Redirect dönüşü kontrolü (PWA redirect sonrası) ──
-    const isRedirectReturn = sessionStorage.getItem('acilx_redirect') === '1';
-    if(isRedirectReturn){
-      sessionStorage.removeItem('acilx_redirect');
-      agSetStep(1);
-      try {
-        const result = await auth.getRedirectResult();
-        if(result && result.user){
-          console.log('[ACİLX] Redirect OK:', result.user.email);
-          // Redirect başarılı — onAuthStateChanged zaten tetiklenecek
-        }
-      } catch(err) {
-        console.warn('[ACİLX] Redirect hatası:', err.code, err.message);
+    // ── HER ZAMAN getRedirectResult çağır ──
+    // PWA'da sessionStorage güvenilmez, bu yüzden flag olsun olmasın dene
+    console.log('[ACİLX] getRedirectResult çağrılıyor...');
+    try {
+      const result = await auth.getRedirectResult();
+      if(result && result.user){
+        console.log('[ACİLX] Redirect BAŞARILI:', result.user.email);
+        _clearRedirectFlag();
+      } else {
+        console.log('[ACİLX] getRedirectResult: kullanıcı yok (redirect dönüşü değil)');
+      }
+    } catch(err) {
+      console.warn('[ACİLX] getRedirectResult hata:', err.code, err.message);
+      _clearRedirectFlag();
+      // credential-already-in-use gibi hatalarda login göster
+      if(err.code !== 'auth/popup-closed-by-user'){
         const errEl = document.getElementById('authError');
-        if(errEl) errEl.textContent = 'Giriş başarısız: ' + (err.code || err.message);
+        if(errEl) errEl.textContent = 'Giriş hatası: ' + (err.code || err.message);
       }
     }
 
-    // onAuthStateChanged — TEK dinleyici
+    // ── currentUser hızlı kontrol — Firebase zaten cache'de tutuyorsa ──
+    if(auth.currentUser && !_authResolved){
+      console.log('[ACİLX] currentUser zaten var (cache):', auth.currentUser.email);
+      _handleAuth(auth.currentUser);
+    }
+
+    // onAuthStateChanged — TEK dinleyici (cache'den gelen user'ı da yakalar)
+    console.log('[ACİLX] onAuthStateChanged dinleyicisi kuruluyor...');
     auth.onAuthStateChanged(_handleAuth);
 
-    // ── Timeout: auth gelmezse login göster ──
-    // Redirect dönüşünde 5sn, normal durumda 3sn
-    const timeout = isRedirectReturn ? 5000 : 3000;
+    // ── Timeout: auth gelmezse login + "Tekrar Giriş Yap" butonu göster ──
     _authGateTimer = setTimeout(() => {
       if(!_authResolved){
-        console.warn('[ACİLX] Auth ' + timeout + 'ms timeout — login gösteriliyor');
+        console.warn('[ACİLX] Auth 5sn TIMEOUT — login gösteriliyor');
+        console.warn('[ACİLX] currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
         _authResolved = true;
-        _showLogin();
+        _showLogin('timeout');
+        // Timeout mesajı göster
+        const errEl = document.getElementById('authError');
+        if(errEl) errEl.textContent = 'Bağlantı zaman aşımına uğradı.';
       }
-    }, timeout);
+    }, 5000);
 
   } catch(e) {
-    console.error('Firebase init:', e);
-    _showLogin();
+    console.error('[ACİLX] FATAL Firebase init:', e);
+    _showLogin('init-error');
     const errEl = document.getElementById('authError');
     if(errEl) errEl.textContent = 'Firebase başlatılamadı: ' + (e.message || e.code || 'Bilinmeyen hata');
   }
@@ -1230,37 +1297,38 @@ async function doGoogleLogin() {
   const errEl = document.getElementById('authError');
   errEl.textContent = '';
   const btn = document.querySelector('.btn-google');
+  console.log('[ACİLX] doGoogleLogin başladı | PWA:', _isPWA, '| Mobile:', _isMobile);
 
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
 
-    const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
-    if(isPWA){
-      // PWA standalone: popup ASLA çalışmaz — doğrudan redirect
-      console.log('[ACİLX] PWA modunda redirect kullanılıyor');
-      sessionStorage.setItem('acilx_redirect', '1');
+    if(_isPWA){
+      // PWA standalone: popup çalışmaz — doğrudan redirect
+      console.log('[ACİLX] PWA: redirect kullanılıyor');
+      _setRedirectFlag();
       if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
       errEl.textContent = 'Google\'a yönlendiriliyorsunuz...';
       await auth.signInWithRedirect(provider);
       return;
     }
 
-    if(isMobile){
+    if(_isMobile){
       // Mobil tarayıcı: popup dene, başarısızsa redirect
+      console.log('[ACİLX] Mobil: popup deneniyor...');
       try {
         if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
         await auth.signInWithPopup(provider);
+        console.log('[ACİLX] Popup başarılı');
         if(btn) { btn.disabled=false; btn.style.opacity='1'; }
       } catch(popupErr) {
         if(btn) { btn.disabled=false; btn.style.opacity='1'; }
+        console.warn('[ACİLX] Popup hatası:', popupErr.code);
         if(popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') return;
         if(popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/operation-not-supported-in-this-environment'){
-          console.warn('[ACİLX] Popup engellendi, redirect\'e düşülüyor:', popupErr.code);
-          sessionStorage.setItem('acilx_redirect', '1');
+          console.log('[ACİLX] Popup engellendi → redirect\'e düşülüyor');
+          _setRedirectFlag();
           if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
           errEl.textContent = 'Google\'a yönlendiriliyorsunuz...';
           await auth.signInWithRedirect(provider);
@@ -1270,12 +1338,14 @@ async function doGoogleLogin() {
       }
     } else {
       // Desktop: popup
+      console.log('[ACİLX] Desktop: popup kullanılıyor');
       await auth.signInWithPopup(provider);
+      console.log('[ACİLX] Desktop popup başarılı');
     }
   } catch(e) {
-    sessionStorage.removeItem('acilx_redirect');
+    _clearRedirectFlag();
     if(btn) { btn.disabled=false; btn.style.opacity='1'; }
-    console.error('[ACİLX] Login hatası:', e.code, e.message);
+    console.error('[ACİLX] Login HATA:', e.code, e.message);
     if(e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
     if(e.code === 'auth/popup-blocked') {
       errEl.textContent = 'Popup engellendi. Tekrar deneyin veya tarayıcı ayarlarından izin verin.';
