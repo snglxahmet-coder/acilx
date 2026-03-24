@@ -349,6 +349,7 @@ function niStep(btn,delta){
   <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
   <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
   <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
+  <div class="tab" id="tab-btn-sorunlar" onclick="switchTab(this,'sorunlar')">Sorunlar</div>
   <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">⚙ Ayarlar</div>
 </div>
 </div>
@@ -614,6 +615,17 @@ function niStep(btn,delta){
       </div>
     </div>
   </div>
+</div>
+
+<!-- SORUNLAR -->
+<div id="tab-sorunlar" style="display:none">
+  <div class="ph" style="margin-bottom:10px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <button onclick="switchTab(document.getElementById('tab-btn-takvim'),'takvim')" style="padding:5px 10px;border:1px solid var(--bord);border-radius:5px;background:var(--bg3);color:var(--w3);cursor:pointer;font-size:12px;font-family:var(--font-sans)">← Takvim</button>
+      <div class="ptitle" id="sorunlarTitle">Sorunlar</div>
+    </div>
+  </div>
+  <div id="sorunlarContent"></div>
 </div>
 
 <!-- AYARLAR -->
@@ -1312,7 +1324,7 @@ function applyRoleRestrictions() {
     // Sekme erişimini kısıtla — asistan sadece kendi profil + özet sekmesini görür
     document.querySelectorAll('.tab').forEach(t => {
       const txt = t.textContent.trim();
-      if(['Alanlar','Nöbet Dağılımı','⚙ Ayarlar'].includes(txt)){
+      if(['Alanlar','Nöbet Dağılımı','⚙ Ayarlar'].includes(txt) || txt.startsWith('Sorunlar')){
         t.style.display = 'none';
       }
     });
@@ -2146,8 +2158,8 @@ function renderTakStats(){
       <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Kusursuz Gün</div>
       <div style="font-size:20px;font-weight:800;color:${kusursuz>0?'#7DC44A':'var(--w1)'};font-family:'DM Mono',monospace">${kusursuz}</div>
     </div>
-    <div style="background:${sorunluGun>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${sorunluGun>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
-      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Sorunlu Gün</div>
+    <div style="background:${sorunluGun>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${sorunluGun>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px;${sorunluGun>0?'cursor:pointer':''}" ${sorunluGun>0?'onclick="openUyarilarGun(null)"':''}>
+      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Sorunlu Gün${sorunluGun>0?' ↗':''}</div>
       <div style="font-size:20px;font-weight:800;color:${sorunluGun>0?'var(--red)':'var(--w1)'};font-family:'DM Mono',monospace">${sorunluGun}</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bord);border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
@@ -3172,14 +3184,18 @@ function autoGen(){
   function weScore(i){ return load[i].weCount||0; }
 
   function put(i,d,aId){
-    if(kalan(i)<=0) return;
+    if(kalan(i)<=0) return false;
     const _dur=astDurum(i);
-    if(_dur==='izinli'||_dur==='rot_hayir') return;
-    if(astIzinliAylik(i).includes(d)) return;
+    if(_dur==='izinli'||_dur==='rot_hayir') return false;
+    if(astIzinliAylik(i).includes(d)) return false;
+    // Alan kotası kontrolü
+    const kotaLimit = (S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+    if(kotaLimit > 0 && (load[i].byArea[aId]||0) >= kotaLimit) return false;
     S.schedule[gk(i,d)]=aId;
     load[i].total++;
     load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
     if(isWE(y,mo,d)) load[i].weCount=(load[i].weCount||0)+1;
+    return true;
   }
   function remove(i,d){
     const aId=S.schedule[gk(i,d)]; if(!aId) return;
@@ -3520,6 +3536,35 @@ function autoGen(){
         const fazla=atananIdx.length-maxG; if(fazla<=0) return;
         [...atananIdx].sort((a,b)=>load[b].total-load[a].total).slice(0,fazla).forEach(idx=>remove(idx,d));
       });
+    }
+  });
+
+  // ═══ ADIM 6: HEDEF SINIRI — kesin clamp ═══
+  // Hiçbir asistanın hedefinden fazla nöbeti olmamalı
+  ASSISTANTS.forEach((_,i)=>{
+    const h = hedef(i);
+    if(load[i].total <= h) return;
+    // Fazla nöbetleri kaldır — zorunlu olmayan alanlardan başla, en dolu günden
+    const fazla = load[i].total - h;
+    const atamalar = [];
+    for(let d=1;d<=days;d++){
+      const aId = S.schedule[gk(i,d)];
+      if(!aId) continue;
+      const rule = getDayRule(d,aId);
+      const cnt = dCnt(d,aId);
+      const zorunlu = ZORUNLU_ALANLAR.has(aId) && cnt <= (rule.min||0);
+      atamalar.push({d, aId, zorunlu, cnt});
+    }
+    // Önce zorunlu olmayan alanlardan, sonra en dolu günlerden kaldır
+    atamalar.sort((a,b)=>{
+      if(a.zorunlu !== b.zorunlu) return a.zorunlu ? 1 : -1;
+      return b.cnt - a.cnt;
+    });
+    let kaldirilan = 0;
+    for(const at of atamalar){
+      if(kaldirilan >= fazla) break;
+      remove(i, at.d);
+      kaldirilan++;
     }
   });
 
@@ -5064,12 +5109,13 @@ function clearAstH(i){
 function switchTab(el,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','ayarlar'].forEach(n=>{
+  ['minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','sorunlar','ayarlar'].forEach(n=>{
     const tabEl=document.getElementById('tab-'+n);
     if(tabEl) tabEl.style.display=n===name?'block':'none';
   });
   if(name==='takvim') try { renderNewCal(); } catch(e) {}
   if(name==='ozet'){ _ozetDate={y:S.currentDate.y,m:S.currentDate.m}; _ozetSchedule=null; renderOzet(); }
+  if(name==='sorunlar') renderSorunlar();
   if(name==='asistanlar') renderAsistanlar();
   if(name==='astprofile'){
     _apMonth = _apMonth || S.currentDate;
@@ -5716,13 +5762,199 @@ function applyTakasBtn(btn){
 
 /* ── NÖBETLERİM RENDER ── */
 
-/* ── UYARILAR (kaldırıldı) ── */
+/* ── SORUNLAR SEKMESİ ── */
 let _uyarilarGun = null;
-function openUyarilarGun(){}
-function uyariSorunTikla(){}
+function openUyarilarGun(d){
+  _uyarilarGun = d;
+  const titleEl = document.getElementById('sorunlarTitle');
+  if(titleEl){
+    titleEl.textContent = d !== null
+      ? d+' '+MONTHS[S.currentDate.m]+' Sorunları'
+      : 'Tüm Sorunlar — '+MONTHS[S.currentDate.m]+' '+S.currentDate.y;
+  }
+  switchTab(document.getElementById('tab-btn-sorunlar'),'sorunlar');
+}
 
-function renderUyarilar(){ return; }
-function _renderUyarilar_disabled(){
+function renderUyarilar(){ renderSorunlar(); }
+
+function renderSorunlar(){
+  const el = document.getElementById('sorunlarContent');
+  if(!el) return;
+  window._sorunCozCache = [];
+  const {y,m} = S.currentDate;
+  const days = daysInMonth(y,m);
+  const isBasas = window.ACILX_ROLE==='basasistan';
+  let html = '';
+  let toplamSorun = 0;
+
+  const KURAL = {min:'Minimum doluluk ihlali', max:'Maksimum doluluk aşımı', kidem:'Kıdem grubu kuralı ihlali'};
+  const RENK = {min:'var(--red)', max:'var(--orange)', kidem:'#9B7AE0'};
+  const BG   = {min:'rgba(232,87,42,0.10)', max:'rgba(240,160,64,0.10)', kidem:'rgba(155,122,224,0.10)'};
+
+  const gunler = (_uyarilarGun !== null && _uyarilarGun !== undefined)
+    ? [_uyarilarGun]
+    : Array.from({length:days}, (_,i) => i+1);
+
+  for(const d of gunler){
+    const dow = new Date(y,m,d).getDay();
+    const gunAdi = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][dow];
+    const sorunlar = [];
+
+    AREAS.forEach(a=>{
+      const rule = getDayRule(d, a.id);
+      if(!rule.aktif) return;
+      const atananlar = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id);
+      const cnt = atananlar.length;
+
+      // Min eksik
+      if(cnt < rule.min){
+        const eksik = rule.min - cnt;
+        const boslar = ASSISTANTS.filter((ast,i)=>
+          !S.schedule[gk(i,d)] && ((S.quota[a.id]||{})[ast.kidem]||0)>0
+        );
+        const uygunVar = boslar.some((ast,bi)=>{
+          const realIdx = ASSISTANTS.indexOf(ast);
+          return canAssign(realIdx,d,a.id,true);
+        });
+        let oneri = '', otoYapilabilir = uygunVar;
+        if(uygunVar){
+          oneri = `<b>Öneri:</b> ${eksik} asistan daha atanabilir — boş asistanlardan en uygununu ekle`;
+        } else {
+          otoYapilabilir = false;
+          const nedeni = boslar.length===0
+            ? 'Tüm asistanlar bu gün zaten atanmış'
+            : 'Müsait asistanlar art arda/izin/kota kısıtına takılıyor';
+          oneri = `<b>Otomatik çözülemez:</b> ${nedeni}. Başasistan manuel atama yapmalı`;
+        }
+        sorunlar.push({
+          tip:'min', alan:a, gun:d, eksik,
+          msg:`${a.name}: ${cnt}/${rule.min} — ${eksik} kişi eksik`,
+          kural: KURAL.min,
+          oneri, otoYapilabilir,
+          cozumData: {d, aId:a.id, eksik}
+        });
+      }
+
+      // Max aşım
+      if(rule.max > 0 && cnt > rule.max){
+        const fazla = cnt - rule.max;
+        sorunlar.push({
+          tip:'max', alan:a, gun:d,
+          msg:`${a.name}: ${cnt}/${rule.max} — ${fazla} fazla atama`,
+          kural: KURAL.max,
+          oneri: `<b>Öneri:</b> En fazla nöbetli ${fazla} asistanı bu alandan çıkar`,
+          otoYapilabilir: true,
+          cozumData: {d, aId:a.id, fazla}
+        });
+      }
+
+      // Kıdem grubu
+      const r2 = S.defaultDayMin[a.id];
+      if(r2 && r2.kidemGruplari && cnt>0){
+        r2.kidemGruplari.forEach(g=>{
+          const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
+          const grpCnt = atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
+          if(grpCnt < (grp.min||1)){
+            const kLbl = 'K'+grp.kidemler.join('/K');
+            const grpBos = ASSISTANTS.filter((ast,i)=>
+              !S.schedule[gk(i,d)] && grp.kidemler.includes(ast.kidem) && ((S.quota[a.id]||{})[ast.kidem]||0)>0
+            );
+            const uygunVar = grpBos.length > 0;
+            sorunlar.push({
+              tip:'kidem', alan:a, gun:d,
+              msg:`${a.name}: ${kLbl} grubundan ${grpCnt}/${grp.min||1} — eksik`,
+              kural: KURAL.kidem,
+              oneri: uygunVar
+                ? `<b>Öneri:</b> ${kLbl} kıdeminden müsait asistan ata`
+                : `<b>Otomatik çözülemez:</b> ${kLbl} kıdeminden müsait asistan yok. Kıdem kuralını gevşetin veya başka günden takas yapın`,
+              otoYapilabilir: uygunVar,
+              cozumData: {d, aId:a.id, kidemler:grp.kidemler, grpMin:grp.min||1}
+            });
+          }
+          if((grp.max||99)<99 && grpCnt>(grp.max)){
+            sorunlar.push({
+              tip:'max', alan:a, gun:d,
+              msg:`${a.name}: K${grp.kidemler.join('/')} grubundan ${grpCnt}/${grp.max} — fazla`,
+              kural: KURAL.max,
+              oneri: `<b>Öneri:</b> Bu kıdemden fazla asistanı başka alana taşı veya kaldır`,
+              otoYapilabilir: true,
+              cozumData: {d, aId:a.id, fazla: grpCnt-grp.max}
+            });
+          }
+        });
+      }
+    });
+
+    if(sorunlar.length > 0){
+      toplamSorun += sorunlar.length;
+      html += `<div style="background:var(--bg2);border:1px solid rgba(232,87,42,0.15);border-left:3px solid var(--red);border-radius:8px;overflow:hidden;margin-bottom:8px">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bord)">
+          <span style="font-size:13px;font-weight:800;color:var(--w1);font-family:'DM Mono',monospace">${d} ${MONTHS[m]}</span>
+          <span style="font-size:10px;color:var(--w3)">${gunAdi}</span>
+          <span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(232,87,42,0.12);color:var(--red);font-weight:700">${sorunlar.length} sorun</span>
+          <button onclick="switchTab(document.getElementById('tab-btn-takvim'),'takvim');setTimeout(function(){openDayDetail(${d})},50)" style="margin-left:auto;font-size:10px;padding:3px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--bord);color:var(--w2);cursor:pointer;font-family:var(--font-sans)">Günü aç</button>
+        </div>
+        ${sorunlar.map(function(s){
+          var cozBtn = '';
+          if(isBasas && s.otoYapilabilir){
+            var cIdx = window._sorunCozCache.length;
+            window._sorunCozCache.push(s.cozumData);
+            var cozTip = s.tip==='max' ? 'cikar_alan' : s.tip==='kidem' ? 'ekle_kidem' : 'ekle_alan';
+            cozBtn = '<button onclick="sorunCoz('+cIdx+',\''+cozTip+'\')" style="flex-shrink:0;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(80,180,80,0.12);border:1px solid rgba(80,180,80,0.3);color:#80B840;cursor:pointer;font-weight:700;font-family:var(--font-sans)">Çöz</button>';
+          } else if(isBasas && !s.otoYapilabilir){
+            cozBtn = '<span style="flex-shrink:0;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(240,160,64,0.1);border:1px solid rgba(240,160,64,0.25);color:var(--orange);font-weight:600">Manuel</span>';
+          }
+          return '<div style="padding:8px 14px;border-bottom:1px solid var(--bord)">'+
+            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+              '<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+BG[s.tip]+';color:'+RENK[s.tip]+';flex-shrink:0">'+
+                '<span style="width:5px;height:5px;border-radius:50%;background:'+RENK[s.tip]+';display:inline-block"></span>'+s.kural+
+              '</span>'+
+              '<span style="font-size:11px;color:var(--w2);flex:1">'+s.msg+'</span>'+
+              cozBtn+
+            '</div>'+
+            '<div style="font-size:10px;color:var(--w3);padding-left:4px">'+s.oneri+'</div>'+
+          '</div>';
+        }).join('')}
+      </div>`;
+    }
+  }
+
+  if(toplamSorun === 0){
+    html = '<div style="text-align:center;padding:40px 20px">'+
+      '<div style="font-size:32px;margin-bottom:12px">✓</div>'+
+      '<div style="font-size:14px;font-weight:700;color:var(--w1);margin-bottom:6px">Sorun yok</div>'+
+      '<div style="font-size:12px;color:var(--w3)">Tüm kurallar karşılanıyor.</div>'+
+    '</div>';
+  } else {
+    html = '<div style="background:rgba(232,87,42,0.06);border-radius:8px;margin-bottom:12px;overflow:hidden">'+
+      '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap">'+
+        '<div><span style="font-size:16px;font-weight:800;color:var(--red)">'+toplamSorun+'</span>'+
+        '<span style="font-size:11px;color:var(--w3);margin-left:6px">kural ihlali</span></div>'+
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
+          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--red)"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span>Min</span>'+
+          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--orange)"><span style="width:6px;height:6px;border-radius:50%;background:var(--orange);display:inline-block"></span>Max</span>'+
+          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9B7AE0"><span style="width:6px;height:6px;border-radius:50%;background:#9B7AE0;display:inline-block"></span>Kıdem</span>'+
+        '</div>'+(isBasas?
+        '<button onclick="tumSorunlariCoz()" style="margin-left:auto;padding:5px 12px;border-radius:6px;background:var(--red);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;gap:4px">Tümünü Çöz</button>':'')+
+      '</div>'+
+    '</div>' + html;
+  }
+
+  // Sorunlar badge güncelle
+  var badge = document.getElementById('tab-btn-sorunlar');
+  if(badge) badge.textContent = toplamSorun > 0 ? 'Sorunlar ('+toplamSorun+')' : 'Sorunlar';
+
+  el.innerHTML = html;
+}
+
+window._sorunCozCache = [];
+function sorunCoz(idx, cozum){
+  var p = window._sorunCozCache[idx];
+  if(p) uyariCoz(p, cozum);
+}
+function tumSorunlariCoz(){ if(typeof akillicoz==='function') akillicoz(); }
+
+function _renderUyarilar_legacy(){
   const el = document.getElementById('uyarilarContent');
   if(!el) return;
   window._uyariSorunCache = []; // Her render'da cache sıfırla
@@ -7088,6 +7320,8 @@ function initApp(){
     loadNobetSettings().then(()=>{
       // Asistan ve alan verileri yüklendi — ŞİMDİ render yap
       try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) { console.warn('initApp render:', e); }
+      // KRİTİK: Takvimi ilk açılışta render et
+      try { renderNewCal(); renderTakStats(); } catch(e) { console.warn('initApp takvim:', e); }
 
       // Badge'i kıdem bilgisiyle güncelle
       const _isBasasistan2 = window.ACILX_ROLE === 'basasistan';
