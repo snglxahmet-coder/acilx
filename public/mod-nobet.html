@@ -1154,10 +1154,11 @@ function fsSaveState() {
 async function _fsSaveNow() {
   if (!_db) return;
   if (!window._assistantsLoaded) return;
-  if (!window._fsReady) return; // Ay geçişi sırasında boş veri yazma
+  if (!window._fsReady) { console.log('[ACİLX] _fsSaveNow engellendi — fsReady=false'); return; }
   const {y, m} = S.currentDate;
+  const schedLen = Object.keys(S.schedule||{}).length;
   console.log('[ACİLX] _fsSaveNow → Firestore (' + y + '_' + m + ')',
-    'schedule:', Object.keys(S.schedule||{}).length,
+    'schedule:', schedLen,
     'kapaliGunler:', Object.keys(S.kapaliGunler||{}).length);
   try {
     await fsScheduleRef(y, m).set({
@@ -1249,11 +1250,18 @@ async function fsLoadState(y, m) {
 
       // Global ayarları sadece ilk yüklemede al (initApp), changeMonth'ta değil
       if (window._fsInitialLoad) {
-        GLOBAL_KEYS.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
+        console.log('[ACİLX] fsLoadState: İlk yükleme — global ayarlar Firestore\'dan alınıyor');
+        GLOBAL_KEYS.forEach(k => {
+          if (data[k] !== undefined) {
+            console.log('[ACİLX] fsLoadState: global ' + k + ' yüklendi');
+            S[k] = data[k];
+          }
+        });
         window._fsInitialLoad = false;
+        // İlk yüklemede global ayarları ana cache'e yaz
+        try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_) {}
       }
-
-      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_) {}
+      // NOT: changeMonth sırasında ana LS_KEY cache'e yazma — cross-month contamination önlenir
 
       console.log('[ACİLX] fsLoadState: Firestore→S (' + y + '/' + (m+1) + ')',
         'schedule:', Object.keys(S.schedule||{}).length,
@@ -3543,6 +3551,30 @@ function autoGen(){
     }
   });
 
+  // ═══ ADIM 4c: SON ŞANS — art arda dahil tüm kısıtları gevşet ═══
+  ASSISTANTS.forEach((_,i)=>{
+    if(kalan(i)<=0) return;
+    const dur=astDurum(i);
+    if(dur==='izinli'||dur==='rot_hayir') return;
+    for(let d=1;d<=days;d++){
+      if(kalan(i)<=0) break;
+      if(S.schedule[gk(i,d)]) continue;
+      if(astIzinliAylik(i).includes(d)) continue;
+      for(const area of BASE_AREA_ORDER){
+        const aId=area.id;
+        if(!isAlanAktif(d,aId)) continue;
+        if(((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)===0) continue;
+        const maxD=getDayRule(d,aId).max||99;
+        if(dCnt(d,aId)>=maxD) continue;
+        S.schedule[gk(i,d)]=aId;
+        load[i].total++;
+        load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
+        if(isWE(y,mo,d)) load[i].weCount=(load[i].weCount||0)+1;
+        break;
+      }
+    }
+  });
+
   // ═══ ADIM 5: SON MAX DOĞRULAMA ═══
   BASE_AREA_ORDER.forEach(area=>{
     const aId=area.id,r=S.defaultDayMin[aId],gruplari=(r&&r.kidemGruplari)||[];
@@ -4445,37 +4477,46 @@ function changeMonth(dir){
   var oldY = S.currentDate.y;
   var oldM = S.currentDate.m;
   var oldKey = oldY + '_' + oldM;
+  var oldFsReady = window._fsReady; // Bu ay Firestore'dan yüklendi mi?
   var _snp = {};
   MONTHLY_KEYS.forEach(function(k){ _snp[k] = S[k] || {}; });
   GLOBAL_KEYS.forEach(function(k){ _snp[k] = S[k]; });
   var snapshot = JSON.parse(JSON.stringify(_snp));
   console.log('[ACİLX] changeMonth snapshot (' + oldKey + ')',
     'schedule:', Object.keys(snapshot.schedule||{}).length,
-    'kapaliGunler:', Object.keys(snapshot.kapaliGunler||{}).length);
+    'kapaliGunler:', Object.keys(snapshot.kapaliGunler||{}).length,
+    'fsReady:', oldFsReady);
 
   // ── 2. localStorage'a anında yedekle (senkron, <1ms) ──
-  try { localStorage.setItem(LS_KEY + '_' + oldKey, JSON.stringify(snapshot)); } catch(e) {}
+  // Sadece Firestore'dan yüklenmiş veya düzenlenmiş veri varsa cache'e yaz
+  if(oldFsReady && Object.keys(snapshot.schedule||{}).length > 0) {
+    try { localStorage.setItem(LS_KEY + '_' + oldKey, JSON.stringify(snapshot)); } catch(e) {}
+  } else {
+    console.log('[ACİLX] changeMonth: boş/yüklenmemiş ay, cache yazılmadı (' + oldKey + ')');
+  }
 
   // ── 3. Firestore'a arka planda kaydet (await yok, kullanıcı beklemez) ──
-  if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded) {
+  // KRİTİK: Sadece Firestore'dan yüklenmiş veri varsa kaydet — boş snapshot'la Firestore'u ezme
+  if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded && oldFsReady) {
     var gId = window.ACILX_GROUP || 'default';
+    // Sadece ay-bazlı verileri kaydet — global ayarları Firestore'daki schedule doc'una yazma
     var saveP = _db.collection('groups').doc(gId).collection('schedule').doc(oldKey).set({
-      schedule: snapshot.schedule, defaultDayMin: snapshot.defaultDayMin,
-      minNobet: snapshot.minNobet,
-      quota: snapshot.quota, maxHours: snapshot.maxHours,
+      schedule: snapshot.schedule,
       dayOverride: snapshot.dayOverride, monthOverride: snapshot.monthOverride,
       kapaliGunler: snapshot.kapaliGunler, prevMonthLastDay: snapshot.prevMonthLastDay,
-      nextMonthFirstDay: snapshot.nextMonthFirstDay, listName: snapshot.listName,
-      astProfiles: snapshot.astProfiles, algoConfig: snapshot.algoConfig,
+      nextMonthFirstDay: snapshot.nextMonthFirstDay,
       updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
       updatedBy: window.ACILX_UID
     }, {merge: true}).then(function(){
       delete _pendingMonthSaves[oldKey];
+      console.log('[ACİLX] changeMonth: Firestore kaydedildi (' + oldKey + ')');
     }).catch(function(err){
       console.error('[ACİLX] changeMonth kayıt hatası:', err);
       delete _pendingMonthSaves[oldKey];
     });
     _pendingMonthSaves[oldKey] = saveP;
+  } else if(!oldFsReady) {
+    console.log('[ACİLX] changeMonth: Firestore yüklenmemişti, kayıt atlandı (' + oldKey + ')');
   }
 
   // ── 4. Ay HEMEN değişir ──
@@ -4551,17 +4592,19 @@ function changeMonth(dir){
       window._fsReady = true;
       console.log('[ACİLX] Firestore yüklendi (' + newKey + ')',
         'schedule:', Object.keys(S.schedule||{}).length,
-        'quota:', JSON.stringify(S.quota).substring(0,80));
-      // localStorage cache'i ay-bazlı verilerle güncelle
+        'quota:', JSON.stringify(S.quota).substring(0,80),
+        'maxHours:', JSON.stringify(S.maxHours));
+      // localStorage cache'i sadece ay-bazlı verilerle güncelle
       try {
         var _cacheObj = {};
         MONTHLY_KEYS.forEach(function(k){ _cacheObj[k] = S[k]; });
-        // Global ayarları da cache'e yaz (ilk yükleme için yedek)
+        // Global ayarları da cache'e yaz (changeMonth geri geldiğinde yedek)
         GLOBAL_KEYS.forEach(function(k){ _cacheObj[k] = S[k]; });
         localStorage.setItem(LS_KEY + '_' + newKey, JSON.stringify(_cacheObj));
       } catch(e) {}
       // Firestore'dan yeni veri geldiyse re-render
       if(loaded){
+        console.log('[ACİLX] changeMonth re-render (' + newKey + ')');
         try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
         try { renderNewCal(); } catch(e) {}
         updateTercihUI();
@@ -5948,6 +5991,51 @@ function renderSorunlar(){
       </div>`;
     }
   }
+
+  // ── Hedef eksik/fazla asistanlar ──
+  var hedefHtml = '';
+  var moKey = y+'_'+m;
+  var eksikAst = [], fazlaAst = [];
+  ASSISTANTS.forEach(function(ast,i){
+    var ov = S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
+    var defH = Math.round(S.maxHours[ast.kidem]/24);
+    var h = (ov!==undefined&&ov!==null) ? ov : defH;
+    if(h<=0) return;
+    var mevcut = 0;
+    for(var d2=1;d2<=days;d2++) if(S.schedule[gk(i,d2)]) mevcut++;
+    if(mevcut < h) eksikAst.push({ast:ast, idx:i, hedef:h, mevcut:mevcut, fark:h-mevcut});
+    if(mevcut > h) fazlaAst.push({ast:ast, idx:i, hedef:h, mevcut:mevcut, fark:mevcut-h});
+  });
+
+  if(eksikAst.length > 0){
+    toplamSorun += eksikAst.length;
+    hedefHtml += '<div style="background:var(--bg2);border:1px solid rgba(240,160,64,0.2);border-left:3px solid var(--orange);border-radius:8px;overflow:hidden;margin-bottom:8px">'+
+      '<div style="padding:10px 14px;border-bottom:1px solid var(--bord);font-size:12px;font-weight:700;color:var(--orange)">▼ Hedef altında kalan asistanlar ('+eksikAst.length+')</div>';
+    eksikAst.forEach(function(e){
+      hedefHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bord)">'+
+        '<span class="kt '+KIDEM_CLS[e.ast.kidem]+'" style="font-size:9px;padding:1px 4px">K'+e.ast.kidem+'</span>'+
+        '<span style="font-size:11px;color:var(--w1);flex:1">'+shortName(e.ast.name)+'</span>'+
+        '<span style="font-size:10px;color:var(--orange);font-family:\'DM Mono\',monospace">'+e.mevcut+'/'+e.hedef+' <b>▼'+e.fark+'</b></span>'+
+      '</div>';
+    });
+    hedefHtml += '</div>';
+  }
+
+  if(fazlaAst.length > 0){
+    toplamSorun += fazlaAst.length;
+    hedefHtml += '<div style="background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-left:3px solid var(--red);border-radius:8px;overflow:hidden;margin-bottom:8px">'+
+      '<div style="padding:10px 14px;border-bottom:1px solid var(--bord);font-size:12px;font-weight:700;color:var(--red)">▲ Hedef üstünde kalan asistanlar ('+fazlaAst.length+')</div>';
+    fazlaAst.forEach(function(e){
+      hedefHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bord)">'+
+        '<span class="kt '+KIDEM_CLS[e.ast.kidem]+'" style="font-size:9px;padding:1px 4px">K'+e.ast.kidem+'</span>'+
+        '<span style="font-size:11px;color:var(--w1);flex:1">'+shortName(e.ast.name)+'</span>'+
+        '<span style="font-size:10px;color:var(--red);font-family:\'DM Mono\',monospace">'+e.mevcut+'/'+e.hedef+' <b>▲'+e.fark+'</b></span>'+
+      '</div>';
+    });
+    hedefHtml += '</div>';
+  }
+
+  html += hedefHtml;
 
   if(toplamSorun === 0){
     html = '<div style="text-align:center;padding:40px 20px">'+
@@ -7439,7 +7527,8 @@ window.addEventListener('beforeunload', function(e){
 // Maxı dolmamış asistanları tespit et, nereye yazılabilir seçenek göster.
 // Başasistan seçer, max esnetme olmaz.
 // ══════════════════════════════════════════════════════
-function _checkHedefEksikleri(){
+function _checkHedefEksikleri(){ return; } // Devre dışı — hedef eksikleri Sorunlar sekmesinde gösterilir
+function _checkHedefEksikleri_disabled(){
   if(window.ACILX_ROLE !== 'basasistan') return;
   const {y,m} = S.currentDate;
   const days = daysInMonth(y,m);
