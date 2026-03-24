@@ -2135,52 +2135,71 @@ function renderNewCal(){
   grid.innerHTML = html;
   renderTakStats();
   // Renk legend'ı sadece ihlal varsa göster
-  const {sorunluGun} = hesaplaUyarilar();
+  const {toplamIhlal} = hesaplaUyarilar();
   const legendEl = document.getElementById('calLegend');
-  if(legendEl) legendEl.style.display = sorunluGun>0 ? 'flex' : 'none';
+  if(legendEl) legendEl.style.display = toplamIhlal>0 ? 'flex' : 'none';
   if(typeof updateTercihUI==='function') setTimeout(updateTercihUI,0);
 }
 
 // Viol hesabını merkezi yap — hem stat hem uyarılar kullanır
+// Gün bazlı ihlal detaylarını döndürür — renderSorunlar ile aynı mantık
+function gunIhlalleri(d){
+  const {y,m}=S.currentDate;
+  const ihlaller=[];
+  AREAS.forEach(a=>{
+    const rule=getDayRule(d,a.id);
+    if(!rule.aktif) return;
+    const atananlar=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id);
+    const cnt=atananlar.length;
+    // Min eksik
+    if(cnt<rule.min){
+      ihlaller.push({tip:'min',alan:a,msg:a.name+': '+cnt+'/'+rule.min+' — '+(rule.min-cnt)+' kişi eksik'});
+    }
+    // Max aşım
+    if(rule.max>0&&cnt>rule.max){
+      ihlaller.push({tip:'max',alan:a,msg:a.name+': '+cnt+'/'+rule.max+' — '+(cnt-rule.max)+' fazla'});
+    }
+    // Kıdem grubu
+    const r2=S.defaultDayMin[a.id];
+    if(r2&&r2.kidemGruplari&&cnt>0){
+      r2.kidemGruplari.forEach(g=>{
+        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
+        const grpCnt=atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
+        if(grpCnt<(grp.min||1)){
+          ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+grp.kidemler.join('/')+' grubundan '+grpCnt+'/'+(grp.min||1)+' — eksik'});
+        }
+        if((grp.max||99)<99&&grpCnt>(grp.max)){
+          ihlaller.push({tip:'max',alan:a,msg:a.name+': K'+grp.kidemler.join('/')+' grubundan '+grpCnt+'/'+grp.max+' — fazla'});
+        }
+      });
+    }
+    // Kıdem bağımlılık kuralı
+    if(r2&&r2.kidemBagimliligi&&cnt>0){
+      const atananKidemler=atananlar.map(ast=>ast.kidem);
+      r2.kidemBagimliligi.forEach(b=>{
+        const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+        if(bagimliVar&&!(b.refans||[]).some(k=>atananKidemler.includes(k))){
+          ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+(b.bagimli||[]).filter(k=>atananKidemler.includes(k)).join('/')+' yalnız — yanında K'+(b.refans||[]).join('/')+' olmalı'});
+        }
+      });
+    }
+  });
+  return ihlaller;
+}
+
 function hesaplaUyarilar(){
-  const {y,m} = S.currentDate;
-  const days = daysInMonth(y,m);
-  const sorunluGunler = new Set();
-
+  const {y,m}=S.currentDate;
+  const days=daysInMonth(y,m);
+  let toplamIhlal=0;
+  let sorunluGun=0;
   for(let d=1;d<=days;d++){
-    const gundeAtanan = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]).length;
-    // Tamamen boş gün sorunlu sayılmaz
+    const gundeAtanan=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]).length;
     if(gundeAtanan===0) continue;
-
-    AREAS.forEach(a=>{
-      const rule=getDayRule(d,a.id);
-      if(!rule.aktif) return;
-      // Eğitim bloke günü
-      const allBlocked=ASSISTANTS.every(ast=>isEgtFull(y,m,d,ast.kidem));
-      if(allBlocked) return;
-      // Girebilecek asistan yoksa sorun sayma
-      const girebilir=ASSISTANTS.some(ast=>!isEgtFull(y,m,d,ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0);
-      if(!girebilir&&rule.min>0) return;
-
-      const atananlar=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id);
-      const cnt=atananlar.length;
-      if(cnt<rule.min){ sorunluGunler.add(d); return; }
-      if(cnt>rule.max){ sorunluGunler.add(d); return; }
-      const r2=S.defaultDayMin[a.id];
-      if(r2&&r2.kidemGruplari&&cnt>0){
-        r2.kidemGruplari.forEach(g=>{
-          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grupEligible=ASSISTANTS.some(ast=>grp.kidemler.includes(ast.kidem)&&!isEgtFull(y,m,d,ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0);
-          if(!grupEligible) return;
-          const gc=atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-          if(gc<(grp.min||1)) sorunluGunler.add(d);
-          if((grp.max||99)<99 && gc>(grp.max)) sorunluGunler.add(d);
-        });
-      }
-    });
+    const ih=gunIhlalleri(d);
+    toplamIhlal+=ih.length;
+    if(ih.length>0) sorunluGun++;
   }
-
-  return { sorunluGun: sorunluGunler.size };
+  return {sorunluGun, toplamIhlal};
 }
 
 function sapmaCacheTikla(idx){
@@ -2194,7 +2213,7 @@ function renderTakStats(){
   if(!document.getElementById('takStats')) return;
   const {y,m} = S.currentDate;
   const days = daysInMonth(y,m);
-  const {sorunluGun} = hesaplaUyarilar();
+  const {sorunluGun, toplamIhlal} = hesaplaUyarilar();
 
   let kusursuz=0, bosGun=0;
   for(let d=1;d<=days;d++){
@@ -2214,9 +2233,9 @@ function renderTakStats(){
       <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Kusursuz Gün</div>
       <div style="font-size:20px;font-weight:800;color:${kusursuz>0?'#7DC44A':'var(--w1)'};font-family:'DM Mono',monospace">${kusursuz}</div>
     </div>
-    <div style="background:${sorunluGun>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${sorunluGun>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px;${sorunluGun>0?'cursor:pointer':''}" ${sorunluGun>0?'onclick="openUyarilarGun(null)"':''}>
-      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Sorunlu Gün${sorunluGun>0?' ↗':''}</div>
-      <div style="font-size:20px;font-weight:800;color:${sorunluGun>0?'var(--red)':'var(--w1)'};font-family:'DM Mono',monospace">${sorunluGun}</div>
+    <div style="background:${toplamIhlal>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${toplamIhlal>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px;${toplamIhlal>0?'cursor:pointer':''}" ${toplamIhlal>0?'onclick="openUyarilarGun(null)"':''}>
+      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Kural İhlali${toplamIhlal>0?' ↗':''}</div>
+      <div style="font-size:20px;font-weight:800;color:${toplamIhlal>0?'var(--red)':'var(--w1)'};font-family:'DM Mono',monospace">${toplamIhlal}</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bord);border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
       <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Boş Gün</div>
@@ -2241,58 +2260,28 @@ function openDayDetail(d){
 
   let html = '';
 
-  // ── Uyarılar: tıklanabilir, öneri sunar ──
+  // ── Uyarılar: gunIhlalleri ile tutarlı hesaplama ──
   const isBasasistan = window.ACILX_ROLE === 'basasistan';
-  const _ddSorunlar = [];
-
-  // Min eksik sorunları
-  AREAS.forEach(a=>{
-    const rule=getDayRule(d,a.id);
-    if(!rule.aktif||rule.min===0) return;
-    const cnt=getAreaCount(d,a.id);
-    if(cnt<rule.min){
-      _ddSorunlar.push({tip:'min', alan:a, gun:d,
-        msg:`${a.name}: ${cnt}/${rule.min} kişi — ${rule.min-cnt} eksik`});
-    }
-  });
-
-  // Kıdem grubu eksik sorunları
-  AREAS.forEach(a=>{
-    const r=S.defaultDayMin[a.id];
-    if(!r||!r.kidemGruplari||!r.kidemGruplari.length) return;
-    if(!isAlanAktif(d,a.id)) return;
-    const cnt=getAreaCount(d,a.id);
-    if(cnt===0) return;
-    const atananlar=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id);
-    r.kidemGruplari.forEach(g=>{
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-      if(!grp.kidemler||!grp.kidemler.length) return;
-      const grupEligible=ASSISTANTS.some(ast=>
-        grp.kidemler.includes(ast.kidem)&&!isEgtFull(S.currentDate.y,S.currentDate.m,d,ast.kidem)&&
-        (S.quota[a.id]||{})[ast.kidem]>0
-      );
-      if(!grupEligible) return;
-      const atanan=atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-      if(atanan<(grp.min||1)){
-        _ddSorunlar.push({tip:'kidem', alan:a, gun:d,
-          msg:`${a.name}: K${grp.kidemler.join('/')} grubundan ${atanan}/${grp.min||1} — eksik`});
-      }
-    });
-  });
+  const _ddSorunlar = gunIhlalleri(d);
+  window._ddSorunlarCache = _ddSorunlar;
 
   if(_ddSorunlar.length){
-    window._ddSorunlarCache = _ddSorunlar;
+    const RENK_MAP={min:'var(--red)',max:'var(--orange)',kidem:'#9B7AE0'};
+    const LBL_MAP={min:'Min',max:'Max',kidem:'Kıdem'};
     html += `<div style="background:rgba(232,87,42,0.07);border:1px solid rgba(232,87,42,0.2);border-radius:8px;overflow:hidden;margin-bottom:10px">
-      <div style="padding:8px 12px;font-size:10px;font-weight:700;color:var(--red);border-bottom:1px solid rgba(232,87,42,0.15)">⚠ ${_ddSorunlar.length} kural ihlali${isBasasistan?' — çözmek için tıkla':''}</div>
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(232,87,42,0.15)">
+        <span style="font-size:11px;font-weight:700;color:var(--red);flex:1">Bu günde ${_ddSorunlar.length} kural ihlali var</span>
+        <button onclick="openUyarilarGun(${d})" style="font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(232,87,42,0.12);border:1px solid rgba(232,87,42,0.3);color:var(--red);cursor:pointer;font-weight:600;font-family:var(--font-sans);white-space:nowrap">Sorunlara git</button>
+      </div>
       ${_ddSorunlar.map((s,si)=>{
-        const tipCol=s.tip==='kidem'?'#9B7AE0':'var(--red)';
-        const tipLbl=s.tip==='kidem'?'Kıdem':'Min';
+        const tipCol=RENK_MAP[s.tip]||'var(--red)';
+        const tipLbl=LBL_MAP[s.tip]||s.tip;
         return `<div
           onclick="${isBasasistan ? 'ddSorunTikla('+si+')' : ''}"
           style="display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid rgba(232,87,42,0.08);transition:background .12s;" class="${isBasasistan?'uyari-sorun-satir':''}">
           <span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:${tipCol}22;color:${tipCol};flex-shrink:0">${tipLbl}</span>
           <span style="font-size:11px;color:var(--w2);flex:1">${s.msg}</span>
-          ${isBasasistan?'<span style="font-size:10px;color:var(--w4)">💡</span>':''}
+          ${isBasasistan?'<span style="font-size:10px;color:var(--w4)">&#128161;</span>':''}
         </div>`;
       }).join('')}
     </div>`;
