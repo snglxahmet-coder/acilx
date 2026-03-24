@@ -1156,7 +1156,9 @@ async function _fsSaveNow() {
   if (!window._assistantsLoaded) return;
   if (!window._fsReady) return; // Ay geçişi sırasında boş veri yazma
   const {y, m} = S.currentDate;
-  // ── SPINNER YOK — arka planda sessizce kaydet, UI'ı engelleme ──
+  console.log('[ACİLX] _fsSaveNow → Firestore (' + y + '_' + m + ')',
+    'schedule:', Object.keys(S.schedule||{}).length,
+    'kapaliGunler:', Object.keys(S.kapaliGunler||{}).length);
   try {
     await fsScheduleRef(y, m).set({
       schedule:          S.schedule,
@@ -1223,6 +1225,11 @@ async function _fsLoadAreas() {
   return false;
 }
 
+// Ay-bazlı anahtarlar (her ay farklı, aydan aya sıfırlanır)
+var MONTHLY_KEYS = ['schedule','dayOverride','monthOverride','kapaliGunler','prevMonthLastDay','nextMonthFirstDay'];
+// Global anahtarlar (tüm aylarda aynı, ay geçişinde korunur)
+var GLOBAL_KEYS = ['defaultDayMin','minNobet','quota','maxHours','listName','algoConfig','astProfiles'];
+
 // Firestore'dan state yükle (tüm kullanıcılar okuyabilir)
 async function fsLoadState(y, m) {
   if (!_db) return false;
@@ -1237,15 +1244,23 @@ async function fsLoadState(y, m) {
         return false;
       }
 
-      const allKeys = ['schedule','egBlocks','defaultDayMin','minNobet','quota','maxHours',
-                       'dayOverride','monthOverride','kapaliGunler','prevMonthLastDay',
-                       'nextMonthFirstDay','listName','astProfiles','algoConfig'];
-      allKeys.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
+      // Sadece ay-bazlı verileri yükle — global ayarları ezme
+      MONTHLY_KEYS.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
+
+      // Global ayarları sadece ilk yüklemede al (initApp), changeMonth'ta değil
+      if (window._fsInitialLoad) {
+        GLOBAL_KEYS.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
+        window._fsInitialLoad = false;
+      }
 
       try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_) {}
 
-      console.log('[ACİLX] fsLoadState: Firestore yüklendi (' + y + '/' + (m+1) + '), schedule:', Object.keys(S.schedule||{}).length, 'kayıt');
+      console.log('[ACİLX] fsLoadState: Firestore→S (' + y + '/' + (m+1) + ')',
+        'schedule:', Object.keys(S.schedule||{}).length,
+        'kapaliGunler:', Object.keys(S.kapaliGunler||{}).length);
       return true;
+    } else {
+      console.log('[ACİLX] fsLoadState: Firestore boş (' + y + '/' + (m+1) + ')');
     }
   } catch(e) {
     console.warn('Firestore okuma hatası:', e);
@@ -1497,14 +1512,10 @@ function save(){
     localStorage.setItem(LS_KEY, JSON.stringify(S));
     // Ay-bazlı cache de güncelle — changeMonth geri geldiğinde hızlı yükleme için
     const _sy=S.currentDate.y, _sm=S.currentDate.m;
-    localStorage.setItem(LS_KEY+'_'+_sy+'_'+_sm, JSON.stringify({
-      schedule:S.schedule, dayOverride:S.dayOverride,
-      monthOverride:S.monthOverride, kapaliGunler:S.kapaliGunler,
-      prevMonthLastDay:S.prevMonthLastDay, nextMonthFirstDay:S.nextMonthFirstDay,
-      astProfiles:S.astProfiles, defaultDayMin:S.defaultDayMin,
-      minNobet:S.minNobet, quota:S.quota, maxHours:S.maxHours,
-      listName:S.listName, algoConfig:S.algoConfig
-    }));
+    var _sc = {};
+    MONTHLY_KEYS.forEach(function(k){ _sc[k] = S[k]; });
+    GLOBAL_KEYS.forEach(function(k){ _sc[k] = S[k]; });
+    localStorage.setItem(LS_KEY+'_'+_sy+'_'+_sm, JSON.stringify(_sc));
     const el=document.getElementById('globalSaved');
     if(el){el.style.display='inline';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',1800);}
   }catch(e){}
@@ -4370,21 +4381,13 @@ function changeMonth(dir){
   var oldY = S.currentDate.y;
   var oldM = S.currentDate.m;
   var oldKey = oldY + '_' + oldM;
-  var snapshot = JSON.parse(JSON.stringify({
-    schedule: S.schedule || {},
-    dayOverride: S.dayOverride || {},
-    monthOverride: S.monthOverride || {},
-    kapaliGunler: S.kapaliGunler || {},
-    prevMonthLastDay: S.prevMonthLastDay || {},
-    nextMonthFirstDay: S.nextMonthFirstDay || {},
-    astProfiles: S.astProfiles || {},
-    defaultDayMin: S.defaultDayMin,
-    minNobet: S.minNobet,
-    quota: S.quota,
-    maxHours: S.maxHours,
-    listName: S.listName,
-    algoConfig: S.algoConfig
-  }));
+  var _snp = {};
+  MONTHLY_KEYS.forEach(function(k){ _snp[k] = S[k] || {}; });
+  GLOBAL_KEYS.forEach(function(k){ _snp[k] = S[k]; });
+  var snapshot = JSON.parse(JSON.stringify(_snp));
+  console.log('[ACİLX] changeMonth snapshot (' + oldKey + ')',
+    'schedule:', Object.keys(snapshot.schedule||{}).length,
+    'kapaliGunler:', Object.keys(snapshot.kapaliGunler||{}).length);
 
   // ── 2. localStorage'a anında yedekle (senkron, <1ms) ──
   try { localStorage.setItem(LS_KEY + '_' + oldKey, JSON.stringify(snapshot)); } catch(e) {}
@@ -4417,9 +4420,11 @@ function changeMonth(dir){
   if(S.currentDate.m < 0){ S.currentDate.m = 11; S.currentDate.y--; }
 
   window._fsReady = false;
+  // Ay-bazlı verileri sıfırla (global ayarlar korunur)
   S.schedule = {};
   S.dayOverride = {};
   S.monthOverride = {};
+  S.kapaliGunler = {};
   S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
   window._tercihAcik = false;
@@ -4431,21 +4436,28 @@ function changeMonth(dir){
   var lbl = document.getElementById('monthLbl');
   if(lbl) lbl.textContent = MONTHS[m] + ' ' + y;
 
-  // ── 5. localStorage cache'den anında göster ──
+  console.log('[ACİLX] changeMonth → ' + newKey,
+    'quota:', JSON.stringify(S.quota).substring(0,80),
+    'maxHours:', JSON.stringify(S.maxHours));
+
+  // ── 5. localStorage cache'den anında göster (sadece ay-bazlı veriler) ──
   var lsCacheLoaded = false;
   try {
     var cached = localStorage.getItem(LS_KEY + '_' + newKey);
     if(cached){
       var data = JSON.parse(cached);
-      ['schedule','dayOverride','monthOverride','kapaliGunler',
-       'prevMonthLastDay','nextMonthFirstDay','astProfiles',
-       'defaultDayMin','minNobet','quota','maxHours',
-       'listName','algoConfig'].forEach(function(k){
+      // Sadece ay-bazlı anahtarları yükle — global ayarları ezme
+      MONTHLY_KEYS.forEach(function(k){
         if(data[k] !== undefined) S[k] = data[k];
       });
       lsCacheLoaded = Object.keys(S.schedule||{}).length > 0;
+      console.log('[ACİLX] cache→S (' + newKey + ')',
+        'schedule:', Object.keys(S.schedule||{}).length,
+        'kapaliGunler:', Object.keys(S.kapaliGunler||{}).length);
+    } else {
+      console.log('[ACİLX] cache yok (' + newKey + ')');
     }
-  } catch(e) {}
+  } catch(e) { console.warn('[ACİLX] cache okuma hatası:', e); }
 
   // Anında render — localStorage verisiyle
   try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
@@ -4473,17 +4485,16 @@ function changeMonth(dir){
         window._tercihAy     = sd.tercihAy     || null;
       }
       window._fsReady = true;
-      // localStorage cache'i Firestore verisiyle güncelle
+      console.log('[ACİLX] Firestore yüklendi (' + newKey + ')',
+        'schedule:', Object.keys(S.schedule||{}).length,
+        'quota:', JSON.stringify(S.quota).substring(0,80));
+      // localStorage cache'i ay-bazlı verilerle güncelle
       try {
-        localStorage.setItem(LS_KEY + '_' + newKey, JSON.stringify({
-          schedule: S.schedule, dayOverride: S.dayOverride,
-          monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
-          prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
-          astProfiles: S.astProfiles, defaultDayMin: S.defaultDayMin,
-          minNobet: S.minNobet,
-          quota: S.quota, maxHours: S.maxHours,
-          listName: S.listName, algoConfig: S.algoConfig
-        }));
+        var _cacheObj = {};
+        MONTHLY_KEYS.forEach(function(k){ _cacheObj[k] = S[k]; });
+        // Global ayarları da cache'e yaz (ilk yükleme için yedek)
+        GLOBAL_KEYS.forEach(function(k){ _cacheObj[k] = S[k]; });
+        localStorage.setItem(LS_KEY + '_' + newKey, JSON.stringify(_cacheObj));
       } catch(e) {}
       // Firestore'dan yeni veri geldiyse re-render
       if(loaded){
@@ -7124,7 +7135,8 @@ initApp();
   try {
     if(_db) {
       const {y,m} = S.currentDate;
-      // Firestore'dan yükle — her zaman önceliklidir
+      // İlk yüklemede global ayarları da al
+      window._fsInitialLoad = true;
       const loaded = await fsLoadState(y, m);
       if(loaded){
         // KRİTİK: ASSISTANTS/AREAS yüklendiyse render yap, yoksa loadNobetSettings zaten halleder
