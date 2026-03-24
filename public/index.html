@@ -1239,7 +1239,7 @@ function _hideNobetOverlay() {
   setTimeout(() => { overlay.classList.remove('fadeout'); overlay.classList.add('hidden'); }, 380);
 }
 
-function _loadNobetFrameActual() {
+async function _loadNobetFrameActual() {
   if (nobetFrameLoaded) {
     _hideNobetOverlay();
     const frame = document.getElementById('nobetFrame');
@@ -1250,6 +1250,17 @@ function _loadNobetFrameActual() {
   const frame   = document.getElementById('nobetFrame');
   const overlay = document.getElementById('nobetLoadingOverlay');
   if (!frame) return;
+
+  // Rolü her iframe yüklemesinde Firestore'dan doğrula
+  if (currentUser && db) {
+    try {
+      const snap = await db.collection('users').doc(currentUser.uid).get();
+      if (snap.exists) {
+        currentRole    = snap.data().role || 'asistan';
+        currentGroupId = snap.data().groupId || currentGroupId;
+      }
+    } catch(e) { /* mevcut currentRole kullanılır */ }
+  }
 
   const role    = currentRole || 'asistan';
   const uid     = currentUser?.uid || '';

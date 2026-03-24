@@ -1176,6 +1176,7 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
 (function(){
   try {
     const params = new URLSearchParams(window.location.search);
+    // URL parametresi sadece ilk render için; gerçek rol Firestore'dan doğrulanır
     window.ACILX_ROLE    = params.get('role')    || 'asistan';
     window.ACILX_UID     = params.get('uid')     || '';
     window.ACILX_GROUP   = params.get('groupId') || '';
@@ -1184,6 +1185,40 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
     window.ACILX_UID  = '';
   }
 })();
+
+// Sunucu tarafı rol doğrulama — Firestore'dan kullanıcının gerçek rolünü çeker
+// Her kritik yazma işleminden önce çağrılır
+let _fsVerifiedRole = null;   // Firestore'dan doğrulanmış rol
+let _fsRoleVerifiedAt = 0;    // Son doğrulama zamanı (ms)
+const _FS_ROLE_TTL = 30000;   // 30sn cache — sık Firestore okuması önlenir
+
+async function fsVerifyRole() {
+  // Cache hâlâ geçerliyse tekrar sorma
+  if (_fsVerifiedRole && (Date.now() - _fsRoleVerifiedAt < _FS_ROLE_TTL)) {
+    return _fsVerifiedRole;
+  }
+  if (!_db || !window.ACILX_UID) return 'asistan';
+  try {
+    const snap = await _db.collection('users').doc(window.ACILX_UID).get();
+    if (snap.exists) {
+      _fsVerifiedRole = snap.data().role || 'asistan';
+    } else {
+      _fsVerifiedRole = 'asistan';
+    }
+  } catch(e) {
+    console.warn('[ACİLX] Rol doğrulama hatası:', e);
+    _fsVerifiedRole = _fsVerifiedRole || 'asistan';
+  }
+  _fsRoleVerifiedAt = Date.now();
+  // Client-side ACILX_ROLE'u Firestore gerçeğiyle eşitle
+  window.ACILX_ROLE = _fsVerifiedRole;
+  return _fsVerifiedRole;
+}
+
+// Kısayol: başasistan mı kontrol et (async)
+async function fsIsBasasistan() {
+  return (await fsVerifyRole()) === 'basasistan';
+}
 
 /* ── Firestore bağlantısı (shell ile aynı config kullanılır) ──────────── */
 /* Config shell'den mesaj olarak da alınabilir; şimdilik aynı config kopyalanır. */
@@ -1236,7 +1271,14 @@ function fsSaveState() {
     return;
   }
   clearTimeout(_fsSaveTimer);
-  _fsSaveTimer = setTimeout(_fsSaveNow, 1500);
+  _fsSaveTimer = setTimeout(async function() {
+    // Sunucu tarafı rol doğrulama
+    if (!(await fsIsBasasistan())) {
+      console.warn('[ACİLX] fsSaveState engellendi — Firestore rol doğrulaması başarısız');
+      return;
+    }
+    _fsSaveNow();
+  }, 1500);
 }
 async function _fsSaveNow() {
   if (!_db) return;
@@ -1271,6 +1313,11 @@ async function _fsSaveNow() {
 // ── AREAS Firestore Kaydet/Yükle ──
 async function _fsSaveAreas() {
   if (!_db || window.ACILX_ROLE !== 'basasistan') return;
+  // Sunucu tarafı rol doğrulama
+  if (!(await fsIsBasasistan())) {
+    console.warn('[ACİLX] _fsSaveAreas engellendi — yetkisiz');
+    return;
+  }
   if (!window._areasLoaded && AREAS.length === 0) return; // Boş veri yazma
   const gId = window.ACILX_GROUP || 'default';
   try {
@@ -2824,14 +2871,17 @@ function saveAstEkle(){
   ASSISTANTS.push(newAst);
   window._assistantsLoaded = true; // Artık asistan verisi mevcut
 
-  // Firestore'a da kaydet (başasistan için)
+  // Firestore'a da kaydet (başasistan için — sunucu doğrulamalı)
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    const _gId = window.ACILX_GROUP || 'default';
-    _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
-      list: ASSISTANTS,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: window.ACILX_UID
-    }).catch(e=>console.warn('Asistan kayıt hatası:', e));
+    fsIsBasasistan().then(ok => {
+      if(!ok){ console.warn('[ACİLX] Asistan ekleme engellendi — yetkisiz'); return; }
+      const _gId = window.ACILX_GROUP || 'default';
+      _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
+        list: ASSISTANTS,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: window.ACILX_UID
+      }).catch(e=>console.warn('Asistan kayıt hatası:', e));
+    });
   }
 
   closeAstEkleModal();
@@ -2861,14 +2911,17 @@ function deleteAst(idx){
   // ID'leri güncelle
   ASSISTANTS.forEach((a,i)=>{ a.id=i; });
 
-  // Firestore'a kaydet
+  // Firestore'a kaydet (sunucu doğrulamalı)
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    const _gIdDel = window.ACILX_GROUP || 'default';
-    _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
-      list: ASSISTANTS,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: window.ACILX_UID
-    }).catch(e=>console.warn('Asistan silme hatası:', e));
+    fsIsBasasistan().then(ok => {
+      if(!ok){ console.warn('[ACİLX] Asistan silme engellendi — yetkisiz'); return; }
+      const _gIdDel = window.ACILX_GROUP || 'default';
+      _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
+        list: ASSISTANTS,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: window.ACILX_UID
+      }).catch(e=>console.warn('Asistan silme hatası:', e));
+    });
   }
 
   save();
@@ -2881,6 +2934,8 @@ function deleteAst(idx){
 // Pending (onay bekleyen) kullanıcıları göster
 async function loadPendingUsers(){
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())) return;
   try {
     const snap = await _db.collection('users')
       .where('status','==','pending').get();
@@ -2950,6 +3005,8 @@ function togglePendingKidem(uid, val){
 }
 
 async function approveUser(uid, email, name){
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   const action = document.getElementById('pendingAction_'+uid)?.value;
   if(!action){ alert('Lütfen bir seçim yapın.'); return; }
 
@@ -2999,6 +3056,8 @@ async function approveUser(uid, email, name){
 
 async function rejectUser(uid){
   if(!confirm('Bu kullaniciyi reddetmek istediginizden emin misiniz?')) return;
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   await _db.collection('users').doc(uid).update({status:'rejected'});
   loadPendingUsers();
 }
@@ -3027,6 +3086,8 @@ async function loadNobetSettings() {
     _applyFallbackData();
     return;
   }
+  // Sayfa açılışında Firestore'dan gerçek rolü doğrula
+  await fsVerifyRole();
   showSpinner();
   try {
     // 0. Grup bilgisini çek (kıdem yapısı)
@@ -3052,7 +3113,7 @@ async function loadNobetSettings() {
       console.log('[ACİLX] İlk kurulum — varsayılan asistan listesi yükleniyor');
       _DEFAULT_ASSISTANTS.forEach((a,i) => ASSISTANTS.push({...a, id:i}));
       window._assistantsLoaded = true;
-      // İlk kez Firestore'a kaydet
+      // İlk kez Firestore'a kaydet (rol zaten doğrulanmış)
       if(window.ACILX_ROLE === 'basasistan') {
         await _db.collection('groups').doc(gId).collection('assistants').doc('list').set({
           list: ASSISTANTS,
@@ -3260,6 +3321,8 @@ async function nobetSil(){
 
 async function nobetYayindanKaldir(){
   if(!_db) return;
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbeti yayından kaldırmak istediğinden emin misin?')) return;
   window._nobetYayinda = false;
   showSpinner();
@@ -3275,6 +3338,8 @@ async function nobetYayindanKaldir(){
 
 async function toggleTercihDonem() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   const {y,m} = S.currentDate;
   const yeni = !window._tercihAcik;
   window._tercihAcik = yeni;
@@ -3299,6 +3364,8 @@ async function toggleTercihDonem() {
 
 async function nobetYayinla() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
+  // Sunucu tarafı rol doğrulama
+  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbet listesini yayınlamak istediğinizden emin misiniz? Asistanlar bildirim alacak.')) return;
   window._nobetYayinda = true;
   showSpinner();
