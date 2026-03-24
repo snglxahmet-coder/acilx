@@ -1755,16 +1755,27 @@ function renderMinConf(){
             onchange="toggleKidemGrupKidem('${a.id}',${gi},${k},this.checked)">
           <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
         </label>`).join('');
-      const maxOpt=Math.max((g.kidemler||[]).length,1);
-      const optHtml=Array.from({length:maxOpt},(_,i)=>i+1).map(n=>`<option value="${n}" ${(g.enAzKac||1)===n?'selected':''}>${n}</option>`).join('');
-      return `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:5px;padding:6px 8px;margin-bottom:4px">
+      const grupLen=Math.max((g.kidemler||[]).length,1);
+      const minOptHtml=Array.from({length:grupLen+1},(_,i)=>i).map(n=>`<option value="${n}" ${(g.enAzKac||0)===n?'selected':''}>${n}</option>`).join('');
+      const enFazla=g.enFazlaKac||0;
+      const maxOptHtml=Array.from({length:grupLen+1},(_,i)=>i).map(n=>`<option value="${n}" ${enFazla===n?'selected':''}>${n}</option>`).join('');
+      const deaktif=(g.enAzKac||0)===0&&enFazla===0;
+      const ozet=deaktif?'yazılmaz':enFazla===0?'en az '+(g.enAzKac||0)+', max sınırsız':'en az '+(g.enAzKac||0)+', en fazla '+enFazla;
+      return `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:5px;padding:6px 8px;margin-bottom:4px;${deaktif?'opacity:.5':''}">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
           ${cbHtml}
-          <span style="font-size:10px;color:var(--w3);margin-left:4px">en az</span>
-          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:var(--w2);font-family:var(--font-sans)"
-            onchange="setKidemGrupEnAz('${a.id}',${gi},parseInt(this.value))">${optHtml}</select>
-          <span style="font-size:10px;color:var(--w3)">kişi</span>
           <button onclick="silKidemGrupKurali('${a.id}',${gi})" style="margin-left:auto;background:none;border:none;color:var(--w4);cursor:pointer;font-size:11px;padding:1px 4px" title="Grubu sil">&#10005;</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--bord);flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--w3)">En az</span>
+          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:#4ade80;font-weight:600;font-family:var(--font-sans)"
+            onchange="setKidemGrupEnAz('${a.id}',${gi},parseInt(this.value))">${minOptHtml}</select>
+          <span style="font-size:10px;color:var(--w4)">—</span>
+          <span style="font-size:10px;color:var(--w3)">En fazla</span>
+          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:var(--acc);font-weight:600;font-family:var(--font-sans)"
+            onchange="setKidemGrupEnFazla('${a.id}',${gi},parseInt(this.value))">${maxOptHtml}</select>
+          <span style="font-size:10px;color:var(--w3)">kişi</span>
+          <span style="font-size:9px;color:var(--w4);margin-left:2px">(${ozet})</span>
         </div>
       </div>`;
     }).join('');
@@ -2550,7 +2561,7 @@ function setYanindaEnAz(aId,k,val){
 function ekleKidemGrupKurali(aId){
   const r=S.defaultDayMin[aId];
   if(!r.kidemGrupKurallari) r.kidemGrupKurallari=[];
-  r.kidemGrupKurallari.push({kidemler:[],enAzKac:1});
+  r.kidemGrupKurallari.push({kidemler:[],enAzKac:0,enFazlaKac:0});
   save();showSaved('minSaved');renderMinConf();
 }
 function silKidemGrupKurali(aId,gi){
@@ -2565,14 +2576,27 @@ function toggleKidemGrupKidem(aId,gi,k,checked){
   if(!g.kidemler) g.kidemler=[];
   if(checked){if(!g.kidemler.includes(k))g.kidemler.push(k);}
   else{g.kidemler=g.kidemler.filter(x=>x!==k);}
-  if(g.enAzKac>g.kidemler.length) g.enAzKac=Math.max(1,g.kidemler.length);
+  const maxK=g.kidemler.length;
+  if((g.enAzKac||0)>maxK) g.enAzKac=maxK;
+  if((g.enFazlaKac||0)>maxK) g.enFazlaKac=maxK;
+  if(g.enFazlaKac>0 && g.enAzKac>g.enFazlaKac) g.enAzKac=g.enFazlaKac;
   save();showSaved('minSaved');renderMinConf();
 }
 function setKidemGrupEnAz(aId,gi,val){
   const r=S.defaultDayMin[aId];
   const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
-  g.enAzKac=Math.max(1,val);
-  save();showSaved('minSaved');
+  g.enAzKac=Math.max(0,val);
+  // Min > max ise max'ı da yükselt (0 = sınırsız değil, en fazla clamp)
+  if(g.enFazlaKac>0 && g.enAzKac>g.enFazlaKac) g.enFazlaKac=g.enAzKac;
+  save();showSaved('minSaved');renderMinConf();
+}
+function setKidemGrupEnFazla(aId,gi,val){
+  const r=S.defaultDayMin[aId];
+  const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
+  g.enFazlaKac=Math.max(0,val);
+  // Max < min ise min'i düşür
+  if(g.enFazlaKac>0 && (g.enAzKac||0)>g.enFazlaKac) g.enAzKac=g.enFazlaKac;
+  save();showSaved('minSaved');renderMinConf();
 }
 
 // Kıdem kuralı ihlal kontrolü (2 bölümlü sistem)
@@ -2625,14 +2649,22 @@ function kidemKuralIhlali(d, aId){
     r.kidemGrupKurallari.forEach((g,gi)=>{
       const gKidemler=g.kidemler||[];
       if(!gKidemler.length) return;
-      const enAzKac=g.enAzKac||1;
+      const enAzKac=g.enAzKac||0;
+      const enFazlaKac=g.enFazlaKac||0;
       // Bu gruptan kaç kişi atanmış?
       let bulunan=0;
       for(const yk of gKidemler){ bulunan+=kidemSayisi(yk); }
-      if(bulunan<enAzKac){
+      // Min ihlali
+      if(enAzKac>0 && bulunan<enAzKac){
         const eksik=enAzKac-bulunan;
         ihlaller.push({tip:'grup',grupIdx:gi,kidemler:gKidemler,enAzKac,
           msg:'K'+gKidemler.join('+K')+' grubundan en az '+enAzKac+' kişi olmalı ('+eksik+' eksik)'});
+      }
+      // Max ihlali
+      if(enFazlaKac>0 && bulunan>enFazlaKac){
+        const fazla=bulunan-enFazlaKac;
+        ihlaller.push({tip:'grupMax',grupIdx:gi,kidemler:gKidemler,enFazlaKac,
+          msg:'K'+gKidemler.join('+K')+' grubundan en fazla '+enFazlaKac+' kişi olmalı ('+fazla+' fazla)'});
       }
     });
   }
@@ -4051,6 +4083,16 @@ function autoGen(){
       const _kCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidem).length;
       if(_kCnt>=_kMax) return false;
     }
+    // Kıdem grubu max kontrolü
+    const _gRules=(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemGrupKurallari)||[];
+    for(const _g of _gRules){
+      const _gMax=_g.enFazlaKac||0;
+      if(_gMax<=0) continue;
+      if(!(_g.kidemler||[]).includes(kidem)) continue;
+      let _gCnt=0;
+      for(const _gk of (_g.kidemler||[])) _gCnt+=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===_gk).length;
+      if(_gCnt>=_gMax) return false;
+    }
     // Art arda mesafe
     if(!ignoreMesafe){
       for(let delta=1;delta<=ART_ARDA_MESAFE;delta++){
@@ -4102,6 +4144,17 @@ function autoGen(){
     const gundeKidem=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidem).length;
     if(gundeKidem===0) sc+=200;
     else sc-=gundeKidem*80;
+    // Kıdem grubu min/max bonusu
+    const _dsGRules=(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemGrupKurallari)||[];
+    for(const _dg of _dsGRules){
+      if(!(_dg.kidemler||[]).includes(kidem)) continue;
+      let _dgCnt=0;
+      for(const _dgk of (_dg.kidemler||[])) _dgCnt+=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===_dgk).length;
+      const _dgMin=_dg.enAzKac||0;
+      const _dgMax=_dg.enFazlaKac||0;
+      if(_dgMin>0 && _dgCnt<_dgMin) sc+=400; // Grup min eksik → bonus
+      if(_dgMax>0 && _dgCnt>=_dgMax) sc-=3000; // Grup max doldu → güçlü ceza
+    }
     // Doluluk — az dolu günleri tercih et
     sc-=cnt*15;
     // İdeal aralık — nöbetleri aya eşit yay
@@ -5726,7 +5779,7 @@ function buildContext(){
         const kural=r.kidemKurallari[k];
         return {kidem:'K'+k,yaninda:(kural.yanindaKidemler||[]).map(y=>'K'+y),enAzKac:kural.enAzKac||1};
       }),
-      kidemGruplari:(r.kidemGrupKurallari||[]).map(g=>({kidemler:(g.kidemler||[]).map(y=>'K'+y),enAzKac:g.enAzKac||1})),
+      kidemGruplari:(r.kidemGrupKurallari||[]).map(g=>({kidemler:(g.kidemler||[]).map(y=>'K'+y),enAzKac:g.enAzKac||0,enFazlaKac:g.enFazlaKac||0})),
       kapaliGunSayisi:Object.keys(S.kapaliGunler||{}).filter(k=>k.endsWith('_'+a.id)).reduce((s,k)=>(S.kapaliGunler[k]||[]).length+s,0)
     };
   });
