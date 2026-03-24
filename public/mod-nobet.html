@@ -3417,6 +3417,19 @@ function autoGen(){
   const ZORUNLU_ALANLAR=new Set(BASE_AREA_ORDER.filter(a=>(S.defaultDayMin[a.id]&&S.defaultDayMin[a.id].min||0)>0).map(a=>a.id));
   function alanSirasi(i){ const n=BASE_AREA_ORDER.length,offset=i%n; return [...BASE_AREA_ORDER.slice(offset),...BASE_AREA_ORDER.slice(0,offset)]; }
 
+  // Gün d için tüm alanların minimumları karşılandı mı?
+  function gunMinlerKarsilandi(d){
+    for(const a of BASE_AREA_ORDER){
+      if(!isAlanAktif(d,a.id)) continue;
+      const rule=getDayRule(d,a.id);
+      if((rule.min||0)<=0) continue;
+      if(dCnt(d,a.id)<rule.min) return false;
+    }
+    return true;
+  }
+  // Gün d, alan aId için min hala eksik mi?
+  function alanMinEksik(d,aId){ const rule=getDayRule(d,aId); return dCnt(d,aId)<(rule.min||0); }
+
   function makeAreaComparator(aId,d,isWEday){
     return function(a,b){
       const kotaA=(S.quota[aId]||{})[ASSISTANTS[a].kidem]||1,kotaB=(S.quota[aId]||{})[ASSISTANTS[b].kidem]||1;
@@ -3555,6 +3568,7 @@ function autoGen(){
   }
 
   // Pass B: Her asistan kalan kotasını doldur
+  // ÖNCELİK: Bir günde tüm alanların min'leri karşılanmadan o güne max'a doğru atama YAPILMAZ
   ASSISTANTS.forEach((_,i)=>{
     if(kalan(i)<=0) return;
     const sirali=alanSirasi(i);
@@ -3574,10 +3588,15 @@ function autoGen(){
         const mesafeFiltreli=tumMusait.filter(d=>{for(const s of secilen)if(Math.abs(d-s)<=ART_ARDA_MESAFE)return false;return dCnt(d,aId)<(getDayRule(d,aId).max||99);});
         const adayGunlerBase=mesafeFiltreli.length>0?mesafeFiltreli:tumMusait.filter(d=>!secilen.includes(d-1)&&!secilen.includes(d+1)&&dCnt(d,aId)<(getDayRule(d,aId).max||99));
         if(!adayGunlerBase.length) break;
-        const minEksikGunler=adayGunlerBase.filter(d=>(getDayRule(d,aId).min||0)-dCnt(d,aId)>0);
+        // ── ÖNCELİK KURALI: min eksik günleri ayır, min-dolu ama başka alan min-eksik günleri engelle ──
+        const minEksikGunler=adayGunlerBase.filter(d=>alanMinEksik(d,aId));
+        // Min'i zaten dolu olan günler: sadece tüm alanların min'leri karşılandıysa izin ver
+        const maxGunler=adayGunlerBase.filter(d=>!alanMinEksik(d,aId)&&gunMinlerKarsilandi(d));
+        const oncelikliGunler=[...minEksikGunler,...maxGunler];
         const gEksik=globalMinEksik();
         const rezervModu=minEksikGunler.length>0&&kalanKota<=gEksik;
-        const adayGunler=rezervModu?minEksikGunler:adayGunlerBase;
+        const adayGunler=rezervModu?minEksikGunler:(oncelikliGunler.length>0?oncelikliGunler:minEksikGunler);
+        if(!adayGunler.length) break;
         const weOran=adayGunlerBase.filter(d=>isWE(y,mo,d)).length/Math.max(adayGunlerBase.length,1);
         const weBudget=Math.max(Math.ceil(kalanKota*weOran),1);
         const weBudgetDoldu=(mevcutWe+secilenWe)>=weBudget;
@@ -3625,38 +3644,66 @@ function autoGen(){
   }
 
   // ═══ ADIM 4: KALAN HEDEF DOLDURMA ═══
+  // ÖNCELİK: Önce min eksik günler, sonra tüm min'ler karşılanmış günler
   ASSISTANTS.forEach((_,i)=>{
     if(kalan(i)<=0) return;
     alanSirasi(i).forEach(area=>{
       const aId=area.id; if(aRem(i,aId)<=0) return;
       const gunler=[];
-      for(let d=1;d<=days;d++){if(!canAssign(i,d,aId,false))continue;if(dCnt(d,aId)>=(getDayRule(d,aId).max||99))continue;gunler.push(d);}
-      gunler.sort((da,db)=>{const tA=tercihScore(i,da),tB=tercihScore(i,db);if(tA!==tB)return tA-tB;return enYakinMesafe(i,db)-enYakinMesafe(i,da);});
+      for(let d=1;d<=days;d++){if(!canAssign(i,d,aId,false))continue;if(dCnt(d,aId)>=(getDayRule(d,aId).max||99))continue;
+        // Öncelik: min eksik günlere izin ver, min doluysa sadece tüm alanlar min karşılamışsa
+        if(!alanMinEksik(d,aId)&&!gunMinlerKarsilandi(d)) continue;
+        gunler.push(d);}
+      gunler.sort((da,db)=>{
+        // Min eksik günler önce gelsin
+        const maA=alanMinEksik(da,aId)?0:1, maB=alanMinEksik(db,aId)?0:1;
+        if(maA!==maB) return maA-maB;
+        const tA=tercihScore(i,da),tB=tercihScore(i,db);if(tA!==tB)return tA-tB;return enYakinMesafe(i,db)-enYakinMesafe(i,da);});
       for(const d of gunler){if(kalan(i)<=0)break;if(!canAssign(i,d,aId,false))continue;if(dCnt(d,aId)>=(getDayRule(d,aId).max||99))continue;put(i,d,aId);}
     });
   });
 
   // ═══ ADIM 4b: HEDEF EKSİKLERİNİ ZORLA DOLDUR ═══
   // Kota aşımı ve art arda kısıtlarını gevşeterek hedef doluluk garanti et
+  // ÖNCELİK: İki geçiş — 1) min eksik günler/alanlar, 2) tüm minler karşılandıysa max'a doğru
   ASSISTANTS.forEach((_,i)=>{
     if(kalan(i)<=0) return;
     const dur=astDurum(i);
     if(dur==='izinli'||dur==='rot_hayir') return;
-    // Tüm günleri tara, kota dolmuş bile olsa alan öncelik sırasında ata
+    // Geçiş 1: Sadece min eksik alanlara ata
     for(let d=1;d<=days;d++){
       if(kalan(i)<=0) break;
       if(S.schedule[gk(i,d)]) continue;
       if(astIzinliAylik(i).includes(d)) continue;
-      // Art arda kontrolünü gevşet — sadece bitişik gün engeli kalsın
       if(d>1&&S.schedule[gk(i,d-1)]) continue;
       if(d<days&&S.schedule[gk(i,d+1)]) continue;
-      // Alan öncelik sırasında dene
+      for(const area of BASE_AREA_ORDER){
+        const aId=area.id;
+        if(!isAlanAktif(d,aId)) continue;
+        if(!alanMinEksik(d,aId)) continue; // Sadece min eksik alanlara
+        const maxD=getDayRule(d,aId).max||99;
+        if(dCnt(d,aId)>=maxD) continue;
+        if(((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)===0) continue;
+        S.schedule[gk(i,d)]=aId;
+        load[i].total++;
+        load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
+        if(isWE(y,mo,d)) load[i].weCount=(load[i].weCount||0)+1;
+        break;
+      }
+    }
+    // Geçiş 2: Tüm minler karşılandıysa max'a doğru doldur
+    for(let d=1;d<=days;d++){
+      if(kalan(i)<=0) break;
+      if(S.schedule[gk(i,d)]) continue;
+      if(astIzinliAylik(i).includes(d)) continue;
+      if(d>1&&S.schedule[gk(i,d-1)]) continue;
+      if(d<days&&S.schedule[gk(i,d+1)]) continue;
+      if(!gunMinlerKarsilandi(d)) continue; // Tüm minler karşılanmadıysa atla
       for(const area of BASE_AREA_ORDER){
         const aId=area.id;
         if(!isAlanAktif(d,aId)) continue;
         const maxD=getDayRule(d,aId).max||99;
         if(dCnt(d,aId)>=maxD) continue;
-        // Kota kontrolü — gevşetilmiş (0 kotası varsa atla, ama dolu kotayı aş)
         if(((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)===0) continue;
         S.schedule[gk(i,d)]=aId;
         load[i].total++;
@@ -3668,14 +3715,36 @@ function autoGen(){
   });
 
   // ═══ ADIM 4c: SON ŞANS — art arda dahil tüm kısıtları gevşet ═══
+  // ÖNCELİK: İki geçiş — 1) min eksik alanlar, 2) tüm minler karşılandıysa max'a doğru
   ASSISTANTS.forEach((_,i)=>{
     if(kalan(i)<=0) return;
     const dur=astDurum(i);
     if(dur==='izinli'||dur==='rot_hayir') return;
+    // Geçiş 1: Min eksik alanlar
     for(let d=1;d<=days;d++){
       if(kalan(i)<=0) break;
       if(S.schedule[gk(i,d)]) continue;
       if(astIzinliAylik(i).includes(d)) continue;
+      for(const area of BASE_AREA_ORDER){
+        const aId=area.id;
+        if(!isAlanAktif(d,aId)) continue;
+        if(!alanMinEksik(d,aId)) continue;
+        if(((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)===0) continue;
+        const maxD=getDayRule(d,aId).max||99;
+        if(dCnt(d,aId)>=maxD) continue;
+        S.schedule[gk(i,d)]=aId;
+        load[i].total++;
+        load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
+        if(isWE(y,mo,d)) load[i].weCount=(load[i].weCount||0)+1;
+        break;
+      }
+    }
+    // Geçiş 2: Tüm minler karşılandıysa max'a doğru
+    for(let d=1;d<=days;d++){
+      if(kalan(i)<=0) break;
+      if(S.schedule[gk(i,d)]) continue;
+      if(astIzinliAylik(i).includes(d)) continue;
+      if(!gunMinlerKarsilandi(d)) continue;
       for(const area of BASE_AREA_ORDER){
         const aId=area.id;
         if(!isAlanAktif(d,aId)) continue;
