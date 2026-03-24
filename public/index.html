@@ -56,6 +56,9 @@ body {
   --safe-right:  env(safe-area-inset-right, 0px);
 }
 
+/* ── SKELETON PULSE ── */
+@keyframes skPulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
+
 /* ── SCREENS ── */
 .screen {
   position: fixed; inset: 0;
@@ -853,6 +856,18 @@ function agFadeOut(){
   <!-- Content -->
   <div class="app-content">
 
+    <!-- Skeleton loader — Firestore yüklenirken gösterilir -->
+    <div id="appSkeleton" style="position:absolute;inset:0;z-index:50;background:var(--bg0);padding:16px;display:none">
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="height:14px;width:40%;background:var(--bg3);border-radius:6px;animation:skPulse 1.2s ease-in-out infinite"></div>
+        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .1s"></div>
+        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .2s"></div>
+        <div style="height:120px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .3s"></div>
+        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .4s"></div>
+        <div style="height:80px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .5s"></div>
+      </div>
+    </div>
+
     <!-- Nöbet modülü iframe yükleme overlay -->
     <div id="nobetLoadingOverlay" class="hidden">
       <div class="nlo-icon-wrap">
@@ -1043,8 +1058,8 @@ function hideSplash(){
 
 window.addEventListener('load', ()=>{
   startSplash();
-  // 4 saniyede video gelmediyse splash kaldır
-  setTimeout(hideSplash, 4000);
+  // 2 saniyede video gelmediyse splash kaldır
+  setTimeout(hideSplash, 2000);
 });
 </script>
 
@@ -1060,15 +1075,55 @@ const FIREBASE_CONFIG = {
 };
 
 let app, auth, db;
+
+// ── Auth state debounce — 300ms içinde birden fazla tetikleme olursa sadece sonuncusu ──
+let _authDebounceTimer = null;
+let _authResolved = false; // İlk auth sonucu geldi mi?
+let _authGateTimer = null; // 2sn max bekleme
+
+function _debouncedAuthHandler(user) {
+  clearTimeout(_authDebounceTimer);
+  _authDebounceTimer = setTimeout(() => {
+    _authResolved = true;
+    clearTimeout(_authGateTimer);
+
+    if (!user) {
+      // ── GİRİŞ YOK ──
+      nobetFrameLoaded = false;
+      window._iframeReadyBound = false;
+      const fr = document.getElementById('nobetFrame');
+      if (fr) { fr.onload = null; }
+      if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
+      agFadeOut();
+      const loginEl = document.getElementById('loginScreen');
+      if(loginEl){
+        loginEl.style.display = '';
+        loginEl.style.cssText = '';
+        loginEl.classList.remove('hidden');
+        requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
+      }
+      hideSplash();
+    } else {
+      // ── GİRİŞ VAR — hemen app'e geç, skeleton göster ──
+      agSetStep(2);
+      const loginEl = document.getElementById('loginScreen');
+      if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
+      const appEl = document.getElementById('appScreen');
+      if(appEl) appEl.classList.remove('hidden');
+    }
+    onAuthChange(user);
+  }, 150); // 150ms debounce — hızlı ama çift tetiklemeyi önler
+}
+
 window.addEventListener('load', async () => {
   try {
-    // ADIM 0: Firebase başlat — Auth + Firestore paralel
+    // ADIM 0: Firebase başlat
     agSetStep(0);
     app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth(app);
     db   = firebase.firestore(app);
 
-    // Persistence ve Firestore ayarlarını paralel başlat
+    // Persistence ve Firestore paralel
     await Promise.all([
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
       db.enablePersistence({synchronizeTabs:true}).catch(()=>{})
@@ -1077,64 +1132,57 @@ window.addEventListener('load', async () => {
     // ADIM 1: Auth dinlemeye başla
     agSetStep(1);
 
-    // Redirect'ten dönüş bekleniyor mu?
-    window._redirectPending = sessionStorage.getItem('acilx_redirect') === '1';
-    if (window._redirectPending) {
+    // Redirect'ten dönüş mü?
+    const isRedirectReturn = sessionStorage.getItem('acilx_redirect') === '1';
+    if (isRedirectReturn) {
       sessionStorage.removeItem('acilx_redirect');
-      const loginEl = document.getElementById('loginScreen');
-      if (loginEl) { loginEl.classList.remove('hidden'); loginEl.style.opacity = '1'; }
-      showStep('step-loading');
-    }
-
-    // onAuthStateChanged — TEK auth dinleyicisi
-    auth.onAuthStateChanged((user) => {
-      if (!user && window._redirectPending) {
-        return; // Redirect sonrası bekle
-      }
-      window._redirectPending = false;
-
-      if (!user) {
-        // Giriş yok — login ekranına geç
-        nobetFrameLoaded = false;
-        window._iframeReadyBound = false;
-        const fr = document.getElementById('nobetFrame');
-        if (fr) { fr.onload = null; }
-        if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
-        agFadeOut();
-        const loginEl = document.getElementById('loginScreen');
-        if(loginEl){
-          loginEl.style.display = '';
-          loginEl.classList.remove('hidden');
-          requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
-        }
-      } else {
-        // Giriş VAR — ADIM 2: veri yükleme
-        agSetStep(2);
-        const loginEl = document.getElementById('loginScreen');
-        if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
-        // appScreen'i hemen göster — launchApp'ı bekleme (Firestore gecikmesi var)
-        const appEl = document.getElementById('appScreen');
-        if(appEl) appEl.classList.remove('hidden');
-      }
-      onAuthChange(user);
-    });
-
-    // getRedirectResult — sadece hata yakalamak için
-    if (window._redirectPending) {
-      auth.getRedirectResult().then(result => {
+      // Redirect dönüşünde getRedirectResult'ı ÖNCE çağır
+      try {
+        const result = await auth.getRedirectResult();
         if (result && result.user) {
           console.log('[ACİLX] Redirect OK:', result.user.email);
         }
-      }).catch(err => {
-        console.warn('[ACİLX] Redirect hatası:', err.code);
-        window._redirectPending = false;
-        showStep('step-auth');
+      } catch(err) {
+        console.warn('[ACİLX] Redirect hatası:', err.code, err.message);
         const errEl = document.getElementById('authError');
-        if (errEl) errEl.textContent = 'Giriş başarısız oldu. Tekrar deneyin.';
-      });
+        if (errEl) errEl.textContent = 'Giriş başarısız: ' + (err.code || err.message);
+      }
     }
 
-  } catch(e) { console.error('Firebase init:', e); }
+    // onAuthStateChanged — TEK auth dinleyicisi (debounced)
+    auth.onAuthStateChanged(_debouncedAuthHandler);
+
+    // ── authGate max 2sn bekleme — auth gelmezse login göster ──
+    _authGateTimer = setTimeout(() => {
+      if (!_authResolved) {
+        console.warn('[ACİLX] Auth 2sn timeout — login gösteriliyor');
+        _authResolved = true;
+        agFadeOut();
+        hideSplash();
+        const loginEl = document.getElementById('loginScreen');
+        if(loginEl){
+          loginEl.style.display = '';
+          loginEl.style.cssText = '';
+          loginEl.classList.remove('hidden');
+          requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
+        }
+      }
+    }, 2000);
+
+  } catch(e) {
+    console.error('Firebase init:', e);
+    // Init hatası — login göster
+    agFadeOut();
+    hideSplash();
+    const loginEl = document.getElementById('loginScreen');
+    if(loginEl){
+      loginEl.style.display = '';
+      loginEl.classList.remove('hidden');
+      loginEl.style.opacity = '1';
+    }
+    const errEl = document.getElementById('authError');
+    if (errEl) errEl.textContent = 'Firebase başlatılamadı: ' + (e.message || e.code || 'Bilinmeyen hata');
+  }
 });
 
 /* ── STATE ── */
@@ -1147,9 +1195,10 @@ let currentModule = 'nobet';
 
 /* ── AUTH ── */
 async function onAuthChange(user) {
-  if (!user) { showStep('step-auth'); showScreen('login'); return; }
+  if (!user) { showStep('step-auth'); showScreen('login'); _hideSkeleton(); return; }
   currentUser = user;
   showStep('step-loading');
+  _showSkeleton();
 
   try {
     const snap = await db.collection('users').doc(user.uid).get();
@@ -1175,8 +1224,11 @@ async function onAuthChange(user) {
     await launchApp(data);
   } catch(e) {
     console.error('onAuthChange:', e);
+    _hideSkeleton();
     showStep('step-auth');
     showScreen('login');
+    const errEl = document.getElementById('authError');
+    if (errEl) errEl.textContent = 'Veri yüklenemedi: ' + (e.message || 'Bağlantı hatası');
   }
 }
 
@@ -1190,9 +1242,13 @@ async function launchApp(userData) {
   }
   updateAppUI(userData);
   showScreen('app');
+  _hideSkeleton();
   // switchModule çağır ki frame active sınıfı alsın
   switchModule('nobet');
 }
+
+function _showSkeleton(){ const el=document.getElementById('appSkeleton'); if(el) el.style.display='block'; }
+function _hideSkeleton(){ const el=document.getElementById('appSkeleton'); if(el) el.style.display='none'; }
 
 /* ── SEÇENEK ── */
 let selectedOption = null;
@@ -1282,27 +1338,34 @@ async function doGoogleLogin() {
     const provider = new firebase.auth.GoogleAuthProvider();
     provider.addScope('email');
     provider.addScope('profile');
-    // 'select_account' kaldırıldı — oturum açıksa direkt geçer
-    // provider.setCustomParameters({ prompt: 'select_account' });
 
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
     const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
     if (isMobile || isPWA) {
+      // Mobil: önce popup dene — engellenirse redirect'e düş
       try {
-        // Önce redirect dene (en güvenilir mobil yöntem)
-        sessionStorage.setItem('acilx_redirect', '1');
         if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
-        await auth.signInWithRedirect(provider);
-        // Buraya gelinmez
-      } catch(redirectErr) {
-        // Redirect başarısız olduysa popup dene
-        sessionStorage.removeItem('acilx_redirect');
-        console.warn('[ACİLX] Redirect başarısız, popup deneniyor:', redirectErr.code);
-        if(btn) { btn.disabled=false; btn.style.opacity='1'; }
         await auth.signInWithPopup(provider);
+        // Popup başarılı — onAuthStateChanged tetiklenecek
+        if(btn) { btn.disabled=false; btn.style.opacity='1'; }
+      } catch(popupErr) {
+        if(btn) { btn.disabled=false; btn.style.opacity='1'; }
+        if (popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') return;
+        if (popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/operation-not-supported-in-this-environment') {
+          // Popup engellendi veya desteklenmiyor — redirect'e düş
+          console.warn('[ACİLX] Popup engellendi, redirect\'e düşülüyor:', popupErr.code);
+          sessionStorage.setItem('acilx_redirect', '1');
+          if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
+          errEl.textContent = 'Google\'a yönlendiriliyorsunuz...';
+          await auth.signInWithRedirect(provider);
+          return; // Buraya gelinmez
+        }
+        // Diğer hatalar
+        throw popupErr;
       }
     } else {
+      // Desktop: popup
       await auth.signInWithPopup(provider);
     }
   } catch(e) {
@@ -1311,13 +1374,13 @@ async function doGoogleLogin() {
     console.error('[ACİLX] Login hatası:', e.code, e.message);
     if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
     if (e.code === 'auth/popup-blocked') {
-      errEl.textContent = 'Popup engellendi. Tarayıcı ayarlarından popup iznini açın.';
+      errEl.textContent = 'Popup engellendi. Tekrar deneyin veya tarayıcı ayarlarından izin verin.';
     } else if (e.code === 'auth/network-request-failed') {
       errEl.textContent = 'İnternet bağlantısı yok. Bağlantınızı kontrol edin.';
     } else if (e.code === 'auth/unauthorized-domain') {
-      errEl.textContent = 'Bu domain Firebase\'de yetkili değil. ('+location.hostname+')';
+      errEl.textContent = 'Bu domain yetkili değil. Firebase Console > Auth > Settings > Authorized domains\'e ' + location.hostname + ' ekleyin.';
     } else {
-      errEl.textContent = 'Giriş başarısız oldu. Tekrar deneyin.';
+      errEl.textContent = 'Giriş başarısız: ' + (e.code || e.message || 'Bilinmeyen hata');
     }
   }
 }
