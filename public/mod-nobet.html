@@ -1454,12 +1454,12 @@ const LS_KEY = 'acilx_nobet_state';
 const DEFAULT_STATE = {
   egBlocks:[],
   defaultDayMin:{
-    s1:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
-    s2:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
-    r1:{min:2,max:4,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
-    r2:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
-    mt:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
-    yp:{min:1,max:2,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    s1:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    s2:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    r1:{min:2,max:4,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    r2:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    mt:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
+    yp:{min:1,max:2,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
   },
   minNobet:{
     s1:{1:1,2:1,3:1,4:0,5:0},s2:{1:1,2:1,3:1,4:0,5:0},
@@ -1669,31 +1669,13 @@ function checkDayMin(day){
 
 // Kıdem grubu ihlallerini kontrol et — o gün herhangi bir alanda kıdem grubu karşılanmamışsa döner
 function checkKidemGrup(day){
-  const y=S.currentDate.y,mo=S.currentDate.m;
   const viols=[];
   AREAS.forEach(a=>{
-    const r=S.defaultDayMin[a.id];
-    if(!r||!r.kidemGruplari||!r.kidemGruplari.length) return;
     if(!isAlanAktif(day,a.id)) return;
-    // O gün bu alana en az bir kişi atanmış olmalı ki kıdem grubu kontrolü anlamlı olsun
     const cnt=getAreaCount(day,a.id);
     if(cnt===0) return;
-    r.kidemGruplari.forEach(g=>{
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-      if(!grp.kidemler||!grp.kidemler.length) return;
-      // Bu grupta eğitim blokesi olmayan asistan var mı?
-      const grupEligible=ASSISTANTS.filter(ast=>
-        grp.kidemler.includes(ast.kidem)&&
-        !isEgtFull(y,mo,day,ast.kidem)&&
-        (S.quota[a.id]||{})[ast.kidem]>0
-      );
-      if(!grupEligible.length) return; // Karşılanamaz — uyarma
-      const atanan=ASSISTANTS.filter((ast,j)=>
-        S.schedule[gk(j,day)]===a.id&&grp.kidemler.includes(ast.kidem)
-      ).length;
-      if(atanan<(grp.min||1))
-        viols.push(`${a.name} K${grp.kidemler.join('/K')}: ${atanan}/${grp.min||1}`);
-    });
+    const ih=kidemKuralIhlali(day,a.id);
+    ih.forEach(i=>viols.push(a.name+': '+i.msg));
   });
   return viols;
 }
@@ -1704,61 +1686,59 @@ function renderEgitim(){}
 function renderMinConf(){
   let html='';
   AREAS.forEach(a=>{
-    if(!S.defaultDayMin[a.id]) S.defaultDayMin[a.id]={min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']};
+    if(!S.defaultDayMin[a.id]) S.defaultDayMin[a.id]={min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemKurallari:{},aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']};
     const r=S.defaultDayMin[a.id];
     if(!r.kidemMin) r.kidemMin={1:0,2:0,3:0,4:0,5:0};
-    if(!r.kidemGruplari) r.kidemGruplari=[];
-    if(!r.kidemBagimliligi) r.kidemBagimliligi=[];
+    if(!r.kidemKurallari) r.kidemKurallari={};
+    // Eski veri yapısından migration
+    if(r.kidemGruplari&&r.kidemGruplari.length&&!Object.keys(r.kidemKurallari).length){
+      migrateKidemKurallari(a.id);
+    }
 
-    // Kıdem grubu kartları — bağımlılık kuralı entegre
-    const grupHtml=r.kidemGruplari.map((g,gi)=>{
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-      if(grp.max===undefined) grp.max=99;
-      // Bu gruba bağlı bağımlılık kuralı bul (bagimli kıdemleri grubun kıdemleriyle eşleşen)
-      const bagIdx=r.kidemBagimliligi.findIndex(b=>{
-        const bk=b.bagimli||[];
-        return bk.length>0&&bk.every(k=>grp.kidemler.includes(k));
-      });
-      const hasBag=bagIdx>=0;
-      const bag=hasBag?r.kidemBagimliligi[bagIdx]:null;
-      const checkboxler=[1,2,3,4,5].map(k=>`
-        <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
-          <input type="checkbox" ${grp.kidemler.includes(k)?'checked':''} style="accent-color:var(--red)"
-            onchange="toggleGrupKidem('${a.id}',${gi},${k},this.checked)">
-          <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
-        </label>`).join('');
-      // Yanında kıdem checkboxları (bağımlılık)
-      let bagHtml='';
-      if(hasBag){
-        const refCbs=[1,2,3,4,5].map(k=>`
+    // Kıdem kuralları kartları — her kıdem için tek kart
+    const kidemKartHtml=[1,2,3,4,5].map(k=>{
+      const kural=r.kidemKurallari[k]||{yalnizTutamaz:false};
+      const yalniz=kural.yalnizTutamaz;
+      const yaninda=kural.yaninda||[];
+      const kosul=kural.kosul||'enAz1';
+      let detayHtml='';
+      if(yalniz){
+        const yanindaCbs=[1,2,3,4,5].filter(k2=>k2!==k).map(k2=>`
           <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
-            <input type="checkbox" ${(bag.refans||[]).includes(k)?'checked':''} style="accent-color:#4ade80"
-              onchange="toggleBagKidem('${a.id}',${bagIdx},'refans',${k},this.checked)">
-            <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
+            <input type="checkbox" ${yaninda.includes(k2)?'checked':''} style="accent-color:#4ade80"
+              onchange="toggleKidemYaninda('${a.id}',${k},${k2},this.checked)">
+            <span class="kt ${KIDEM_CLS[k2]}" style="font-size:9px;padding:1px 4px">K${k2}</span>
           </label>`).join('');
-        bagHtml=`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 0 0;margin-top:4px;border-top:1px dashed var(--bord)">
-          <span style="font-size:10px;color:#4ade80;font-weight:600">Yanında:</span>
-          ${refCbs}
+        detayHtml=`<div style="margin-top:6px;padding-top:6px;border-top:1px dashed var(--bord)">
+          <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-size:10px;color:#4ade80;font-weight:600">Yanında olması gerekenler:</span>
+            ${yanindaCbs}
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <span style="font-size:10px;color:var(--w4)">Koşul:</span>
+            <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer">
+              <input type="radio" name="kosul_${a.id}_${k}" value="enAz1" ${kosul==='enAz1'?'checked':''} style="accent-color:#4ade80"
+                onchange="setKidemKosul('${a.id}',${k},'enAz1')">
+              <span style="font-size:10px;color:var(--w3)">En az 1 tanesi</span>
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:3px;cursor:pointer">
+              <input type="radio" name="kosul_${a.id}_${k}" value="hepsi" ${kosul==='hepsi'?'checked':''} style="accent-color:#4ade80"
+                onchange="setKidemKosul('${a.id}',${k},'hepsi')">
+              <span style="font-size:10px;color:var(--w3)">Hepsi</span>
+            </label>
+          </div>
         </div>`;
       }
-      return `<div style="background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:6px">
-        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
-          <div style="display:flex;flex-wrap:wrap;gap:3px;flex:1">${checkboxler}</div>
-          <button onclick="deleteGrup('${a.id}',${gi})" class="del-btn" style="flex-shrink:0">&#10005;</button>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap">
-          <span style="font-size:10px;color:var(--w3)">En az</span>
-          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="10" value="${grp.min!==undefined?grp.min:1}" style="width:28px" onchange="setGrupMin('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
-          <span style="font-size:10px;color:var(--w3)">en fazla</span>
-          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="1" max="19" value="${grp.max>=99?'':grp.max}" placeholder="∞" style="width:28px" onchange="setGrupMax('${a.id}',${gi},parseInt(this.value)||99)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
-          <span style="font-size:10px;color:var(--w3)">kişi</span>
-          <label style="display:inline-flex;align-items:center;gap:4px;margin-left:auto;cursor:pointer">
-            <span style="font-size:10px;color:${hasBag?'#4ade80':'var(--w4)'}">Yalnız tutulamaz</span>
-            <input type="checkbox" ${hasBag?'checked':''} style="accent-color:#4ade80"
-              onchange="toggleGrupBagimlilik('${a.id}',${gi},this.checked)">
+      return `<div style="background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:4px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="kt ${KIDEM_CLS[k]}" style="font-size:11px;padding:2px 8px">K${k}</span>
+          <label style="display:inline-flex;align-items:center;gap:5px;cursor:pointer;margin-left:auto">
+            <span style="font-size:11px;color:${yalniz?'#4ade80':'var(--w4)'}">Yalnız tutamaz</span>
+            <input type="checkbox" ${yalniz?'checked':''} style="accent-color:#4ade80"
+              onchange="toggleKidemYalniz('${a.id}',${k},this.checked)">
           </label>
         </div>
-        ${bagHtml}
+        ${detayHtml}
       </div>`;
     }).join('');
 
@@ -1793,11 +1773,8 @@ function renderMinConf(){
           </div>
         </div>
         <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-          <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-            <span class="eg-lbl">Kıdem grupları</span>
-            <button onclick="addGrup('${a.id}')" style="font-size:12px;padding:5px 12px;border-radius:5px;border:1px solid var(--bord-r);background:var(--red-sub);color:var(--red);cursor:pointer;touch-action:manipulation">+ Grup</button>
-          </div>
-          ${grupHtml||'<span style="font-size:12px;color:var(--w4)">Henüz grup yok</span>'}
+          <span class="eg-lbl">Kıdem kuralları</span>
+          ${kidemKartHtml}
         </div>
         <div id="${advId}" class="eg-adv">
           <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
@@ -1915,8 +1892,7 @@ function saveAlan(){
     min: parseInt(document.getElementById('alanMin').value)||1,
     max: parseInt(document.getElementById('alanMax').value)||3,
     kidemMin:{1:0,2:0,3:0,4:0,5:0},
-    kidemGruplari:[],
-    kidemBagimliligi:[],
+    kidemKurallari:{},
     aktifGunler:[0,1,2,3,4,5,6],
     siftler:['24h']
   };
@@ -2096,19 +2072,8 @@ function renderNewCal(){
       const cnt = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id).length;
       if(cnt < rule.min && girebilir){ if(violType===null) violType='min'; }
       if(rule.max>0 && cnt > rule.max){ if(violType===null||violType==='kidem') violType='max'; }
-      // Kıdem grubu — sadece o alana atama varsa kontrol et
-      const r = S.defaultDayMin[a.id];
-      if(r && r.kidemGruplari && cnt>0){
-        r.kidemGruplari.forEach(g=>{
-          const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grupEligible = ASSISTANTS.some(ast=>grp.kidemler.includes(ast.kidem)&&!isEgtFull(y,m,d,ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0);
-          if(!grupEligible) return;
-          const grpCnt = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[i].kidem)).length;
-          if(grpCnt < (grp.min||1)){ if(violType===null) violType='kidem'; }
-        });
-      }
-      // Kıdem bağımlılık kuralı
-      if(cnt>0 && kidemBagimlilikIhlali(d,a.id).length>0){
+      // Kıdem kuralı — yalnız tutamaz
+      if(cnt>0 && kidemKuralIhlali(d,a.id).length>0){
         if(violType===null) violType='kidem';
       }
     });
@@ -2178,43 +2143,11 @@ function gunIhlalleri(d){
     if(rule.max>0&&cnt>rule.max){
       ihlaller.push({tip:'max',alan:a,msg:a.name+': '+cnt+'/'+rule.max+' — '+(cnt-rule.max)+' fazla'});
     }
-    // Kıdem grubu
-    const r2=S.defaultDayMin[a.id];
-    if(r2&&r2.kidemGruplari&&cnt>0){
-      r2.kidemGruplari.forEach(g=>{
-        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-        const grpCnt=atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-        if(grpCnt<(grp.min||1)){
-          ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+grp.kidemler.join('/')+' grubundan '+grpCnt+'/'+(grp.min||1)+' — eksik'});
-        }
-        if((grp.max||99)<99&&grpCnt>(grp.max)){
-          ihlaller.push({tip:'max',alan:a,msg:a.name+': K'+grp.kidemler.join('/')+' grubundan '+grpCnt+'/'+grp.max+' — fazla'});
-        }
-      });
-    }
-    // Kıdem bağımlılık kuralı
-    if(r2&&r2.kidemBagimliligi&&cnt>0){
-      const atananKidemler=atananlar.map(ast=>ast.kidem);
-      r2.kidemBagimliligi.forEach(b=>{
-        const bagimli=b.bagimli||[];
-        const refans=b.refans||[];
-        const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-        const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-        // Ortak kıdem: tek kişiyse ihlal
-        ortakKidemler.forEach(k=>{
-          const sayi=atananKidemler.filter(ak=>ak===k).length;
-          if(sayi===1){
-            ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
-          }
-        });
-        // Farklı kıdem: bağımlı varsa yanında refans olmalı
-        if(farkliRefans.length>0){
-          const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-          const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
-          if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))){
-            ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)).join('/')+' yalnız — yanında K'+farkliRefans.join('/')+' olmalı'});
-          }
-        }
+    // Kıdem kuralı ihlali (yalnız tutamaz)
+    if(cnt>0){
+      const kIhlaller=kidemKuralIhlali(d,a.id);
+      kIhlaller.forEach(ih=>{
+        ihlaller.push({tip:'kidem',alan:a,msg:a.name+': '+ih.msg});
       });
     }
   });
@@ -2486,137 +2419,94 @@ function renderAreaList(){
   el.innerHTML = html;
 }
 
-function addGrup(aId){
-  if(!S.defaultDayMin[aId].kidemGruplari) S.defaultDayMin[aId].kidemGruplari=[];
-  S.defaultDayMin[aId].kidemGruplari.push({kidemler:[1,2,3],min:1,max:99});
-  save();showSaved('minSaved');renderMinConf();
-}
-function deleteGrup(aId,gi){
-  const r=S.defaultDayMin[aId];
-  const grp=Array.isArray(r.kidemGruplari[gi])?{kidemler:r.kidemGruplari[gi]}:r.kidemGruplari[gi];
-  // Bağlı bağımlılık kuralını da kaldır
-  if(r.kidemBagimliligi&&grp&&grp.kidemler){
-    const bagIdx=r.kidemBagimliligi.findIndex(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
-    if(bagIdx>=0) r.kidemBagimliligi.splice(bagIdx,1);
-  }
-  r.kidemGruplari.splice(gi,1);
-  save();showSaved('minSaved');renderMinConf();
-}
-function toggleGrupKidem(aId,gi,k,checked){
-  const r=S.defaultDayMin[aId];
-  const gruplari=r.kidemGruplari;
-  let g=gruplari[gi];
-  if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
-  const eskiKidemler=[...g.kidemler];
-  if(checked){if(!g.kidemler.includes(k))g.kidemler.push(k);}
-  else{const idx=g.kidemler.indexOf(k);if(idx>-1)g.kidemler.splice(idx,1);}
-  // Bağlı bağımlılık kuralının bagimli listesini senkronize et
-  if(r.kidemBagimliligi){
-    const bagIdx=r.kidemBagimliligi.findIndex(b=>{
-      const bk=b.bagimli||[];
-      return bk.length>0&&bk.every(kk=>eskiKidemler.includes(kk));
-    });
-    if(bagIdx>=0) r.kidemBagimliligi[bagIdx].bagimli=[...g.kidemler];
-  }
-  save();showSaved('minSaved');renderMinConf();
-}
-function setGrupMin(aId,gi,val){
-  const gruplari=S.defaultDayMin[aId].kidemGruplari;
-  let g=gruplari[gi];
-  if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
-  g.min=Math.max(0,val);
-  if(g.max<g.min) g.max=g.min;
-  save();showSaved('minSaved');
-}
-function setGrupMax(aId,gi,val){
-  const gruplari=S.defaultDayMin[aId].kidemGruplari;
-  let g=gruplari[gi];
-  if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
-  g.max=Math.max(g.min||1, val||99);
-  save();showSaved('minSaved');
-}
-
-// Grup kartındaki "Yalnız tutulamaz" toggle
-function toggleGrupBagimlilik(aId,gi,checked){
+/* ── KIDEM KURALLARI FONKSİYONLARI (Yeni basitleştirilmiş sistem) ── */
+function migrateKidemKurallari(aId){
   const r=S.defaultDayMin[aId];
   if(!r) return;
-  if(!r.kidemBagimliligi) r.kidemBagimliligi=[];
-  const grp=Array.isArray(r.kidemGruplari[gi])?{kidemler:r.kidemGruplari[gi],min:1,max:99}:r.kidemGruplari[gi];
-  if(checked){
-    // Bu grubun kıdemleriyle eşleşen bağımlılık kuralı yoksa ekle
-    const zatenVar=r.kidemBagimliligi.some(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
-    if(!zatenVar){
-      r.kidemBagimliligi.push({bagimli:[...grp.kidemler],refans:[]});
-    }
-  } else {
-    // Bu grubun kıdemleriyle eşleşen bağımlılık kuralını kaldır
-    const idx=r.kidemBagimliligi.findIndex(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
-    if(idx>=0) r.kidemBagimliligi.splice(idx,1);
+  if(!r.kidemKurallari) r.kidemKurallari={};
+  // Eski kidemBagimliligi → yeni kidemKurallari
+  if(r.kidemBagimliligi&&r.kidemBagimliligi.length){
+    r.kidemBagimliligi.forEach(b=>{
+      const bagimli=b.bagimli||[];
+      const refans=b.refans||[];
+      bagimli.forEach(k=>{
+        if(!r.kidemKurallari[k]) r.kidemKurallari[k]={yalnizTutamaz:false};
+        r.kidemKurallari[k].yalnizTutamaz=true;
+        r.kidemKurallari[k].yaninda=refans.filter(rk=>rk!==k);
+        // Aynı kıdem refansta varsa → kendisinden de 1 olmalı, yanında listesine ekleme
+        if(refans.includes(k)&&!r.kidemKurallari[k].yaninda.length){
+          // K3 yalnız tutamaz, yanında K3 olmalı → aynı kıdemden 2 kişi olmalı anlamına gelir
+          // Yeni sistemde: "Yalnız tutamaz" + yanında hiçbiri seçili değilse → "aynı kıdemden en az 2" demek
+        }
+        r.kidemKurallari[k].kosul='enAz1';
+      });
+    });
   }
+  // Eski yapıyı temizle
+  delete r.kidemGruplari;
+  delete r.kidemBagimliligi;
+  save();
+}
+
+function toggleKidemYalniz(aId,k,checked){
+  const r=S.defaultDayMin[aId];
+  if(!r.kidemKurallari) r.kidemKurallari={};
+  if(!r.kidemKurallari[k]) r.kidemKurallari[k]={yalnizTutamaz:false};
+  r.kidemKurallari[k].yalnizTutamaz=checked;
+  if(checked&&!r.kidemKurallari[k].yaninda) r.kidemKurallari[k].yaninda=[];
+  if(checked&&!r.kidemKurallari[k].kosul) r.kidemKurallari[k].kosul='enAz1';
   save();showSaved('minSaved');renderMinConf();
 }
 
-/* ── KIDEM BAĞIMLILIK KURALI FONKSİYONLARI ── */
-function addBagimlilik(aId){
-  if(!S.defaultDayMin[aId].kidemBagimliligi) S.defaultDayMin[aId].kidemBagimliligi=[];
-  S.defaultDayMin[aId].kidemBagimliligi.push({bagimli:[3],refans:[1,2]});
+function toggleKidemYaninda(aId,k,k2,checked){
+  const r=S.defaultDayMin[aId];
+  const kural=r.kidemKurallari[k];
+  if(!kural||!kural.yaninda) return;
+  if(checked){if(!kural.yaninda.includes(k2))kural.yaninda.push(k2);}
+  else{kural.yaninda=kural.yaninda.filter(x=>x!==k2);}
   save();showSaved('minSaved');renderMinConf();
 }
-function deleteBagimlilik(aId,bi){
-  S.defaultDayMin[aId].kidemBagimliligi.splice(bi,1);
-  save();showSaved('minSaved');renderMinConf();
-}
-function toggleBagKidem(aId,bi,field,k,checked){
-  const arr=S.defaultDayMin[aId].kidemBagimliligi[bi];
-  if(!arr[field]) arr[field]=[];
-  if(checked){if(!arr[field].includes(k))arr[field].push(k);}
-  else{const idx=arr[field].indexOf(k);if(idx>-1)arr[field].splice(idx,1);}
+
+function setKidemKosul(aId,k,kosul){
+  const r=S.defaultDayMin[aId];
+  if(!r.kidemKurallari||!r.kidemKurallari[k]) return;
+  r.kidemKurallari[k].kosul=kosul;
   save();showSaved('minSaved');
 }
 
-// Kıdem bağımlılık kontrolü: Verilen gün+alan'da bağımlı kıdem varsa refans kıdemi de olmalı
-function kidemBagimlilikIhlali(d, aId){
+// Kıdem kuralı ihlal kontrolü (yeni sistem)
+function kidemKuralIhlali(d, aId){
   const r=S.defaultDayMin[aId];
-  if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return [];
+  if(!r||!r.kidemKurallari) return [];
   const ihlaller=[];
-  const atananKidemler=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId).map(ast=>ast.kidem);
-  if(!atananKidemler.length) return [];
-  r.kidemBagimliligi.forEach(b=>{
-    const bagimli=b.bagimli||[];
-    const refans=b.refans||[];
-    // Ortak kıdemler: aynı kıdem hem bağımlı hem yanında → "en az 2 kişi olmalı"
-    const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-    // Farklı refanslar: klasik mantık (yanında farklı kıdemden biri olmalı)
-    const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-
-    // 1) Ortak kıdem kontrolü: tek kişiyse ihlal
-    ortakKidemler.forEach(k=>{
+  const atananlar=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId);
+  if(!atananlar.length) return [];
+  const atananKidemler=atananlar.map(ast=>ast.kidem);
+  Object.keys(r.kidemKurallari).forEach(kStr=>{
+    const k=parseInt(kStr);
+    const kural=r.kidemKurallari[k];
+    if(!kural||!kural.yalnizTutamaz) return;
+    // Bu kıdemden atanan var mı?
+    if(!atananKidemler.includes(k)) return;
+    const yaninda=kural.yaninda||[];
+    const kosul=kural.kosul||'enAz1';
+    if(!yaninda.length){
+      // Yanında listesi boş → aynı kıdemden en az 2 kişi olmalı
       const sayi=atananKidemler.filter(ak=>ak===k).length;
       if(sayi===1){
-        ihlaller.push({
-          bagimli:[k], refans:[k], kural:b,
-          ortakKidem:true,
-          msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'
-        });
+        ihlaller.push({kidem:k,yaninda:[],kosul,msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
       }
-    });
-
-    // 2) Farklı kıdem kontrolü: bağımlı varsa yanında refans olmalı
-    if(farkliRefans.length>0){
-      const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-      const bagimliVarMi=sadeceBagimli.length>0
-        ? sadeceBagimli.some(k=>atananKidemler.includes(k))
-        : bagimli.some(k=>atananKidemler.includes(k));
-      if(bagimliVarMi){
-        const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
-        if(!refansVarMi){
-          ihlaller.push({
-            bagimli:bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)),
-            refans:farkliRefans,
-            kural:b,
-            ortakKidem:false
-          });
-        }
+    } else if(kosul==='hepsi'){
+      // Hepsi gerekli
+      const eksikler=yaninda.filter(yk=>!atananKidemler.includes(yk));
+      if(eksikler.length>0){
+        ihlaller.push({kidem:k,yaninda,kosul,eksikler,msg:'K'+k+' yalnız — yanında K'+eksikler.join('/K')+' olmalı (hepsi)'});
+      }
+    } else {
+      // En az 1 tanesi
+      const varMi=yaninda.some(yk=>atananKidemler.includes(yk));
+      if(!varMi){
+        ihlaller.push({kidem:k,yaninda,kosul,msg:'K'+k+' yalnız — yanında K'+yaninda.join('/K')+"'ten en az 1 olmalı"});
       }
     }
   });
@@ -3240,7 +3130,7 @@ function _showGenAnaliz(){
     });
   });
 
-  // D) Kıdem bağımlılık ihlalleri — hangi alan/kural?
+  // D) Kıdem kuralı ihlalleri (yalnız tutamaz) — hangi alan/kural?
   const bagIhlalMap={}; // aId → Set of rule indices
   for(let d=1;d<=days;d++){
     gunIhlalleri(d).forEach(ih=>{
@@ -3255,61 +3145,48 @@ function _showGenAnaliz(){
     if(!alan) return;
     const sayi=bagIhlalMap[aId];
     const r=S.defaultDayMin[aId];
-    if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return;
-    // Zaten başka öneri ile çözülüyor mu kontrol et
+    if(!r||!r.kidemKurallari) return;
     if(oneriler.some(o=>o.uygula&&o.metin.includes(alan.name)&&o.metin.includes('kota'))) return;
-    r.kidemBagimliligi.forEach((b,bi)=>{
-      const bagimli=b.bagimli||[];
-      const refans=b.refans||[];
-      const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-      const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-      // Ortak kıdem ihlali
-      ortakKidemler.forEach(k=>{
+    Object.keys(r.kidemKurallari).forEach(kStr=>{
+      const k=parseInt(kStr);
+      const kural=r.kidemKurallari[k];
+      if(!kural||!kural.yalnizTutamaz) return;
+      const yaninda=kural.yaninda||[];
+      if(!yaninda.length){
+        // Aynı kıdemden en az 2 → yeterli asistan var mı?
         const astSayi=kidemAstSayi[k]||0;
         if(astSayi<2){
           oneriler.push({
-            metin:alan.name+'\'de K'+k+' bağımlılık kuralını kaldır (sadece '+astSayi+' K'+k+' asistanı var)',
+            metin:alan.name+'\'de K'+k+' yalnız tutamaz kuralını kaldır (sadece '+astSayi+' K'+k+' asistanı var)',
             detay:sayi+' gün ihlal. K'+k+' yalnız tutulamaz kuralı ama yeterli asistan yok',
             renk:'#9B7AE0',
             ikon:'&#9881;',
-            uygula:function(){
-              if(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemBagimliligi){
-                S.defaultDayMin[aId].kidemBagimliligi.splice(bi,1);
-              }
-            }
+            uygula:function(){ if(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemKurallari&&S.defaultDayMin[aId].kidemKurallari[k]) S.defaultDayMin[aId].kidemKurallari[k].yalnizTutamaz=false; }
           });
         }
-      });
-      // Farklı kıdem ihlali
-      if(farkliRefans.length>0){
-        const refKota=farkliRefans.reduce((s,k)=>s+((S.quota[aId]||{})[k]||0),0);
-        const refAstSayi=farkliRefans.reduce((s,k)=>s+(kidemAstSayi[k]||0),0);
-        const refLbl='K'+farkliRefans.join('/K');
+      } else {
+        const refKota=yaninda.reduce((s,yk)=>s+((S.quota[aId]||{})[yk]||0),0);
+        const refAstSayi=yaninda.reduce((s,yk)=>s+(kidemAstSayi[yk]||0),0);
+        const refLbl='K'+yaninda.join('/K');
         if(refAstSayi===0){
-          // Refans kıdeminde hiç asistan yok — kuralı kaldır
           oneriler.push({
-            metin:alan.name+'\'de '+refLbl+' bağımlılık kuralını kaldır ('+refLbl+' asistanı yok)',
+            metin:alan.name+'\'de K'+k+' yalnız tutamaz kuralını kaldır ('+refLbl+' asistanı yok)',
             detay:sayi+' gün ihlal. Yanında '+refLbl+' olmalı kuralı ama o kıdemde asistan yok',
             renk:'#9B7AE0',
             ikon:'&#9881;',
-            uygula:function(){
-              if(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemBagimliligi){
-                S.defaultDayMin[aId].kidemBagimliligi.splice(bi,1);
-              }
-            }
+            uygula:function(){ if(S.defaultDayMin[aId]&&S.defaultDayMin[aId].kidemKurallari&&S.defaultDayMin[aId].kidemKurallari[k]) S.defaultDayMin[aId].kidemKurallari[k].yalnizTutamaz=false; }
           });
         } else if(refKota===0){
-          // Asistan var ama bu alana kotası yok — kota ekle
-          const ekleme=Math.min(3,Math.ceil(sayi/days*farkliRefans.length));
+          const ekleme=Math.min(3,Math.ceil(sayi/days*yaninda.length));
           oneriler.push({
             metin:alan.name+'\'e '+refLbl+' kotası ekle ('+ekleme+' nöbet)',
             detay:sayi+' gün ihlal. '+refLbl+' asistanı var ('+refAstSayi+') ama bu alana kotası 0',
             renk:'#9B7AE0',
             ikon:'&#9650;',
             uygula:function(){
-              farkliRefans.forEach(k=>{
+              yaninda.forEach(yk=>{
                 if(!S.quota[aId]) S.quota[aId]={};
-                S.quota[aId][k]=(S.quota[aId][k]||0)+ekleme;
+                S.quota[aId][yk]=(S.quota[aId][yk]||0)+ekleme;
               });
             }
           });
@@ -3901,24 +3778,6 @@ function autoGen(){
     }
     const alanSiftler=(S.defaultDayMin[aId]&&S.defaultDayMin[aId].siftler)||['24h'];
     if(!astSiftler(i).some(s=>alanSiftler.includes(s))) return false;
-    const r=S.defaultDayMin[aId];
-    if(r&&r.kidemGruplari&&r.kidemGruplari.length){
-      const ast=ASSISTANTS[i];
-      for(const g of r.kidemGruplari){
-        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-        if(grp.kidemler.includes(ast.kidem)){
-          if((grp.max||99)<99){
-            const mev=ASSISTANTS.filter((a2,j)=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(a2.kidem)).length;
-            if(mev>=grp.max) return false;
-          }
-          continue;
-        }
-        const zatenVar=ASSISTANTS.filter((a2,j)=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(a2.kidem)).length;
-        if(zatenVar>=(grp.min||1)) continue;
-        const kıdemliAday=ASSISTANTS.some((a2,j)=>j!==i&&grp.kidemler.includes(a2.kidem)&&!S.schedule[gk(j,d)]&&aRem(j,aId)>0&&!isEgtFull(y,mo,d,a2.kidem)&&((S.quota[aId]||{})[a2.kidem]||0)>0&&mesafeUygun(j,d));
-        if(kıdemliAday) return false;
-      }
-    }
     return true;
   }
 
@@ -3970,8 +3829,8 @@ function autoGen(){
     BASE_AREA_ORDER=[...AREAS].sort((a,b)=>{
       const ra=S.defaultDayMin[a.id],rb=S.defaultDayMin[b.id];
       const minA=(ra&&ra.min)||0,minB=(rb&&rb.min)||0;
-      const grpA=(ra&&ra.kidemGruplari&&ra.kidemGruplari.length)?1:0;
-      const grpB=(rb&&rb.kidemGruplari&&rb.kidemGruplari.length)?1:0;
+      const grpA=(ra&&ra.kidemKurallari&&Object.values(ra.kidemKurallari).some(k=>k.yalnizTutamaz))?1:0;
+      const grpB=(rb&&rb.kidemKurallari&&Object.values(rb.kidemKurallari).some(k=>k.yalnizTutamaz))?1:0;
       if((minA===0)!==(minB===0)) return minA===0?1:-1;
       if(grpA!==grpB) return grpB-grpA;
       return ASSISTANTS.filter(x=>(S.quota[a.id]||{})[x.kidem]>0).length-ASSISTANTS.filter(x=>(S.quota[b.id]||{})[x.kidem]>0).length;
@@ -4023,52 +3882,9 @@ function autoGen(){
     };
   }
 
-  // ═══ ADIM 1: KİDEM GRUBU MİN DOLDURMA ═══
-  BASE_AREA_ORDER.forEach(area=>{
-    const aId=area.id;const r=S.defaultDayMin[aId];const gruplari=(r&&r.kidemGruplari)||[];
-    if(!gruplari.length) return;
-    gruplari.forEach(g=>{
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;const minG=grp.min||1,maxG=grp.max||99;
-      const grupAst=ASSISTANTS.map((_,i)=>i).filter(i=>grp.kidemler.includes(ASSISTANTS[i].kidem)&&aRem(i,aId)>0&&kalan(i)>0);
-      if(!grupAst.length) return;
-      function enKritikGrupGun(){
-        let best=null,bestSk=-Infinity;
-        for(let d2=1;d2<=days;d2++){
-          if(!isAlanAktif(d2,aId)) continue;
-          const egtAll=grp.kidemler.every(k=>ASSISTANTS.filter(a=>a.kidem===k).every(a=>isEgtFull(y,mo,d2,a.kidem)));
-          if(egtAll) continue;
-          if(dCnt(d2,aId)>=(getDayRule(d2,aId).max||99)) continue;
-          const zaten=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d2)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-          const eksikMin=minG-zaten; if(eksikMin<=0||zaten>=maxG) continue;
-          const adaylar=grupAst.filter(i=>canAssign(i,d2,aId,false));
-          if(!adaylar.length) continue;
-          const sk=(eksikMin*10)/adaylar.length-d2*0.001;
-          if(sk>bestSk){bestSk=sk;best=d2;}
-        }
-        return best;
-      }
-      let iterD;
-      while((iterD=enKritikGrupGun())!==null){
-        const d=iterD,maxD=getDayRule(d,aId).max||99;
-        const zaten=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-        const eksik=minG-zaten; if(eksik<=0||zaten>=maxG) continue;
-        const uygun=grupAst.filter(i=>canAssign(i,d,aId,false)).sort((a,b)=>{
-          const mA=enYakinMesafe(a,d),mB=enYakinMesafe(b,d);
-          if(Math.abs(mA-mB)>1) return mB-mA;
-          const tA=tercihScore(a,d),tB=tercihScore(b,d);
-          if(tA!==tB) return tA-tB;
-          return kalan(b)-kalan(a);
-        });
-        let placed=0;
-        for(const i of uygun){
-          if(placed>=eksik||dCnt(d,aId)>=maxD) break;
-          const zS=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-          if(zS>=maxG) break;
-          put(i,d,aId);placed++;
-        }
-      }
-    });
-  });
+  // ═══ ADIM 1: KIDEM KURALI — YALNIZ TUTAMAZ DÜZELTME ═══
+  // Atama sonrası yalnız kalan kıdemleri tespit et, uygun arkadaş ekle
+  // (Bu adım ADIM 1b'den sonra da tekrar çalışır — burada erken düzeltme)
 
   // ═══ ADIM 1b: GENEL MIN DOLDURMA ═══
   BASE_AREA_ORDER.forEach(area=>{
@@ -4099,21 +3915,7 @@ function autoGen(){
     }
   });
 
-  // ═══ ADIM 1c: MAX İHLAL TEMİZLEME ═══
-  BASE_AREA_ORDER.forEach(area=>{
-    const aId=area.id,r=S.defaultDayMin[aId],gruplari=(r&&r.kidemGruplari)||[];
-    if(!gruplari.length) return;
-    for(let d=1;d<=days;d++){
-      if(!isAlanAktif(d,aId)) continue;
-      gruplari.forEach(g=>{
-        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;const maxG=grp.max||99;
-        if(maxG>=99) return;
-        const atananIdx=ASSISTANTS.map((_,j)=>j).filter(j=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem));
-        const fazla=atananIdx.length-maxG; if(fazla<=0) return;
-        [...atananIdx].sort((a,b)=>load[b].total-load[a].total).slice(0,fazla).forEach(idx=>remove(idx,d));
-      });
-    }
-  });
+  // ═══ ADIM 1c: (Eski kıdem grubu max temizleme kaldırıldı — yeni sistemde grup max yok) ═══
 
   // ═══ ADIM 2: ASISTAN HEDEFLERİNİ DOLDUR ═══
   {
@@ -4179,9 +3981,7 @@ function autoGen(){
         let best=null,bestSc=Infinity;
         for(const d of adayGunler){
           const isWEday=isWE(y,mo,d);const acik=Math.max(0,(getDayRule(d,aId).min||0)-dCnt(d,aId));
-          const r2=S.defaultDayMin[aId];let maxIhlal=false;
-          for(const g2 of (r2&&r2.kidemGruplari)||[]){const grp2=Array.isArray(g2)?{kidemler:g2,min:1,max:99}:g2;if((grp2.max||99)>=99||!grp2.kidemler.includes(ASSISTANTS[i].kidem))continue;const mev=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&grp2.kidemler.includes(ASSISTANTS[j].kidem)).length;if(mev>=grp2.max){maxIhlal=true;break;}}
-          if(maxIhlal) continue;
+          // (Eski kıdem grubu max kontrolü kaldırıldı — yeni sistemde grup max yok)
           let sc;
           if(acik>0){let artarda=0;for(const nd of[d-1,d+1])if(nd>=1&&nd<=days){const na=Math.max(0,(getDayRule(nd,aId).min||0)-dCnt(nd,aId));if(na>0)artarda+=na*15;}sc=-10000+artarda+(isWEday?3:0);}
           else{const doluluk=dCnt(d,aId)*8;const idealFark=Math.abs(d-idealSonrakiGun);const erkenCeza=(gEksik>0&&d<idealSonrakiGun)?(idealSonrakiGun-d)*1.5:0;const wePenalty=WE_DENGESI==='yok'?0:isWEday&&weBudgetDoldu?500:isWEday?(mevcutWe+secilenWe)/Math.max(weBudget,1)*5:0;const mes=minMesafe(d);const aralikCeza=mes<2?2000:mes===2?50:mes===3?10:0;const tercihBonus=tercihScore(i,d)*3;sc=idealFark+erkenCeza+doluluk+wePenalty+aralikCeza+tercihBonus;}
@@ -4333,66 +4133,29 @@ function autoGen(){
     }
   });
 
-  // ═══ ADIM 5: SON MAX DOĞRULAMA ═══
-  BASE_AREA_ORDER.forEach(area=>{
-    const aId=area.id,r=S.defaultDayMin[aId],gruplari=(r&&r.kidemGruplari)||[];
-    if(!gruplari.length) return;
-    for(let d=1;d<=days;d++){
-      if(!isAlanAktif(d,aId)) continue;
-      gruplari.forEach(g=>{
-        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;const maxG=grp.max||99;if(maxG>=99)return;
-        const atananIdx=ASSISTANTS.map((_,j)=>j).filter(j=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem));
-        const fazla=atananIdx.length-maxG; if(fazla<=0) return;
-        [...atananIdx].sort((a,b)=>load[b].total-load[a].total).slice(0,fazla).forEach(idx=>remove(idx,d));
-      });
-    }
-  });
+  // ═══ ADIM 5: (Eski kıdem grubu max doğrulama kaldırıldı — yeni sistemde grup max yok) ═══
 
-  // ═══ ADIM 5b: KIDEM BAĞIMLILIK KURALI ═══
-  // Bağımlı kıdem yalnızsa uygun kıdemden birini eklemeye çalış
+  // ═══ ADIM 5b: KIDEM KURALI — YALNIZ TUTAMAZ DÜZELTME ═══
   BASE_AREA_ORDER.forEach(area=>{
     const aId=area.id, r=S.defaultDayMin[aId];
-    if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return;
+    if(!r||!r.kidemKurallari) return;
+    const hasKural=Object.values(r.kidemKurallari).some(kk=>kk.yalnizTutamaz);
+    if(!hasKural) return;
     for(let d=1;d<=days;d++){
       if(!isAlanAktif(d,aId)) continue;
-      const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId).map(a2=>a2.kidem);
-      if(!atananKidemler.length) continue;
-      r.kidemBagimliligi.forEach(b=>{
-        const bagimli=b.bagimli||[];
-        const refans=b.refans||[];
-        const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-        const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-        const maxD=getDayRule(d,aId).max||99;
-
-        // 1) Ortak kıdem: tek kişiyse aynı kıdemden ekle
-        ortakKidemler.forEach(k=>{
-          if(atananKidemler.filter(ak=>ak===k).length!==1) return;
-          if(dCnt(d,aId)>=maxD) return;
-          const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
-            if(S.schedule[gk(j,d)]) return false;
-            if(ASSISTANTS[j].kidem!==k) return false;
-            if(kalan(j)<=0) return false;
-            return canAssign(j,d,aId,false);
-          }).sort((a2,b2)=>kalan(b2)-kalan(a2));
-          if(adaylar.length>0) put(adaylar[0],d,aId);
-        });
-
-        // 2) Farklı kıdem: bağımlı varsa refans kıdeminden ekle
-        if(farkliRefans.length>0){
-          const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-          const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
-          if(!bagimliVarMi) return;
-          const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
-          if(refansVarMi) return;
-          if(dCnt(d,aId)>=maxD) return;
-          const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
-            if(S.schedule[gk(j,d)]) return false;
-            if(!farkliRefans.includes(ASSISTANTS[j].kidem)) return false;
-            if(kalan(j)<=0) return false;
-            return canAssign(j,d,aId,false);
-          }).sort((a2,b2)=>kalan(b2)-kalan(a2));
-          if(adaylar.length>0) put(adaylar[0],d,aId);
-        }
+      const ihlaller=kidemKuralIhlali(d,aId);
+      if(!ihlaller.length) continue;
+      const maxD=getDayRule(d,aId).max||99;
+      ihlaller.forEach(ih=>{
+        if(dCnt(d,aId)>=maxD) return;
+        const gerekliKidemler=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
+        const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
+          if(S.schedule[gk(j,d)]) return false;
+          if(!gerekliKidemler.includes(ASSISTANTS[j].kidem)) return false;
+          if(kalan(j)<=0) return false;
+          return canAssign(j,d,aId,false);
+        }).sort((a2,b2)=>kalan(b2)-kalan(a2));
+        if(adaylar.length>0) put(adaylar[0],d,aId);
       });
     }
   });
@@ -4530,39 +4293,6 @@ function canAssign(i, d, aId, ignoreHedef) {
   if(_kacAylik(i).includes(d)) return false;
   const alanSiftler=(S.defaultDayMin[aId]&&S.defaultDayMin[aId].siftler)||['24h'];
   if(!_siftler(i).some(s=>alanSiftler.includes(s))) return false;
-  // Kıdem grubu max kontrolü + kıdemli aday varsa çömeziş yazma
-  const r=S.defaultDayMin[aId];
-  if(r&&r.kidemGruplari&&r.kidemGruplari.length){
-    const ast=ASSISTANTS[i];
-    for(const g of r.kidemGruplari){
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-
-      // Bu asistan bu gruptaysa — max kontrolü
-      if(grp.kidemler.includes(ast.kidem)){
-        if((grp.max||99)<99){
-          const mev=ASSISTANTS.filter((a2,j)=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(a2.kidem)).length;
-          if(mev>=grp.max) return false;
-        }
-        continue;
-      }
-
-      // Bu asistan grupta değil — min karşılanmışsa yaz, değilse kıdemli aday varsa bekle
-      const zatenVar=ASSISTANTS.filter((a2,j)=>
-        S.schedule[gk(j,d)]===aId && grp.kidemler.includes(a2.kidem)).length;
-      if(zatenVar >= (grp.min||1)) continue;
-      const kıdemliAday=ASSISTANTS.some((a2,j)=>
-        j!==i &&
-        grp.kidemler.includes(a2.kidem) &&
-        !S.schedule[gk(j,d)] &&
-        _aRem(j,aId)>0 &&
-        !isEgtFull(y,m,d,a2.kidem) &&
-        ((S.quota[aId]||{})[a2.kidem]||0)>0 &&
-        !(d>1&&S.schedule[gk(j,d-1)]) &&
-        !(d<days&&S.schedule[gk(j,d+1)])
-      );
-      if(kıdemliAday) return false;
-    }
-  }
   return true;
 }
 
@@ -4663,26 +4393,7 @@ function renderSchedule(log){
 
       // Kıdem grubu ihlali: bu alan + bu gün için kontrol
       const kidemViolsCell=(()=>{
-        const r2=S.defaultDayMin[a.id];
-        if(!r2||!r2.kidemGruplari||!r2.kidemGruplari.length) return [];
-        const y2=S.currentDate.y,mo2=S.currentDate.m;
-        const v2=[];
-        r2.kidemGruplari.forEach(g=>{
-          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          if(!grp.kidemler||!grp.kidemler.length) return;
-          const grupEligible=ASSISTANTS.filter(ast=>
-            grp.kidemler.includes(ast.kidem)&&
-            !isEgtFull(y2,mo2,d,ast.kidem)&&
-            (S.quota[a.id]||{})[ast.kidem]>0
-          );
-          if(!grupEligible.length) return;
-          const atanan=ASSISTANTS.filter((ast,j)=>
-            S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ast.kidem)
-          ).length;
-          if(atanan<(grp.min||1))
-            v2.push('K'+grp.kidemler.join('/K')+': '+atanan+'/'+(grp.min||1));
-        });
-        return v2;
+        return kidemKuralIhlali(d,a.id).map(ih=>ih.msg);
       })();
       const kidemShort=kidemViolsCell.length>0&&who.length>0;
       const isViol=short||kidemShort;
@@ -5487,9 +5198,9 @@ function buildContext(){
     const r=S.defaultDayMin[a.id];
     alanKurallari[a.name]={
       gunlukMin:r.min,gunlukMax:r.max,
-      kidemGruplari:(r.kidemGruplari||[]).map(g=>{
-        const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-        return {kidemler:grp.kidemler.map(k=>'K'+k),enAz:grp.min};
+      kidemKurallari:Object.keys(r.kidemKurallari||{}).filter(k=>(r.kidemKurallari[k]||{}).yalnizTutamaz).map(k=>{
+        const kural=r.kidemKurallari[k];
+        return {kidem:'K'+k,yalnizTutamaz:true,yaninda:(kural.yaninda||[]).map(y=>'K'+y),kosul:kural.kosul||'enAz1'};
       }),
       aktifGunler:(r.aktifGunler||[0,1,2,3,4,5,6]).map(g=>['Paz','Pzt','Sal','Car','Per','Cum','Cmt'][g])
     };
@@ -5559,7 +5270,7 @@ Format: {"AsistanAdi": {"AlanAdi": [gun1, gun2, ...], ...}, ...}`;
 Asistanlar ve hedef nobet sayilari:
 ${ctx.asistanlar.map(a=>`- ${a.isim} (${a.kidem}): ${a.hedefNobet} nobet`).join('\n')}
 Alan kurallari:
-${Object.entries(ctx.alanKurallari).map(([alan,k])=>`- ${alan}: min=${k.gunlukMin}/gun, max=${k.gunlukMax}/gun`+(k.kidemGruplari.length?', kidem grubu: '+k.kidemGruplari.map(g=>g.kidemler.join('/')+' en az '+g.enAz).join('; '):'')).join('\n')}
+${Object.entries(ctx.alanKurallari).map(([alan,k])=>`- ${alan}: min=${k.gunlukMin}/gun, max=${k.gunlukMax}/gun`+(k.kidemKurallari&&k.kidemKurallari.length?', kidem kuralları: '+k.kidemKurallari.map(r=>r.kidem+' yalnız tutamaz → yanında '+r.yaninda.join('/')+' ('+r.kosul+')').join('; '):'')).join('\n')}
 Nobet dagitimi (kota):
 ${Object.entries(ctx.nobetDagitimi).map(([alan,d])=>`- ${alan}: `+Object.entries(d).map(([k,v])=>`${k}=${v}`).join(', ')).join('\n')}
 Toplam ${ctx.toplamGun} gun.`;
@@ -6481,21 +6192,30 @@ function takasMumkunMu(iA, dA, alanA, iB, dB, alanB){
     }
   }
 
-  // 5) Kıdem grubu kontrolü — takas sonrası kıdem grupları korunuyor mu?
+  // 5) Kıdem kuralı kontrolü — takas sonrası yalnız tutamaz ihlali oluşuyor mu?
+  // tmpSched üzerinden geçici kontrol — S.schedule'ı geçici olarak swap et
+  const origSched={};
   for(const checkDay of checkDays){
-    for(const aObj of AREAS){
-      const r2 = S.defaultDayMin[aObj.id];
-      if(!r2||!r2.kidemGruplari||!r2.kidemGruplari.length) continue;
-      const atananlar = ASSISTANTS.filter((_,ci)=>tmpSched[gk(ci,checkDay)]===aObj.id);
-      if(atananlar.length===0) continue;
-      for(const g of r2.kidemGruplari){
-        const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-        const gc = atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-        if(gc < (grp.min||1)) return {ok:false, reason:checkDay+'. gün '+aObj.name+' kıdem grubu (K'+grp.kidemler.join('/')+') eksik'};
-        if((grp.max||99)<99 && gc>(grp.max)) return {ok:false, reason:checkDay+'. gün '+aObj.name+' kıdem grubu (K'+grp.kidemler.join('/')+') max aşılıyor ('+gc+'/'+grp.max+')'};
-      }
+    for(let ci=0;ci<ASSISTANTS.length;ci++){
+      const key=gk(ci,checkDay);
+      origSched[key]=S.schedule[key];
+      S.schedule[key]=tmpSched[key];
     }
   }
+  let kidemHata=null;
+  for(const checkDay of checkDays){
+    for(const aObj of AREAS){
+      const ih=kidemKuralIhlali(checkDay,aObj.id);
+      if(ih.length>0){
+        kidemHata={ok:false, reason:checkDay+'. gün '+aObj.name+': '+ih[0].msg};
+        break;
+      }
+    }
+    if(kidemHata) break;
+  }
+  // Schedule'ı geri al
+  Object.keys(origSched).forEach(key=>{ if(origSched[key]===undefined) delete S.schedule[key]; else S.schedule[key]=origSched[key]; });
+  if(kidemHata) return kidemHata;
 
   return {ok:true};
 }
@@ -6778,72 +6498,24 @@ function renderSorunlar(){
         });
       }
 
-      // Kıdem grubu
-      const r2 = S.defaultDayMin[a.id];
-      if(r2 && r2.kidemGruplari && cnt>0){
-        r2.kidemGruplari.forEach(g=>{
-          const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grpCnt = atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-          if(grpCnt < (grp.min||1)){
-            const kLbl = 'K'+grp.kidemler.join('/K');
-            const grpBos = ASSISTANTS.filter((ast,i)=>
-              !S.schedule[gk(i,d)] && grp.kidemler.includes(ast.kidem) && ((S.quota[a.id]||{})[ast.kidem]||0)>0
-            );
-            const uygunVar = grpBos.length > 0;
-            sorunlar.push({
-              tip:'kidem', alan:a, gun:d,
-              msg:`${a.name}: ${kLbl} grubundan ${grpCnt}/${grp.min||1} — eksik`,
-              kural: KURAL.kidem,
-              oneri: uygunVar
-                ? `<b>Öneri:</b> ${kLbl} kıdeminden müsait asistan ata`
-                : `<b>Otomatik çözülemez:</b> ${kLbl} kıdeminden müsait asistan yok. Kıdem kuralını gevşetin veya başka günden takas yapın`,
-              otoYapilabilir: uygunVar,
-              cozumData: {d, aId:a.id, kidemler:grp.kidemler, grpMin:grp.min||1}
-            });
-          }
-          if((grp.max||99)<99 && grpCnt>(grp.max)){
-            sorunlar.push({
-              tip:'max', alan:a, gun:d,
-              msg:`${a.name}: K${grp.kidemler.join('/')} grubundan ${grpCnt}/${grp.max} — fazla`,
-              kural: KURAL.max,
-              oneri: `<b>Öneri:</b> Bu kıdemden fazla asistanı başka alana taşı veya kaldır`,
-              otoYapilabilir: true,
-              cozumData: {d, aId:a.id, fazla: grpCnt-grp.max}
-            });
-          }
-        });
-      }
-
-      // Kıdem bağımlılık kuralı ihlali
+      // Kıdem kuralı ihlali (yalnız tutamaz)
       if(cnt>0){
-        const bagIhlaller=kidemBagimlilikIhlali(d,a.id);
-        bagIhlaller.forEach(ih=>{
-          const isOrtak=ih.ortakKidem;
-          const msgText=isOrtak
-            ? `${a.name}: K${ih.bagimli[0]} yalnız — aynı kıdemden en az 2 kişi olmalı`
-            : `${a.name}: K${ih.bagimli.join('/K')} yalnız — yanında K${ih.refans.join('/K')} olmalı`;
-          // Uygun asistan var mı?
+        const kIhlaller=kidemKuralIhlali(d,a.id);
+        kIhlaller.forEach(ih=>{
+          const gerekliKidemler=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
           const refBoslar=ASSISTANTS.filter((ast,i)=>
-            !S.schedule[gk(i,d)]&&ih.refans.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0
+            !S.schedule[gk(i,d)]&&gerekliKidemler.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0
           );
-          const uygunRef=refBoslar.some((ast)=>{
-            const realIdx=ASSISTANTS.indexOf(ast);
-            return canAssign(realIdx,d,a.id,true);
-          });
-          const oneriText=isOrtak
-            ? (uygunRef
-              ? `<b>Öneri:</b> Aynı kıdemden (K${ih.bagimli[0]}) müsait asistan ata`
-              : `<b>Otomatik çözülemez:</b> K${ih.bagimli[0]} kıdeminden müsait asistan yok. Manuel atama yapın`)
-            : (uygunRef
-              ? `<b>Öneri:</b> K${ih.refans.join('/K')} kıdeminden müsait asistan ata`
-              : `<b>Otomatik çözülemez:</b> K${ih.refans.join('/K')} kıdeminden müsait asistan yok. Manuel takas veya atama yapın`);
+          const uygunRef=refBoslar.length>0;
           sorunlar.push({
             tip:'kidem', alan:a, gun:d,
-            msg:msgText,
-            kural:'Kıdem bağımlılık kuralı ihlali',
-            oneri:oneriText,
+            msg:`${a.name}: ${ih.msg}`,
+            kural:'Kıdem kuralı ihlali (yalnız tutamaz)',
+            oneri: uygunRef
+              ? `<b>Öneri:</b> K${gerekliKidemler.join('/K')} kıdeminden müsait asistan ata`
+              : `<b>Otomatik çözülemez:</b> Gerekli kıdemden müsait asistan yok. Manuel takas veya atama yapın`,
             otoYapilabilir: uygunRef,
-            cozumData: {d, aId:a.id, kidemler:ih.refans, bagimlilik:true}
+            cozumData: {d, aId:a.id, kidemler:gerekliKidemler, bagimlilik:true}
           });
         });
       }
@@ -6962,21 +6634,9 @@ function _renderUyarilar_legacy(){
       if(rule.max > 0 && cnt > rule.max){
         sorunlar.push({ tip:'max', alan:a, gun:d, msg:`${a.name}: ${cnt}/${rule.max} kişi — fazla atama` });
       }
-      const r2 = S.defaultDayMin[a.id];
-      if(r2 && r2.kidemGruplari && cnt>0){
-        r2.kidemGruplari.forEach((g)=>{
-          const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grupEligible = ASSISTANTS.some(ast =>
-            grp.kidemler.includes(ast.kidem) && !isEgtFull(y,m,d,ast.kidem) && ((S.quota[a.id]||{})[ast.kidem]||0)>0
-          );
-          if(!grupEligible) return;
-          const grpCnt = atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-          if(grpCnt < (grp.min||1)){
-            sorunlar.push({ tip:'kidem', alan:a, gun:d, msg:`${a.name}: K${grp.kidemler.join('/')} grubundan ${grpCnt}/${grp.min||1} — eksik` });
-          }
-          if((grp.max||99)<99 && grpCnt>(grp.max)){
-            sorunlar.push({ tip:'max', alan:a, gun:d, msg:`${a.name}: K${grp.kidemler.join('/')} grubundan ${grpCnt}/${grp.max} — fazla` });
-          }
+      if(cnt>0){
+        kidemKuralIhlali(d,a.id).forEach(ih=>{
+          sorunlar.push({ tip:'kidem', alan:a, gun:d, msg:`${a.name}: ${ih.msg}` });
         });
       }
     });
@@ -7497,19 +7157,12 @@ function _sorunlariTopla(){
         const adaylar=_cozumEkle(d,a.id,[]);
         gorevler.push({tip:'min',d,alan:a,eksik:rule.min-cnt,adaylar,oncelik:adaylar.length});
       }
-      const r2=S.defaultDayMin[a.id];
-      if(r2&&r2.kidemGruplari&&cnt>0){
-        r2.kidemGruplari.forEach(g=>{
-          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grpEligible=ASSISTANTS.some(ast=>
-            grp.kidemler.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0);
-          if(!grpEligible) return;
-          const grpCnt=atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-          if(grpCnt<(grp.min||1)){
-            const adaylar=_cozumEkle(d,a.id,grp.kidemler);
-            gorevler.push({tip:'kidem',d,alan:a,kidemler:grp.kidemler,
-              eksik:(grp.min||1)-grpCnt,adaylar,oncelik:adaylar.length});
-          }
+      if(cnt>0){
+        kidemKuralIhlali(d,a.id).forEach(ih=>{
+          const gerekli=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
+          const adaylar=_cozumEkle(d,a.id,gerekli);
+          gorevler.push({tip:'kidem',d,alan:a,kidemler:gerekli,
+            eksik:1,adaylar,oncelik:adaylar.length});
         });
       }
       if(rule.max>0&&cnt>rule.max){
@@ -7549,34 +7202,8 @@ function akillicoz(){
         const cnt=alanCnt(d,a.id);
         if(cnt<rule.min) toplam+=(rule.min-cnt);
         if(rule.max>0&&cnt>rule.max) toplam+=(cnt-rule.max);
-        const r2=S.defaultDayMin[a.id];
-        if(r2&&r2.kidemGruplari&&cnt>0){
-          r2.kidemGruplari.forEach(g=>{
-            const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-            const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&ASSISTANTS[j]&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-            if(grpCnt<(grp.min||1)) toplam+=((grp.min||1)-grpCnt);
-          });
-        }
-        // Kıdem bağımlılık kuralı ihlali
-        if(r2&&r2.kidemBagimliligi&&cnt>0){
-          const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&ASSISTANTS[j]).map(ast=>ast.kidem);
-          r2.kidemBagimliligi.forEach(b=>{
-            const bagimli=b.bagimli||[];
-            const refans=b.refans||[];
-            const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-            const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-            // Ortak kıdem: tek kişiyse ihlal
-            ortakKidemler.forEach(k=>{
-              if(atananKidemler.filter(ak=>ak===k).length===1) toplam++;
-            });
-            // Farklı kıdem: bağımlı varsa yanında refans olmalı
-            if(farkliRefans.length>0){
-              const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-              const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
-              if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))) toplam++;
-            }
-          });
-        }
+        // Kıdem kuralı ihlali (yalnız tutamaz)
+        if(cnt>0) toplam+=kidemKuralIhlali(d,a.id).length;
       });
     }
     return toplam;
@@ -7694,128 +7321,22 @@ function akillicoz(){
       });
     }
 
-    // ── ADIM 3: KIDEM ihlallerini çöz — takas ile ──
+    // ── ADIM 3: KIDEM KURALI ihlallerini çöz (yalnız tutamaz) ──
     for(let d=1;d<=days;d++){
       AREAS.forEach(a=>{
         const rule=getDayRule(d,a.id); if(!rule.aktif) return;
-        const r2=S.defaultDayMin[a.id];
-        if(!r2||!r2.kidemGruplari) return;
         const cnt=alanCnt(d,a.id); if(cnt<=0) return;
-
-        r2.kidemGruplari.forEach(g=>{
-          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grpCnt=ASSISTANTS.filter((_,j)=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-          if(grpCnt>=(grp.min||1)) return;
-          const eksik=(grp.min||1)-grpCnt;
-
-          // Yol 1: Boşta doğru kıdemde biri direkt eklenebilir mi?
-          let eklendi=0;
-          const kidemAdaylar=ASSISTANTS.map((_,j)=>j)
-            .filter(j=>ASSISTANTS[j]&&grp.kidemler.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
+        const ihlaller=kidemKuralIhlali(d,a.id);
+        if(!ihlaller.length) return;
+        const maxD=rule.max||99;
+        ihlaller.forEach(ih=>{
+          if(alanCnt(d,a.id)>=maxD) return;
+          const gerekliKidemler=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
+          const adaylar=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>ASSISTANTS[j]&&gerekliKidemler.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
             .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
-          for(const j of kidemAdaylar){
-            if(eklendi>=eksik) break;
-            // Eklemeden önce max kontrolü
-            const maxD=getDayRule(d,a.id).max||99;
-            if(alanCnt(d,a.id)>=maxD) break;
-            if(guvenliEkle(j,d,a.id)){ eklendi++; cozulen++; }
-          }
-          if(eklendi>=eksik) return;
-
-          // Yol 2: Mevcut yanlış kıdemdeki biriyle doğru kıdemdeki birini takasla
-          const yanlilar=ASSISTANTS.map((_,j)=>j)
-            .filter(j=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id&&!grp.kidemler.includes(ASSISTANTS[j].kidem));
-
-          for(const iYanlis of yanlilar){
-            if(eklendi>=eksik) break;
-            // Doğru kıdemde olan ve başka günde nöbetçi olan birini bul
-            for(let iDogru=0;iDogru<ASSISTANTS.length;iDogru++){
-              if(!ASSISTANTS[iDogru]) continue;
-              if(!grp.kidemler.includes(ASSISTANTS[iDogru].kidem)) continue;
-              if(S.schedule[gk(iDogru,d)]) continue;
-              if(!temelUygun(iDogru,d)) continue;
-              // Max nöbet kontrolü — iDogru'ya yeni nöbet ekleniyor
-              if(nobetSay(iDogru)>=hedef(iDogru)) continue;
-              // iYanlis'i gün d'den çıkar, iDogru'yu gün d'ye koy
-              const onceki=ihlalSay();
-              const eskiAlan=S.schedule[gk(iYanlis,d)];
-              delete S.schedule[gk(iYanlis,d)];
-              S.schedule[gk(iDogru,d)]=a.id;
-              const sonraki=ihlalSay();
-              if(sonraki<onceki){
-                // Takas başarılı — min bozulmadı ve kıdem düzeldi
-                eklendi++; cozulen++;
-                // iYanlis'ı başka güne taşımaya çalış (max kontrolü ile)
-                if(nobetSay(iYanlis)<hedef(iYanlis)){
-                  let tasinabildi=false;
-                  for(let dX=1;dX<=days;dX++){
-                    if(dX===d) continue;
-                    if(S.schedule[gk(iYanlis,dX)]) continue;
-                    if(!temelUygun(iYanlis,dX)) continue;
-                    for(const aX of AREAS){
-                      if(!isAlanAktif(dX,aX.id)) continue;
-                      if(((S.quota[aX.id]||{})[ASSISTANTS[iYanlis].kidem]||0)===0) continue;
-                      const onceki2=ihlalSay();
-                      S.schedule[gk(iYanlis,dX)]=aX.id;
-                      if(ihlalSay()<=onceki2){ tasinabildi=true; cozulen++; break; }
-                      delete S.schedule[gk(iYanlis,dX)];
-                    }
-                    if(tasinabildi) break;
-                  }
-                }
-                break;
-              } else {
-                // Geri al
-                delete S.schedule[gk(iDogru,d)];
-                S.schedule[gk(iYanlis,d)]=eskiAlan;
-              }
-            }
-          }
-        });
-      });
-    }
-
-    // ── ADIM 4: KIDEM BAĞIMLILIK ihlallerini çöz ──
-    for(let d=1;d<=days;d++){
-      AREAS.forEach(a=>{
-        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
-        const r3=S.defaultDayMin[a.id];
-        if(!r3||!r3.kidemBagimliligi||!r3.kidemBagimliligi.length) return;
-        const cnt=alanCnt(d,a.id); if(cnt<=0) return;
-        const atananKidemler=ASSISTANTS.filter((_,j)=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
-        r3.kidemBagimliligi.forEach(b=>{
-          const bagimli=b.bagimli||[];
-          const refans=b.refans||[];
-          const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-          const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-          const maxD=getDayRule(d,a.id).max||99;
-
-          // 1) Ortak kıdem: tek kişiyse aynı kıdemden bir tane daha ekle
-          ortakKidemler.forEach(k=>{
-            if(atananKidemler.filter(ak=>ak===k).length!==1) return;
-            if(alanCnt(d,a.id)>=maxD) return;
-            const adaylar=ASSISTANTS.map((_,j)=>j)
-              .filter(j=>ASSISTANTS[j]&&ASSISTANTS[j].kidem===k&&temelUygun(j,d)&&((S.quota[a.id]||{})[k]||0)>0)
-              .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
-            for(const j of adaylar){
-              if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
-            }
-          });
-
-          // 2) Farklı kıdem: bağımlı varsa refans kıdeminden ekle
-          if(farkliRefans.length>0){
-            const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-            const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
-            if(!bagimliVarMi) return;
-            const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
-            if(refansVarMi) return;
-            if(alanCnt(d,a.id)>=maxD) return;
-            const adaylar=ASSISTANTS.map((_,j)=>j)
-              .filter(j=>ASSISTANTS[j]&&farkliRefans.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
-              .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
-            for(const j of adaylar){
-              if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
-            }
+          for(const j of adaylar){
+            if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
           }
         });
       });
@@ -7844,45 +7365,10 @@ function akillicoz(){
       if(rule.max>0&&cnt>rule.max){
         manuelLog.push({tip:'max',d,alan:a.name,fazla:cnt-rule.max,neden:'Çıkarılabilecek asistan yok (min doluluk bozulur)'});
       }
-      const r2=S.defaultDayMin[a.id];
-      if(r2&&r2.kidemGruplari&&cnt>0){
-        r2.kidemGruplari.forEach(g=>{
-          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-          const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-          if(grpCnt<(grp.min||1)){
-            const kidemStr='K'+grp.kidemler.join('/K');
-            const kidemAdaylar=ASSISTANTS.map((_,j)=>j).filter(j=>ASSISTANTS[j]&&grp.kidemler.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d));
-            const kidemMaxOlmayan=kidemAdaylar.filter(j=>nobetSay(j)<hedef(j));
-            let kidemNeden=kidemStr+' grubundan uygun asistan bulunamadı veya takas yeni ihlal yaratıyor';
-            if(kidemAdaylar.length>0&&kidemMaxOlmayan.length===0) kidemNeden='Çözülemiyor: '+kidemStr+' grubundaki tüm asistanlar max nöbet sayısına ulaştı';
-            manuelLog.push({tip:'kidem',d,alan:a.name,eksik:(grp.min||1)-grpCnt,neden:kidemNeden});
-          }
-        });
-      }
-      // Kıdem bağımlılık ihlali
-      if(r2&&r2.kidemBagimliligi&&cnt>0){
-        const atananKidemler=ASSISTANTS.filter((_,j)=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
-        r2.kidemBagimliligi.forEach(b=>{
-          const bagimli=b.bagimli||[];
-          const refans=b.refans||[];
-          const ortakKidemler=bagimli.filter(k=>refans.includes(k));
-          const farkliRefans=refans.filter(k=>!bagimli.includes(k));
-          // Ortak kıdem: tek kişiyse ihlal
-          ortakKidemler.forEach(k=>{
-            if(atananKidemler.filter(ak=>ak===k).length===1){
-              manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı ama müsait K'+k+' asistanı yok'});
-            }
-          });
-          // Farklı kıdem
-          if(farkliRefans.length>0){
-            const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
-            const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
-            if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))){
-              const bagLbl='K'+bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)).join('/K');
-              const refLbl='K'+farkliRefans.join('/K');
-              manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:bagLbl+' yalnız — yanında '+refLbl+' olmalı ama müsait refans asistanı yok'});
-            }
-          }
+      // Kıdem kuralı ihlali
+      if(cnt>0){
+        kidemKuralIhlali(d,a.id).forEach(ih=>{
+          manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:ih.msg});
         });
       }
     });
@@ -8081,16 +7567,12 @@ function _oneriCozumu(sorun, tip, iA, d, aId, dB, alanB, iB){
   if(sorun.tip==='min') return cnt>=(rule.min||0);
   if(sorun.tip==='max') return !(rule.max>0 && cnt>rule.max);
   if(sorun.tip==='kidem'){
-    const km=(sorun.msg.match(/K(\d+(?:\/\d+)*)/)||['',''])[1].split('/').map(Number).filter(Boolean);
-    const grpCnt=ASSISTANTS.filter((ast,j)=>km.includes(ast.kidem)&&tmpSched[gk(j,sorun.gun)]===sorun.alan.id).length;
-    const r2=S.defaultDayMin[sorun.alan.id];
-    if(!r2||!r2.kidemGruplari) return grpCnt>=1;
-    for(const g of r2.kidemGruplari){
-      const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-      if(JSON.stringify([...grp.kidemler].sort())===JSON.stringify([...km].sort()))
-        return grpCnt>=(grp.min||1);
-    }
-    return grpCnt>=1;
+    // Geçici schedule ile kidem kuralı ihlali kontrol et
+    const origS={};
+    ASSISTANTS.forEach((_,j)=>{const key=gk(j,sorun.gun);origS[key]=S.schedule[key];S.schedule[key]=tmpSched[key];});
+    const ih=kidemKuralIhlali(sorun.gun,sorun.alan.id);
+    ASSISTANTS.forEach((_,j)=>{const key=gk(j,sorun.gun);if(origS[key]===undefined)delete S.schedule[key];else S.schedule[key]=origS[key];});
+    return ih.length===0;
   }
   return true;
 }
@@ -8305,16 +7787,7 @@ function uyariOneriUygula(tip, iA, d, aId, dB, alanB, iB){
       if(sorun.tip==='min'){
         halaVar = cnt < (rule.min||0);
       } else if(sorun.tip==='kidem'){
-        // Kıdem grubu kontrolü — ilgili kıdem grubunun min değerine bak
-        const r2 = S.defaultDayMin[sorun.alan.id];
-        if(r2 && r2.kidemGruplari){
-          halaVar = r2.kidemGruplari.some(g => {
-            const grp = Array.isArray(g)?{kidemler:g,min:1}:g;
-            // Bu sorunun kıdem grubunu msg'den eşle
-            const grpCnt = atananlar.filter(ast=>grp.kidemler.includes(ast.kidem)).length;
-            return grpCnt < (grp.min||1);
-          });
-        }
+        halaVar = kidemKuralIhlali(sorun.gun, sorun.alan.id).length > 0;
       } else if(sorun.tip==='max'){
         halaVar = rule.max>0 && cnt > rule.max;
       }
@@ -8707,16 +8180,8 @@ function _checkHedefEksikleri_disabled(){
         let oncelik = 0;
         if(cnt < (rule.min||0)) oncelik = 100; // min eksik — en yüksek öncelik
         else {
-          // Kıdem grubu eksik mi?
-          const r = S.defaultDayMin[a.id];
-          if(r && r.kidemGruplari){
-            for(const g of r.kidemGruplari){
-              const grp = Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
-              if(!grp.kidemler.includes(ast.kidem)) continue;
-              const grpCnt = ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
-              if(grpCnt < (grp.min||1)) oncelik = 50; // kıdem grubu eksik
-            }
-          }
+          // Kıdem kuralı ihlali var mı?
+          if(kidemKuralIhlali(d,a.id).length>0) oncelik = 50;
         }
 
         if(!maxAsim || oncelik >= 50) { // max aşılsa bile min/kıdem eksikse göster
