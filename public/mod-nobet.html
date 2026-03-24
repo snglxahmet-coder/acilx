@@ -1720,7 +1720,7 @@ function renderMinConf(){
         <span style="font-size:11px;color:var(--w3);min-width:30px">Grup ${gi+1}</span>
         <div style="display:flex;flex-wrap:wrap;gap:4px">${checkboxler}</div>
         <span style="font-size:11px;color:var(--w3)">→ en az</span>
-        <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="1" max="10" value="${grp.min||1}" onchange="setGrupMin('${a.id}',${gi},parseInt(this.value)||1)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
+        <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="10" value="${grp.min!==undefined?grp.min:1}" onchange="setGrupMin('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
         <span style="font-size:11px;color:var(--w3)">en fazla</span>
         <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="1" max="19" value="${grp.max>=99?'':grp.max}" placeholder="∞" onchange="setGrupMax('${a.id}',${gi},parseInt(this.value)||99)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
         <span style="font-size:11px;color:var(--w3)">kişi</span>
@@ -2340,6 +2340,10 @@ function removeAssign(astIdx, d, aId){
 function quickAssign(astIdxStr, d, aId){
   if(!astIdxStr) return;
   const astIdx = parseInt(astIdxStr);
+  if(_maxNobetAsildimi(astIdx)){
+    showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
+    return;
+  }
   S.schedule[gk(astIdx,d)] = aId;
   save();
   renderSchedule(); renderTakStats(); renderUyarilar();
@@ -2443,7 +2447,7 @@ function setGrupMin(aId,gi,val){
   const gruplari=S.defaultDayMin[aId].kidemGruplari;
   let g=gruplari[gi];
   if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
-  g.min=Math.max(1,val);
+  g.min=Math.max(0,val);
   if(g.max<g.min) g.max=g.min;
   save();showSaved('minSaved');
 }
@@ -3662,6 +3666,29 @@ function autoGen(){
 
 // ── GLOBAL canAssign ──
 // autoGen içindeki local canAssign ile birebir aynı mantık.
+// ── MAX NÖBET KONTROLÜ — global yardımcı ──
+// Asistanın mevcut nöbet sayısı hedefine ulaşmış mı?
+// İzin günleri dikkate alınarak hesaplanır.
+function _maxNobetAsildimi(astIdx){
+  const {y,m}=S.currentDate;
+  const days=daysInMonth(y,m);
+  const moKey=y+'_'+m;
+  const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][astIdx];
+  let hedef;
+  if(ov!==undefined&&ov!==null){ hedef=ov; }
+  else {
+    const baseH=Math.round(S.maxHours[ASSISTANTS[astIdx].kidem]/24);
+    const prof=S.astProfiles&&S.astProfiles[astIdx]?S.astProfiles[astIdx]:{};
+    const dur=prof.durum||'aktif';
+    if(dur==='izinli'||dur==='rot_hayir') return true; // hedef 0
+    const izinG=((prof.izinliAylik&&prof.izinliAylik[moKey])||[]).length;
+    hedef=izinG>0?Math.max(0,Math.round(baseH*((days-izinG)/days))):baseH;
+  }
+  let mevcut=0;
+  for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut++;
+  return mevcut>=hedef;
+}
+
 // Öneri motoru, uyarı çözümleme, manuel atama kontrolleri buradan yararlanır.
 function canAssign(i, d, aId, ignoreHedef) {
   const {y,m} = S.currentDate;
@@ -5762,6 +5789,10 @@ function apAddShift(){
   if(_izinliList.includes(d)){
     showToast(d+'. gün izinli — nöbet eklenemez'); return;
   }
+  if(_maxNobetAsildimi(_apIdx)){
+    showToast(ASSISTANTS[_apIdx].name+' max nöbet sayısına ulaştı — eklenemez');
+    return;
+  }
   S.schedule[gk(_apIdx,d)] = alanId;
   save();
   renderNewCal(); renderTakStats(); renderUyarilar();
@@ -5935,9 +5966,21 @@ function renderSorunlar(){
           oneri = `<b>Öneri:</b> ${eksik} asistan daha atanabilir — boş asistanlardan en uygununu ekle`;
         } else {
           otoYapilabilir = false;
-          const nedeni = boslar.length===0
-            ? 'Tüm asistanlar bu gün zaten atanmış'
-            : 'Müsait asistanlar art arda/izin/kota kısıtına takılıyor';
+          let nedeni;
+          if(boslar.length===0){
+            nedeni = 'Tüm asistanlar bu gün zaten atanmış';
+          } else {
+            // Boslar var ama hiçbiri atanabilir değil — max nöbete mi ulaştılar?
+            const maxUlasan = boslar.filter(ast=>{
+              const realIdx = ASSISTANTS.indexOf(ast);
+              return _maxNobetAsildimi(realIdx);
+            });
+            if(maxUlasan.length===boslar.length){
+              nedeni = 'Çözülemiyor: tüm uygun asistanlar max nöbet sayısına ulaştı';
+            } else {
+              nedeni = 'Müsait asistanlar art arda/izin/kota kısıtına takılıyor';
+            }
+          }
           oneri = `<b>Otomatik çözülemez:</b> ${nedeni}. Başasistan manuel atama yapmalı`;
         }
         sorunlar.push({
@@ -6540,6 +6583,7 @@ function tumSapmalariDengele(){
   // En çok eksik olandan başla
   const eksikList = _hesaplaSapma().filter(s=>s.fark<0).sort((a,b)=>a.fark-b.fark);
   for(const {i:astIdx, fark, ast} of eksikList){
+    if(_maxNobetAsildimi(astIdx)) continue; // Max nöbet kontrolü
     const eksik = Math.abs(fark);
     let eklendi=0;
 
@@ -6568,7 +6612,7 @@ function tumSapmalariDengele(){
 
     // Her gün için en uygun alanı dene
     for(const {d} of gunSkor){
-      if(eklendi>=eksik) break;
+      if(eklendi>=eksik||_maxNobetAsildimi(astIdx)) break;
       // Önce alan eksik sıraya göre dene
       for(const {a} of alanEksikSira){
         if(canAssign(astIdx,d,a.id,true)){
@@ -6588,9 +6632,9 @@ function tumSapmalariDengele(){
     }
 
     // Geçiş 2: kota aşımına izin vererek doldur (art arda + izin kısıtı hâlâ geçerli)
-    if(eklendi<eksik){
+    if(eklendi<eksik&&!_maxNobetAsildimi(astIdx)){
       for(const {d} of gunSkor){
-        if(eklendi>=eksik) break;
+        if(eklendi>=eksik||_maxNobetAsildimi(astIdx)) break;
         if(S.schedule[gk(astIdx,d)]) continue;
         const dur=(S.astProfiles&&S.astProfiles[astIdx]&&S.astProfiles[astIdx].durum)||'aktif';
         if(dur==='izinli'||dur==='rot_hayir') break;
@@ -6644,6 +6688,10 @@ function _sayAlan(astIdx, aId, days){
 }
 
 function sapmaOneriEkle(astIdx, d, aId){
+  if(_maxNobetAsildimi(astIdx)){
+    showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
+    return;
+  }
   S.schedule[gk(astIdx,d)] = aId;
   save(); renderSchedule(); renderTakStats(); renderUyarilar();
   _sapmaModalYenile(astIdx);
@@ -6989,9 +7037,11 @@ function akillicoz(){
       if(cnt<rule.min){
         // Neden çözülemedi?
         const uygunAst=ASSISTANTS.filter((_,j)=>temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0);
+        const maxaOlmayan=uygunAst.filter(j=>nobetSay(j)<hedef(j));
         let neden='';
         if(uygunAst.length===0) neden='Uygun asistan yok (tümü izinli, art arda engeli veya eğitimde)';
-        else neden='Atanabilir asistan var ama atama yeni ihlal yaratıyor ('+uygunAst.length+' aday)';
+        else if(maxaOlmayan.length===0) neden='Çözülemiyor: tüm uygun asistanlar max nöbet sayısına ulaştı ('+uygunAst.length+' aday)';
+        else neden='Atanabilir asistan var ama atama yeni ihlal yaratıyor ('+maxaOlmayan.length+' aday)';
         manuelLog.push({tip:'min',d,alan:a.name,eksik:rule.min-cnt,neden});
       }
       if(rule.max>0&&cnt>rule.max){
@@ -7004,8 +7054,11 @@ function akillicoz(){
           const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
           if(grpCnt<(grp.min||1)){
             const kidemStr='K'+grp.kidemler.join('/K');
-            manuelLog.push({tip:'kidem',d,alan:a.name,eksik:(grp.min||1)-grpCnt,
-              neden:kidemStr+' grubundan uygun asistan bulunamadı veya takas yeni ihlal yaratıyor'});
+            const kidemAdaylar=ASSISTANTS.filter((_,j)=>grp.kidemler.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d));
+            const kidemMaxOlmayan=kidemAdaylar.filter(j=>nobetSay(j)<hedef(j));
+            let kidemNeden=kidemStr+' grubundan uygun asistan bulunamadı veya takas yeni ihlal yaratıyor';
+            if(kidemAdaylar.length>0&&kidemMaxOlmayan.length===0) kidemNeden='Çözülemiyor: '+kidemStr+' grubundaki tüm asistanlar max nöbet sayısına ulaştı';
+            manuelLog.push({tip:'kidem',d,alan:a.name,eksik:(grp.min||1)-grpCnt,neden:kidemNeden});
           }
         });
       }
