@@ -57,15 +57,6 @@ body::-webkit-scrollbar{display:none}
 .card{background:var(--bg2);border:1px solid var(--bord);border-radius:var(--border-radius-lg);padding:1rem 1.25rem;margin-bottom:14px}
 .card-title{font-size:13px;font-weight:600;color:var(--w1);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--bord)}
 
-/* EĞİTİM CARDS */
-.eg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:1rem}
-.eg-card{background:var(--bg2);border:1px solid var(--bord);border-radius:var(--border-radius-lg);overflow:hidden;transition:border-color .12s}
-.eg-card:hover{border-color:var(--bord-r)}
-.eg-head{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--bord);background:var(--bg3)}
-.eg-body{padding:12px 14px}
-.eg-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--bord);font-size:12px}
-.eg-row:last-child{border-bottom:none}
-.eg-lbl{color:var(--w3)}
 .del-btn{background:none;border:none;cursor:pointer;font-size:13px;color:var(--w4);padding:2px 5px;transition:color .12s}.del-btn:hover{color:var(--red)}
 .add-dashed{border:1px dashed var(--bord);border-radius:var(--border-radius-lg);padding:14px;cursor:pointer;font-size:13px;color:var(--w3);display:flex;align-items:center;justify-content:center;gap:6px;background:var(--bg3);transition:all .12s}.add-dashed:hover{background:var(--bg4);border-color:var(--bord-r);color:var(--w1)}
 
@@ -195,9 +186,6 @@ select:focus,input[type=number]:focus{outline:none;border-color:var(--bord-r)}
   /* Alan tablosu */
   .atd { min-width: 40px; font-size: 9px; }
   .atd-who span { font-size: 8px; }
-
-  /* Kart grid */
-  .eg-grid { grid-template-columns: 1fr; gap: 8px; }
 
   /* Month nav kompakt */
   .month-nav { gap: 6px; }
@@ -359,29 +347,11 @@ function niStep(btn,delta){
   <div class="tab active" id="tab-btn-takvim" onclick="switchTab(this,'takvim')">Takvim</div>
   <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">👤 Profilim</div>
   <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
-  <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
   <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
-  <div class="tab" id="tab-btn-egitim" onclick="switchTab(this,'egitim')">Eğitim Günleri</div>
+  <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
   <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">⚙ Ayarlar</div>
 </div>
 </div>
-</div>
-
-<!-- EĞİTİM -->
-<div id="tab-egitim" style="display:none">
-  <div class="ph">
-    <div><div class="ptitle">Akademik eğitim blokları</div><div class="psub">Her klinik kendi kuralını tanımlar</div></div>
-    <div class="btn-row">
-      <span class="saved-badge" id="egSaved">&#10003; Kaydedildi</span>
-      <button class="btn btn-p" onclick="openEgModal()">+ Blok ekle</button>
-    </div>
-  </div>
-  <div class="info-box">
-    <strong style="color:var(--w1)">Tam gün bloke:</strong> Nöbet atanamaz, minimum doluluk hesabına dahil edilmez.<br>
-    <strong style="color:var(--w1)">Yarım gün:</strong> Takvimde gösterilir, nöbet atanabilir.<br>
-    <strong style="color:var(--w1)">Sadece bilgi:</strong> İşaretlenir, kısıt yok.
-  </div>
-  <div class="eg-grid" id="egGrid"></div>
 </div>
 
 <!-- ALAN MİNİMUMLARI -->
@@ -439,10 +409,6 @@ function niStep(btn,delta){
 
   <!-- İSTATİSTİK BARLARI -->
   <div id="takStats" style="display:flex;gap:8px;margin-bottom:0;flex-wrap:wrap"></div>
-  <!-- Kıdem hedef sapma barı -->
-  <div id="takHedefBar"></div>
-  <!-- Uyarı kutusu -->
-  <div id="alertBox"></div>
   <!-- Tercih dönemi banner (asistan için) -->
   <div id="tercihBannerTakvim" style="display:none;background:rgba(240,160,64,0.08);border:1px solid rgba(240,160,64,0.2);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:var(--orange)">
     📋 <b>Tercih dönemi açık</b> — Profilim sekmesinden tercihlerinizi girebilirsiniz.
@@ -650,17 +616,6 @@ function niStep(btn,delta){
   </div>
 </div>
 
-<!-- UYARILAR (sorunlu güne tıklayınca açılır) -->
-<div id="tab-uyarilar" style="display:none">
-  <div class="ph" style="margin-bottom:10px">
-    <div style="display:flex;align-items:center;gap:10px">
-      <button onclick="switchTab(document.getElementById('tab-btn-takvim'),'takvim')" style="padding:5px 10px;border:1px solid var(--bord);border-radius:5px;background:var(--bg3);color:var(--w3);cursor:pointer;font-size:12px;font-family:var(--font-sans)">← Takvim</button>
-      <div class="ptitle" id="uyarilarTitle">Uyarılar</div>
-    </div>
-  </div>
-  <div id="uyarilarContent"></div>
-</div>
-
 <!-- AYARLAR -->
 <div id="tab-ayarlar" style="display:none">
   <div class="ph"><div class="ptitle">Ayarlar</div></div>
@@ -823,71 +778,6 @@ function niStep(btn,delta){
     </div>
   </div>
   <div id="ozetContent"></div>
-</div>
-
-<!-- EĞİTİM MODAL -->
-<div class="modal-bg" id="egModal">
-  <div class="modal">
-    <div class="modal-title">Eğitim bloğu ekle</div>
-    <div class="field"><label>Blok adı</label><input type="text" id="egName" placeholder="Akademik Gün, Seminer, M&M..."></div>
-    <div class="field"><label>Tekrar tipi</label>
-      <select id="egRepeatType" onchange="toggleEgRepeatType()">
-        <option value="weekly">Haftalık tekrar — her haftanın aynı günü</option>
-        <option value="single">Tek tarih — belirli bir gün</option>
-      </select>
-    </div>
-    <div id="egWeeklyField" class="field"><label>Tekrar eden gün</label>
-      <select id="egDay">
-        <option value="1">Her Pazartesi</option><option value="2">Her Salı</option>
-        <option value="3">Her Çarşamba</option><option value="4">Her Perşembe</option>
-        <option value="5">Her Cuma</option><option value="6">Her Cumartesi</option>
-        <option value="0">Her Pazar</option>
-      </select>
-    </div>
-    <div id="egSingleField" class="field" style="display:none">
-      <label>Tarih seç</label>
-      <div id="egDatePicker" style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;overflow:hidden">
-        <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid var(--bord)">
-          <button onclick="egCalPrev()" style="background:none;border:none;color:var(--w2);cursor:pointer;font-size:16px;padding:0 6px">&#8592;</button>
-          <span id="egCalTitle" style="font-size:13px;font-weight:600;color:var(--w1);font-family:'DM Mono',monospace"></span>
-          <button onclick="egCalNext()" style="background:none;border:none;color:var(--w2);cursor:pointer;font-size:16px;padding:0 6px">&#8594;</button>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:0;padding:4px">
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Pzt</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Sal</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Çar</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Per</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Cum</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Cmt</div>
-          <div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">Paz</div>
-        </div>
-        <div id="egCalGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;padding:0 4px 6px"></div>
-        <div style="padding:6px 12px;border-top:1px solid var(--bord);font-size:11px;color:var(--w3)">
-          Seçili: <span id="egSelectedDates" style="color:var(--red);font-weight:600">Tarih seçilmedi</span>
-        </div>
-      </div>
-    </div>
-    <div class="field"><label>Blok tipi</label>
-      <select id="egType">
-        <option value="full">Tam gün bloke — nöbet atanamaz, minimum hesabına girmez</option>
-        <option value="half">Yarım gün — gösterilir, nöbet atanabilir</option>
-        <option value="info">Sadece bilgi — kısıt yok</option>
-      </select>
-    </div>
-    <div class="field"><label>Hangi kıdemler?</label>
-      <div class="cbox-group" id="egKidemler">
-        <label class="cbox-lbl"><input type="checkbox" value="1" checked><span class="kt k1">K1</span></label>
-        <label class="cbox-lbl"><input type="checkbox" value="2" checked><span class="kt k2">K2</span></label>
-        <label class="cbox-lbl"><input type="checkbox" value="3" checked><span class="kt k3">K3</span></label>
-        <label class="cbox-lbl"><input type="checkbox" value="4" checked><span class="kt k4">K4</span></label>
-        <label class="cbox-lbl"><input type="checkbox" value="5" checked><span class="kt k5">K5</span></label>
-      </div>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-g" onclick="closeEgModal()">İptal</button>
-      <button class="btn btn-p" onclick="saveEgitim()">Ekle</button>
-    </div>
-  </div>
 </div>
 
 <!-- ASİSTAN AY OVERRIDE MODAL -->
@@ -1270,7 +1160,6 @@ async function _fsSaveNow() {
   try {
     await fsScheduleRef(y, m).set({
       schedule:          S.schedule,
-      egBlocks:          S.egBlocks,
       defaultDayMin:     S.defaultDayMin,
       minNobet:          S.minNobet,
       quota:             S.quota,
@@ -1405,23 +1294,10 @@ function applyRoleRestrictions() {
 
   // Başasistan olmayanlardan düzenleme yetkisini gizle
   if (!isBasasistan) {
-    // Üst butonlar: Sıfırla, Eğitim blok ekle
-    // Eğitim blok ekle butonu gizle
-
-    const addBtn = document.querySelector('button[onclick="openEgModal()"]');
-    if (addBtn) addBtn.style.display = 'none';
-
     // Sekme erişimini kısıtla — asistan sadece kendi profil + özet sekmesini görür
-    // Asistan için gizlenecek sekmeler
-    const hideTabs = ['tab-btn-egitim'];
-    hideTabs.forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = 'none';
-    });
-    // Asistan için Eğitim Günleri, Alan Doluluk, Nöbet Dağılımı, Ayarlar sekmelerini gizle
     document.querySelectorAll('.tab').forEach(t => {
       const txt = t.textContent.trim();
-      if(['Eğitim Günleri','Alanlar','Nöbet Dağılımı','⚙ Ayarlar'].includes(txt)){
+      if(['Alanlar','Nöbet Dağılımı','⚙ Ayarlar'].includes(txt)){
         t.style.display = 'none';
       }
     });
@@ -1540,10 +1416,7 @@ function getKidemLabel(k) {
 // ── KALICI STATE — localStorage'da saklanır ──
 const LS_KEY = 'acilx_nobet_state';
 const DEFAULT_STATE = {
-  egBlocks:[
-    {id:'e1',name:'Akademik Gün',dayOfWeek:2,kidemler:[1,2,3,4,5],type:'full'},
-    {id:'e2',name:'M&M Toplantısı',dayOfWeek:4,kidemler:[1,2,3],type:'full'},
-  ],
+  egBlocks:[],
   defaultDayMin:{
     s1:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
     s2:{min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']},
@@ -1600,7 +1473,7 @@ function loadState(){
     const saved=JSON.parse(raw);
     const base=JSON.parse(JSON.stringify(DEFAULT_STATE));
     // Deep merge — üst seviye alanları koru, alt alanları birleştir
-    ['egBlocks','dayOverride','monthOverride','kapaliGunler','prevMonthLastDay','nextMonthFirstDay','schedule','currentDate','maxHours','astProfiles','listName','algoConfig'].forEach(k=>{
+    ['dayOverride','monthOverride','kapaliGunler','prevMonthLastDay','nextMonthFirstDay','schedule','currentDate','maxHours','astProfiles','listName','algoConfig'].forEach(k=>{
       if(saved[k]!==undefined) base[k]=saved[k];
     });
     // quota, minNobet, defaultDayMin için alan bazlı merge
@@ -1628,9 +1501,8 @@ function save(){
       schedule:S.schedule, dayOverride:S.dayOverride,
       monthOverride:S.monthOverride, kapaliGunler:S.kapaliGunler,
       prevMonthLastDay:S.prevMonthLastDay, nextMonthFirstDay:S.nextMonthFirstDay,
-      astProfiles:S.astProfiles, egBlocks:S.egBlocks,
-      defaultDayMin:S.defaultDayMin, minNobet:S.minNobet,
-      quota:S.quota, maxHours:S.maxHours,
+      astProfiles:S.astProfiles, defaultDayMin:S.defaultDayMin,
+      minNobet:S.minNobet, quota:S.quota, maxHours:S.maxHours,
       listName:S.listName, algoConfig:S.algoConfig
     }));
     const el=document.getElementById('globalSaved');
@@ -1682,10 +1554,10 @@ function resetState(){
   S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
   S.astProfiles = {};
-  // egBlocks, defaultDayMin, minNobet, quota, maxHours, algoConfig KORUNUR
+  // defaultDayMin, minNobet, quota, maxHours, algoConfig KORUNUR
   save();
   // Render güncelle
-  try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+  try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
   try { renderNewCal(); } catch(e){}
   updateTercihUI();
   showToast('Liste sıfırlandı. Asistan ve alan verileri korundu.');
@@ -1704,27 +1576,8 @@ function daysInMonth(y,m){return new Date(y,m+1,0).getDate()}
 function isWE(y,m,d){const dw=new Date(y,m,d).getDay();return dw===0||dw===6}
 function getDOW(y,m,d){const dw=new Date(y,m,d).getDay();return dw===0?6:dw-1}
 
-function getEgtStatus(y,m,d,kidem){
-  const dw = new Date(y,m,d).getDay();
-  // Haftalık tekrar
-  const weekly = S.egBlocks.find(b=>
-    (!b.repeatType||b.repeatType==='weekly') &&
-    b.dayOfWeek===dw && b.kidemler.includes(kidem)
-  );
-  if(weekly) return {type:weekly.type, name:weekly.name};
-  // Tek tarih
-  const single = S.egBlocks.find(b=>
-    b.repeatType==='single' &&
-    b.singleYear===y && b.singleMonth===m && b.singleDay===d &&
-    b.kidemler.includes(kidem)
-  );
-  if(single) return {type:single.type, name:single.name};
-  return null;
-}
-// FIX: eğitim full günü minimum hesabına dahil etme
-function isEgtFull(y,m,d,kidem){
-  const e=getEgtStatus(y,m,d,kidem);return e&&e.type==='full';
-}
+function getEgtStatus(){return null;}
+function isEgtFull(){return false;}
 function getDayRule(day,aId,_y,_m){
   const y=_y!==undefined?_y:S.currentDate.y, m=_m!==undefined?_m:S.currentDate.m;
   const base=(S.dayOverride[day]&&S.dayOverride[day][aId])||S.defaultDayMin[aId]||{min:1,max:3};
@@ -1805,151 +1658,7 @@ function checkKidemGrup(day){
   return viols;
 }
 
-/* ── EĞİTİM ── */
-function renderEgitim(){
-  const TYPE_LABELS={full:'Tam gün bloke',half:'Yarım gün',info:'Sadece bilgi'};
-  const TYPE_CLS={full:'k5',half:'k2',info:'k3'};
-  let html='';
-  S.egBlocks.forEach((b,i)=>{
-    const isSingle = b.repeatType==='single';
-    const gunBilgisi = isSingle
-      ? (b.singleDay+' '+MONTHS[b.singleMonth]+' '+b.singleYear)
-      : ('Her '+DAY_NAMES_FULL[b.dayOfWeek]);
-    const tekrarBadge = isSingle
-      ? `<span class="kt k4" style="font-size:9px;padding:1px 4px">Tek gün</span>`
-      : `<span class="kt k2" style="font-size:9px;padding:1px 4px">Haftalık</span>`;
-    html+=`<div class="eg-card">
-      <div class="eg-head">
-        <div style="display:flex;align-items:center;gap:5px;flex:1;min-width:0">
-          <strong style="font-size:12px;color:var(--w1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${b.name}</strong>
-          ${tekrarBadge}
-        </div>
-        <div style="display:flex;align-items:center;gap:4px;flex-shrink:0">
-          <span class="kt ${TYPE_CLS[b.type]}" style="font-size:9px">${TYPE_LABELS[b.type]}</span>
-          <button class="del-btn" onclick="deleteEg(${i})">&#10005;</button>
-        </div>
-      </div>
-      <div class="eg-body">
-        <div class="eg-row"><span class="eg-lbl">Gün</span><strong style="color:var(--w1);font-size:11px">${gunBilgisi}</strong></div>
-        <div class="eg-row"><span class="eg-lbl">Kıdemler</span>
-          <div style="display:flex;gap:2px;flex-wrap:wrap">${b.kidemler.map(k=>`<span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>`).join('')}</div>
-        </div>
-        <div class="eg-row" style="border-bottom:none"><span class="eg-lbl">Tip</span>
-          <select style="font-size:11px;padding:2px 6px;border:0.5px solid var(--bord);border-radius:5px;background:var(--bg2);color:var(--w1);font-family:var(--font-sans)" onchange="S.egBlocks[${i}].type=this.value;save();showSaved('egSaved');renderEgitim()">
-            <option value="full" ${b.type==='full'?'selected':''}>Tam gün bloke</option>
-            <option value="half" ${b.type==='half'?'selected':''}>Yarım gün</option>
-            <option value="info" ${b.type==='info'?'selected':''}>Sadece bilgi</option>
-          </select>
-        </div>
-      </div>
-    </div>`;
-  });
-  html+=`<div class="add-dashed" onclick="openEgModal()"><span style="font-size:16px">+</span> Yeni blok ekle</div>`;
-  document.getElementById('egGrid').innerHTML=html;
-}
-function openEgModal(){
-  // Takvimi mevcut aya aç
-  _egCalY = S.currentDate.y;
-  _egCalM = S.currentDate.m;
-  _egSelDates = [];
-  document.getElementById('egRepeatType').value = 'weekly';
-  toggleEgRepeatType();
-  renderEgCal();
-  document.getElementById('egModal').classList.add('open');
-}
-function closeEgModal(){document.getElementById('egModal').classList.remove('open');}
-
-function toggleEgRepeatType(){
-  const t = document.getElementById('egRepeatType').value;
-  document.getElementById('egWeeklyField').style.display = t==='weekly'?'':'none';
-  document.getElementById('egSingleField').style.display  = t==='single'?'':'none';
-}
-
-// Mini takvim değişkenleri
-let _egCalY = new Date().getFullYear();
-let _egCalM = new Date().getMonth();
-let _egSelDates = []; // ['2026-03-15', ...]
-
-function egCalPrev(){ _egCalM--; if(_egCalM<0){_egCalM=11;_egCalY--;} renderEgCal(); }
-function egCalNext(){ _egCalM++; if(_egCalM>11){_egCalM=0;_egCalY++;} renderEgCal(); }
-
-function renderEgCal(){
-  const title = document.getElementById('egCalTitle');
-  if(title) title.textContent = MONTHS[_egCalM]+' '+_egCalY;
-  const grid = document.getElementById('egCalGrid');
-  if(!grid) return;
-  const days = daysInMonth(_egCalY, _egCalM);
-  const firstDow = new Date(_egCalY, _egCalM, 1).getDay(); // 0=Paz
-  const offset = firstDow===0 ? 6 : firstDow-1; // Pzt başlangıç
-  let html = '';
-  for(let i=0;i<offset;i++) html += '<div></div>';
-  for(let d=1;d<=days;d++){
-    const key = _egCalY+'-'+String(_egCalM+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
-    const sel = _egSelDates.includes(key);
-    const dow = new Date(_egCalY,_egCalM,d).getDay();
-    const isWe = dow===0||dow===6;
-    html += `<div onclick="egCalToggle('${key}')" style="
-      text-align:center;padding:5px 2px;cursor:pointer;border-radius:5px;font-size:11px;font-weight:500;
-      background:${sel?'var(--red)':'transparent'};
-      color:${sel?'#fff':isWe?'var(--w4)':'var(--w2)'};
-      transition:background .1s;
-    " onmouseover="if(!${sel})this.style.background='var(--bg4)'" onmouseout="if(!${sel})this.style.background='transparent'">${d}</div>`;
-  }
-  grid.innerHTML = html;
-  updateEgSelLabel();
-}
-
-function egCalToggle(key){
-  const idx = _egSelDates.indexOf(key);
-  if(idx>-1) _egSelDates.splice(idx,1);
-  else _egSelDates.push(key);
-  renderEgCal();
-}
-
-function updateEgSelLabel(){
-  const el = document.getElementById('egSelectedDates');
-  if(!el) return;
-  if(!_egSelDates.length){ el.textContent='Tarih seçilmedi'; return; }
-  const sorted = [..._egSelDates].sort();
-  el.textContent = sorted.map(k=>{
-    const [y,m,d]=k.split('-');
-    return d+' '+MONTHS[parseInt(m)-1];
-  }).join(', ');
-}
-
-function saveEgitim(){
-  const name = document.getElementById('egName').value.trim()||'Eğitim';
-  const type = document.getElementById('egType').value;
-  const kidemler = [...document.querySelectorAll('#egKidemler input:checked')].map(el=>parseInt(el.value));
-  if(!kidemler.length) return;
-  const repeatType = document.getElementById('egRepeatType').value;
-
-  if(repeatType === 'weekly'){
-    const day = parseInt(document.getElementById('egDay').value);
-    S.egBlocks.push({id:'e'+Date.now(),name,dayOfWeek:day,kidemler,type,repeatType:'weekly'});
-  } else {
-    // Tek tarih — her seçili gün için ayrı blok ekle
-    if(!_egSelDates.length){ alert('En az bir tarih seçin.'); return; }
-    _egSelDates.sort().forEach((dateStr,i)=>{
-      const [y,m,d] = dateStr.split('-').map(Number);
-      S.egBlocks.push({
-        id:'e'+Date.now()+i,
-        name,
-        kidemler,
-        type,
-        repeatType:'single',
-        singleDate:dateStr, // 'YYYY-MM-DD'
-        singleDay:d,
-        singleMonth:m-1, // 0-indexed
-        singleYear:y
-      });
-    });
-  }
-  closeEgModal();save();showSaved('egSaved');renderEgitim();
-}
-
-function deleteEg(i){S.egBlocks.splice(i,1);save();showSaved('egSaved');renderEgitim();}
-document.getElementById('egModal').addEventListener('click',function(e){if(e.target===this)closeEgModal();});
+function renderEgitim(){}
 
 /* ── ALAN MİNİMUM ── */
 function renderMinConf(){
@@ -2317,14 +2026,6 @@ function renderNewCal(){
       return cnt>0?{a,cnt}:null;
     }).filter(Boolean);
     const total = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]).length;
-    // Eğitim var mı?
-    const hasEgt = S.egBlocks.some(b=>{
-      if(!b.repeatType||b.repeatType==='weekly'){
-        return new Date(y,m,d).getDay()===b.dayOfWeek;
-      }
-      return b.singleYear===y&&b.singleMonth===m&&b.singleDay===d;
-    });
-
     // Kullanıcının kendi nöbeti bu günde var mı?
     const myAlanId = myAstIdx > -1 ? S.schedule[gk(myAstIdx, d)] : null;
     const myAlan = myAlanId ? AREAS.find(a=>a.id===myAlanId) : null;
@@ -2343,7 +2044,6 @@ function renderNewCal(){
     " onmouseover="this.style.borderColor='rgba(232,87,42,0.5)'" onmouseout="this.style.borderColor='${borderColor}'">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:2px">
         <span style="font-size:10px;font-weight:${isMyDay?'800':'700'};color:${dayColor}">${d}</span>
-        ${hasEgt?'<span style="font-size:8px;color:var(--orange)">E</span>':''}
         ${isMyDay?`<span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:3px;background:${myAlan.color};color:#fff">${getAreaLabel(myAlan.id)}</span>`:(total>0?`<span style="font-size:8px;font-weight:700;color:var(--w3)">${total}</span>`:'')}
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:1px">
@@ -2430,16 +2130,13 @@ function renderTakStats(){
 
   const el=document.getElementById('takStats');
   if(!el) return;
-  const sorunStyle=sorunluGun>0?'cursor:pointer':'';
-  const sorunClick=sorunluGun>0?`onclick="openUyarilarGun(null)"`:'';
-
   el.innerHTML=`
     <div style="background:var(--bg2);border:1px solid var(--bord);border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
       <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Kusursuz Gün</div>
       <div style="font-size:20px;font-weight:800;color:${kusursuz>0?'#7DC44A':'var(--w1)'};font-family:'DM Mono',monospace">${kusursuz}</div>
     </div>
-    <div style="background:${sorunluGun>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${sorunluGun>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px;${sorunStyle}" ${sorunClick}>
-      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Sorunlu Gün${sorunluGun>0?' ↗':''}</div>
+    <div style="background:${sorunluGun>0?'rgba(232,87,42,0.08)':'var(--bg2)'};border:1px solid ${sorunluGun>0?'rgba(232,87,42,0.25)':'var(--bord)'};border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
+      <div style="font-size:8px;color:var(--w3);text-transform:uppercase;letter-spacing:.4px;font-weight:600;margin-bottom:2px">Sorunlu Gün</div>
       <div style="font-size:20px;font-weight:800;color:${sorunluGun>0?'var(--red)':'var(--w1)'};font-family:'DM Mono',monospace">${sorunluGun}</div>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--bord);border-radius:7px;padding:6px 10px;flex:1;min-width:70px">
@@ -2447,104 +2144,6 @@ function renderTakStats(){
       <div style="font-size:20px;font-weight:800;color:${bosGun>0?'var(--orange)':'var(--w1)'};font-family:'DM Mono',monospace">${bosGun}</div>
     </div>`;
 
-  // Kıdem hedef barı — fazla/eksik asistanlar + alan dökümü
-  const moKey=y+'_'+m;
-  const sapmalanlar=ASSISTANTS.map((ast,i)=>{
-    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-    const defH=Math.round(S.maxHours[ast.kidem]/24);
-    const hedef=(ov!==undefined&&ov!==null)?ov:defH;
-    let mevcut=0;
-    // Alan bazlı sayımlar
-    const alanSayim={};
-    const alanHedef={};
-    AREAS.forEach(a=>{
-      alanSayim[a.id]=0;
-      alanHedef[a.id]=(S.quota[a.id]||{})[ast.kidem]||0;
-    });
-    for(let d=1;d<=days;d++){
-      const aId=S.schedule[gk(i,d)];
-      if(aId){ mevcut++; if(alanSayim[aId]!==undefined) alanSayim[aId]++; }
-    }
-    return {ast,i,hedef,mevcut,fark:mevcut-hedef,alanSayim,alanHedef};
-  }).filter(a=>a.fark!==0&&a.hedef>0);
-
-  const hedefEl=document.getElementById('takHedefBar');
-  if(!hedefEl) return;
-  if(sapmalanlar.length===0){ hedefEl.innerHTML=''; return; }
-
-  sapmalanlar.sort((a,b)=>b.fark-a.fark);
-  const fazlaGrup=sapmalanlar.filter(s=>s.fark>0);
-  const eksikGrup=sapmalanlar.filter(s=>s.fark<0);
-
-  function renderSapmaRow({ast,mevcut,hedef,fark,alanSayim,alanHedef}){
-    const isOver=fark>0;
-    const col=isOver?'var(--red)':'var(--orange)';
-    const pct=Math.min(100,Math.round(mevcut/hedef*100));
-
-    // Alan bazlı sapma metni
-    const alanSapmaStr = AREAS.filter(a=>alanHedef[a.id]>0).map(a=>{
-      const as=alanSayim[a.id]||0;
-      const ah=alanHedef[a.id]||0;
-      const af=as-ah;
-      if(af===0) return null;
-      const aCol=af>0?'var(--red)':'var(--orange)';
-      return `<span style="display:inline-flex;align-items:center;gap:2px;padding:1px 5px;border-radius:3px;background:${a.color}18;border:1px solid ${a.color}44;font-size:9px;color:${a.color};font-family:'DM Mono',monospace">
-        ${getAreaLabel(a.id)} <span style="color:${aCol};font-weight:700">${af>0?'+'+af:af}</span>
-      </span>`;
-    }).filter(Boolean).join('');
-
-    const isBasas = window.ACILX_ROLE==='basasistan';
-    const astIdxRow = ASSISTANTS.indexOf(ast);
-    // JSON'ları cache'e al — onclick attribute içinde tırnak çakışmasını önle
-    if(!window._sapmaCache) window._sapmaCache=[];
-    const sapmaIdx = window._sapmaCache.length;
-    window._sapmaCache.push({astIdx:astIdxRow, fark, alanSayim, alanHedef});
-    const rowHtml=`<div
-      style="display:flex;flex-direction:column;gap:3px;padding:4px 6px;border-radius:6px;margin:-4px -6px;${isBasas?'cursor:pointer;transition:background .15s':''}"
-      ${isBasas ? `onclick="sapmaCacheTikla(${sapmaIdx})" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background=''"` : ''}>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 4px;flex-shrink:0">K${ast.kidem}</span>
-        <span style="font-size:10px;color:var(--w2);min-width:90px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${shortName(ast.name)}</span>
-        <div style="flex:1;height:6px;background:var(--bg4);border-radius:3px;overflow:hidden">
-          <div style="height:100%;width:${pct}%;background:${col};border-radius:3px"></div>
-        </div>
-        <span style="font-size:10px;color:${col};font-family:'DM Mono',monospace;min-width:40px;text-align:right">${mevcut}/${hedef}</span>
-        <span style="font-size:10px;font-weight:700;color:${col};min-width:24px">${isOver?'▲'+fark:'▼'+Math.abs(fark)}</span>
-        ${isBasas?`<span style="font-size:9px;color:var(--w4)">💡</span>`:''}
-      </div>
-      ${alanSapmaStr ? `<div style="display:flex;gap:4px;flex-wrap:wrap;padding-left:72px">${alanSapmaStr}</div>` : ''}
-    </div>`;
-    return rowHtml;
-  }
-
-  let hHtml=`<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:7px;padding:8px 10px;margin-top:8px">`;
-
-  // ── GLOBAL DENGELE BUTONU — başasistan için ──
-  const isBasasGlobal = window.ACILX_ROLE==='basasistan';
-  if(isBasasGlobal && sapmalanlar.length>0){
-    hHtml+=`<div style="display:flex;gap:6px;margin-bottom:10px">
-      <button onclick="tumSapmalariDengele()" style="flex:1;padding:8px 12px;border-radius:6px;background:linear-gradient(135deg,rgba(232,87,42,0.15),rgba(240,160,64,0.15));border:1px solid rgba(232,87,42,0.35);color:var(--w1);font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;justify-content:center;gap:6px">
-        ⚡ Tümünü Dengele <span style="font-size:9px;color:var(--w3);font-weight:500">(${sapmalanlar.length} asistan)</span>
-      </button>
-    </div>`;
-  }
-
-  if(fazlaGrup.length>0){
-    hHtml+=`<div style="font-size:9px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">▲ Hedefin Üstünde (${fazlaGrup.length})</div>`;
-    hHtml+=`<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:${eksikGrup.length?'10px':'0'}">`;
-    fazlaGrup.forEach(s=>{ hHtml+=renderSapmaRow(s); });
-    hHtml+=`</div>`;
-  }
-
-  if(eksikGrup.length>0){
-    hHtml+=`<div style="font-size:9px;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px${fazlaGrup.length?';padding-top:8px;border-top:1px solid var(--bord)':''}">▼ Hedefin Altında (${eksikGrup.length})</div>`;
-    hHtml+=`<div style="display:flex;flex-direction:column;gap:6px">`;
-    eksikGrup.forEach(s=>{ hHtml+=renderSapmaRow(s); });
-    hHtml+=`</div>`;
-  }
-
-  hHtml+='</div>';
-  hedefEl.innerHTML=hHtml;
 }
 
 function openDayDetail(d){
@@ -4208,11 +3807,9 @@ function renderSchedule(log){
 
   let alerts='';
 
-  // Başasistan değilse uyarıları gösterme
-  if(window.ACILX_ROLE !== 'basasistan'){
-    const _ab=document.getElementById('alertBox'); if(_ab) _ab.innerHTML='';
-    return;
-  }
+  // Uyarı banner kaldırıldı
+  renderOzet();
+  return;
 
   // Matematiksel imkânsızlık uyarıları
   uyarilar.forEach(u=>{
@@ -4398,9 +3995,7 @@ function _renderDayModal(day){
     // Alan butonları
     html+=`<div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">`;
 
-    if(egtBloke){
-      html+=`<span style="font-size:11px;color:var(--w4)">Eğitim bloke</span>`;
-    } else if(artArda){
+    if(artArda){
       const engelGun=artArda;
       if(typeof engelGun === 'string'){
         // Ay sınırı — 'önceki ay son gün' veya 'sonraki ay ilk gün'
@@ -4487,16 +4082,11 @@ function openCellModal(i,d){
   const y=S.currentDate.y,mo=S.currentDate.m;
   const dw=getDOW(y,mo,d);
   const we=isWE(y,mo,d);
-  const egt=getEgtStatus(y,mo,d,ast.kidem);
   document.getElementById('cmTitle').textContent=`${ast.name} · ${d} ${MONTHS[mo]}`;
-  document.getElementById('cmSub').textContent=`Kıdem ${ast.kidem} · ${DAYS_TR[dw]}${we?' · Hafta sonu':''}${egt?' · '+egt.name:''}`;
+  document.getElementById('cmSub').textContent=`Kıdem ${ast.kidem} · ${DAYS_TR[dw]}${we?' · Hafta sonu':''}`;
   let html='';
-  if(egt&&egt.type==='full'){
-    html+=`<div class="alert al-e">&#9888; Tam gün eğitim bloğu — nöbet ataması yapılamaz.</div>`;
-    document.getElementById('cmSaveBtn').style.display='none';
-  } else {
+  {
     document.getElementById('cmSaveBtn').style.display='';
-    if(egt&&egt.type==='half') html+=`<div class="info-box">&#9432; Yarım gün eğitim (${egt.name}). Nöbet atanabilir.</div>`;
     const cur=S.schedule[gk(i,d)]||'';
     html+=`<div class="field"><label>Alan ataması</label><select id="cmSel"><option value="">— Boş —</option>`;
     AREAS.forEach(a=>{
@@ -4788,7 +4378,6 @@ function changeMonth(dir){
     prevMonthLastDay: S.prevMonthLastDay || {},
     nextMonthFirstDay: S.nextMonthFirstDay || {},
     astProfiles: S.astProfiles || {},
-    egBlocks: S.egBlocks,
     defaultDayMin: S.defaultDayMin,
     minNobet: S.minNobet,
     quota: S.quota,
@@ -4804,8 +4393,8 @@ function changeMonth(dir){
   if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded) {
     var gId = window.ACILX_GROUP || 'default';
     var saveP = _db.collection('groups').doc(gId).collection('schedule').doc(oldKey).set({
-      schedule: snapshot.schedule, egBlocks: snapshot.egBlocks,
-      defaultDayMin: snapshot.defaultDayMin, minNobet: snapshot.minNobet,
+      schedule: snapshot.schedule, defaultDayMin: snapshot.defaultDayMin,
+      minNobet: snapshot.minNobet,
       quota: snapshot.quota, maxHours: snapshot.maxHours,
       dayOverride: snapshot.dayOverride, monthOverride: snapshot.monthOverride,
       kapaliGunler: snapshot.kapaliGunler, prevMonthLastDay: snapshot.prevMonthLastDay,
@@ -4850,7 +4439,7 @@ function changeMonth(dir){
       var data = JSON.parse(cached);
       ['schedule','dayOverride','monthOverride','kapaliGunler',
        'prevMonthLastDay','nextMonthFirstDay','astProfiles',
-       'egBlocks','defaultDayMin','minNobet','quota','maxHours',
+       'defaultDayMin','minNobet','quota','maxHours',
        'listName','algoConfig'].forEach(function(k){
         if(data[k] !== undefined) S[k] = data[k];
       });
@@ -4859,7 +4448,7 @@ function changeMonth(dir){
   } catch(e) {}
 
   // Anında render — localStorage verisiyle
-  try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+  try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
   try { renderNewCal(); } catch(e) {}
   updateTercihUI();
   _changeMonthBusy = false; // Kullanıcı tekrar tıklayabilir
@@ -4890,15 +4479,15 @@ function changeMonth(dir){
           schedule: S.schedule, dayOverride: S.dayOverride,
           monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
           prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
-          astProfiles: S.astProfiles, egBlocks: S.egBlocks,
-          defaultDayMin: S.defaultDayMin, minNobet: S.minNobet,
+          astProfiles: S.astProfiles, defaultDayMin: S.defaultDayMin,
+          minNobet: S.minNobet,
           quota: S.quota, maxHours: S.maxHours,
           listName: S.listName, algoConfig: S.algoConfig
         }));
       } catch(e) {}
       // Firestore'dan yeni veri geldiyse re-render
       if(loaded){
-        try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+        try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
         try { renderNewCal(); } catch(e) {}
         updateTercihUI();
       }
@@ -4957,11 +4546,6 @@ function buildContext(){
     ay:MONTHS_TR[mo]+' '+y,
     toplamGun:days,
     asistanlar:ASSISTANTS.map(a=>({isim:a.name,kidem:'K'+a.kidem,hedefNobet:Math.round(S.maxHours[a.kidem]/24)})),
-    egitimBloklari:S.egBlocks.map(b=>({
-      isim:b.name,gun:['Paz','Pzt','Sal','Car','Per','Cum','Cmt'][b.dayOfWeek],
-      tip:b.type==='full'?'Tam gun bloke':b.type==='half'?'Yarim gun':'Bilgi',
-      kidemler:b.kidemler.map(k=>'K'+k)
-    })),
     alanKurallari,nobetDagitimi:dagitim,mevcutListe:liste
   };
 }
@@ -5009,14 +4593,11 @@ KURALLAR:
 - Art arda nobet yasak - nobet sonrasi mutlaka 1 gun dinlenme
 - Alan gunluk minimum doluluk karsilanmali
 - Kidem grubu kurallari uyulmali
-- Egitim bloke gunleri o kidemler nobet tutamaz
 YANIT FORMATI: Sadece JSON dondur, baska hicbir sey yazma.
 Format: {"AsistanAdi": {"AlanAdi": [gun1, gun2, ...], ...}, ...}`;
   const kullanici=`${ctx.ay} ayi icin nobet listesi hazirla.
 Asistanlar ve hedef nobet sayilari:
 ${ctx.asistanlar.map(a=>`- ${a.isim} (${a.kidem}): ${a.hedefNobet} nobet`).join('\n')}
-Egitim bloklari:
-${ctx.egitimBloklari.map(b=>`- ${b.isim}: Her ${b.gun}, ${b.tip}, ${b.kidemler.join('/')}`).join('\n')}
 Alan kurallari:
 ${Object.entries(ctx.alanKurallari).map(([alan,k])=>`- ${alan}: min=${k.gunlukMin}/gun, max=${k.gunlukMax}/gun`+(k.kidemGruplari.length?', kidem grubu: '+k.kidemGruplari.map(g=>g.kidemler.join('/')+' en az '+g.enAz).join('; '):'')).join('\n')}
 Nobet dagitimi (kota):
@@ -5472,15 +5053,12 @@ function clearAstH(i){
 function switchTab(el,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['egitim','minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','uyarilar','ayarlar'].forEach(n=>{
+  ['minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','ayarlar'].forEach(n=>{
     const tabEl=document.getElementById('tab-'+n);
     if(tabEl) tabEl.style.display=n===name?'block':'none';
   });
-  // Uyarılar sekmesinden çıkınca filteri sıfırla
-  if(name!=='uyarilar') _uyarilarGun = null;
   if(name==='takvim') try { renderNewCal(); } catch(e) {}
   if(name==='ozet'){ _ozetDate={y:S.currentDate.y,m:S.currentDate.m}; _ozetSchedule=null; renderOzet(); }
-  if(name==='uyarilar') renderUyarilar();
   if(name==='asistanlar') renderAsistanlar();
   if(name==='astprofile'){
     _apMonth = _apMonth || S.currentDate;
@@ -5812,7 +5390,7 @@ function _renderAstProfile(){
       '<div style="font-size:10px;font-weight:700;color:'+(isToday?'var(--red)':alan?'rgba(80,160,255,0.95)':'var(--w2)')+'">'+d+'</div>'+
       (alan
         ? '<div style="margin-top:2px;font-size:8px;font-weight:700;padding:1px 3px;border-radius:2px;background:rgba(50,130,220,0.18);color:rgba(80,160,255,0.9);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1">'+getAreaLabel(alan.id)+'</div>'
-        : (egtFull ? '<div style="margin-top:2px;font-size:8px;color:var(--w4);font-style:italic;overflow:hidden;text-overflow:ellipsis">'+egt.name.substring(0,5)+'</div>' : '')
+        : ''
       )+
       '</div>';
   }
@@ -5893,17 +5471,7 @@ function takasMumkunMu(iA, dA, alanA, iB, dB, alanB){
   if(((S.quota[alanB]||{})[astA.kidem]||0) === 0) return {ok:false, reason:'Kıdem uyumsuz ('+astA.name+' → '+AREAS.find(a=>a.id===alanB)?.name+')'};
   if(((S.quota[alanA]||{})[astB.kidem]||0) === 0) return {ok:false, reason:'Kıdem uyumsuz ('+astB.name+' → '+AREAS.find(a=>a.id===alanA)?.name+')'};
 
-  // 2) Eğitim bloğu
-  const eA = getEgtStatus(y, mo, dA, astA.kidem);
-  const eB = getEgtStatus(y, mo, dB, astB.kidem);
-  // A dA gününe geri alınacak (zaten vardı), B dB gününe geri alınacak
-  // A dB gününe gidecek
-  const eAonB = getEgtStatus(y, mo, dB, astA.kidem);
-  const eBonA = getEgtStatus(y, mo, dA, astB.kidem);
-  if(eAonB && eAonB.type==='full') return {ok:false, reason:astA.name+' '+dB+'. gün eğitim bloğunda'};
-  if(eBonA && eBonA.type==='full') return {ok:false, reason:astB.name+' '+dA+'. gün eğitim bloğunda'};
-
-  // 3) Art arda nöbet kontrolü — takas sonrası durumu simüle et
+  // 2) Art arda nöbet kontrolü — takas sonrası durumu simüle et
   // Geçici schedule kopyası
   const tmpSched = Object.assign({}, S.schedule);
   delete tmpSched[gk(iA,dA)];
@@ -6137,36 +5705,13 @@ function applyTakasBtn(btn){
 
 /* ── NÖBETLERİM RENDER ── */
 
-/* ── UYARILAR ── */
-// _uyarilarGun: null = tüm ay, number = sadece o gün
+/* ── UYARILAR (kaldırıldı) ── */
 let _uyarilarGun = null;
+function openUyarilarGun(){}
+function uyariSorunTikla(){}
 
-function openUyarilarGun(d){
-  _uyarilarGun = d;
-  // Uyarılar sekmesini aç (tab butonuna basmadan)
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  ['egitim','minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','uyarilar','ayarlar'].forEach(n=>{
-    const tabEl=document.getElementById('tab-'+n);
-    if(tabEl) tabEl.style.display=n==='uyarilar'?'block':'none';
-  });
-  const titleEl = document.getElementById('uyarilarTitle');
-  if(titleEl){
-    if(d !== null){
-      titleEl.textContent = d+' '+MONTHS[S.currentDate.m]+' Uyarıları';
-    } else {
-      titleEl.textContent = 'Tüm Uyarılar — '+MONTHS[S.currentDate.m]+' '+S.currentDate.y;
-    }
-  }
-  renderUyarilar();
-}
-
-function uyariSorunTikla(idx){
-  const s = window._uyariSorunCache && window._uyariSorunCache[idx];
-  if(!s) return;
-  openUyariOneriModal(s);
-}
-
-function renderUyarilar(){
+function renderUyarilar(){ return; }
+function _renderUyarilar_disabled(){
   const el = document.getElementById('uyarilarContent');
   if(!el) return;
   window._uyariSorunCache = []; // Her render'da cache sıfırla
@@ -6347,8 +5892,9 @@ function uyariCoz(params, cozum){
   }
 }
 
-// Uyarılar sekmesindeki sorun satırına tıklayınca — öneri modali
-function openUyariOneriModal(sorunJSON){
+// Uyarılar sekmesindeki sorun satırına tıklayınca — (kaldırıldı)
+function openUyariOneriModal(){ return; }
+function _openUyariOneriModal_disabled(sorunJSON){
   let sorun;
   try { sorun = typeof sorunJSON==='string' ? JSON.parse(sorunJSON) : sorunJSON; } catch(e){ return; }
   window._aktifOneriSorun = sorun; // uygulama sonrası kontrol için sakla
@@ -6368,8 +5914,9 @@ function openUyariOneriModal(sorunJSON){
   document.getElementById('dayModal').classList.add('open');
 }
 
-// Sapma barındaki asistan satırına tıklayınca — öneri modali
-function openSapmaOneriModal(astIdx, fark, alanSayim, alanHedef){
+// Sapma barındaki asistan satırına tıklayınca — (kaldırıldı)
+function openSapmaOneriModal(){ return; }
+function _openSapmaOneriModal_disabled(astIdx, fark, alanSayim, alanHedef){
   const ast = ASSISTANTS[astIdx];
   if(!ast) return;
   const {y,m} = S.currentDate;
@@ -7188,7 +6735,7 @@ function uyariOneriHTML(sorun){
     }
 
     if(!html)
-      html = '<div style="padding:16px 14px;font-size:11px;color:var(--w4);text-align:center">⚠ Çözüm bulunamadı.<br><span style="font-size:10px">İzin, art arda veya eğitim kısıtı engelliyor.</span></div>';
+      html = '<div style="padding:16px 14px;font-size:11px;color:var(--w4);text-align:center">⚠ Çözüm bulunamadı.<br><span style="font-size:10px">İzin veya art arda kısıtı engelliyor.</span></div>';
 
   } else if(tip==='max'){
     const kidemMatch = sorun.msg.match(/K(\d+(?:\/\d+)*)/);
@@ -7529,7 +7076,7 @@ function initApp(){
   if(typeof loadNobetSettings==='function') {
     loadNobetSettings().then(()=>{
       // Asistan ve alan verileri yüklendi — ŞİMDİ render yap
-      try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) { console.warn('initApp render:', e); }
+      try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) { console.warn('initApp render:', e); }
 
       // Badge'i kıdem bilgisiyle güncelle
       const _isBasasistan2 = window.ACILX_ROLE === 'basasistan';
@@ -7553,7 +7100,7 @@ function initApp(){
   } else {
     // loadNobetSettings yoksa — fallback ile render
     _applyFallbackData();
-    try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+    try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
   }
   function fixMobileGrids() {
     if(window.innerWidth <= 768) {
@@ -7582,7 +7129,7 @@ initApp();
       if(loaded){
         // KRİTİK: ASSISTANTS/AREAS yüklendiyse render yap, yoksa loadNobetSettings zaten halleder
         if(ASSISTANTS.length > 0) {
-          try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
           try { renderNewCal(); } catch(e){}
         }
         updateListNameHeader();
@@ -7591,7 +7138,7 @@ initApp();
         // Firestore'a bağlanamazsa localStorage'daki veriyle devam et
         console.warn('[ACİLX] Startup: Firestore yüklenemedi, localStorage kullanılıyor');
         if(ASSISTANTS.length > 0) {
-          try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
           try { renderNewCal(); } catch(e){}
         }
         updateListNameHeader();
@@ -7600,7 +7147,7 @@ initApp();
     } else {
       // DB yok — fallback + localStorage ile devam
       _applyFallbackData();
-      try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+      try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
       try { renderNewCal(); } catch(e){}
     }
   } catch(e) {
