@@ -3020,8 +3020,8 @@ async function nobetOlustur(){
   _checkHedefEksikleri();
   showToast('Nöbet oluşturuldu ve kaydedildi');
 
-  // ── Analiz modalı: sadece ihlal varsa göster ──
-  _showGenAnaliz();
+  // ── Analiz modalı: render tamamlandıktan sonra göster ──
+  setTimeout(_showGenAnaliz, 100);
 }
 
 function _showGenAnaliz(){
@@ -3071,7 +3071,16 @@ function _showGenAnaliz(){
     if(ASSISTANTS.some((_,i)=>S.schedule[gk(i,d)])) toplamIhlal+=gunIhlalleri(d).length;
   }
 
-  if(toplamIhlal===0&&eksikler.length===0) return;
+  // Hedef eksik/fazla asistan sayısı
+  let hedefSorunSayi=0;
+  ASSISTANTS.forEach((_,i)=>{
+    const h=_hesaplaHedef(i);
+    if(h<=0) return;
+    let mev=0; for(let d=1;d<=days;d++) if(S.schedule[gk(i,d)]) mev++;
+    if(mev!==h) hedefSorunSayi++;
+  });
+
+  if(toplamIhlal===0&&eksikler.length===0&&hedefSorunSayi===0) return;
 
   // ── 2) Spesifik öneriler üret ──
   const oneriler=[]; // {metin, detay, renk, uygula}
@@ -6721,103 +6730,47 @@ function renderSorunlar(){
 
     if(sorunlar.length > 0){
       toplamSorun += sorunlar.length;
-      html += `<div style="background:var(--bg2);border:1px solid rgba(232,87,42,0.15);border-left:3px solid var(--red);border-radius:8px;overflow:hidden;margin-bottom:8px">
-        <div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--bord)">
-          <span style="font-size:13px;font-weight:800;color:var(--w1);font-family:'DM Mono',monospace">${d} ${MONTHS[m]}</span>
-          <span style="font-size:10px;color:var(--w3)">${gunAdi}</span>
-          <span style="font-size:9px;padding:1px 6px;border-radius:3px;background:rgba(232,87,42,0.12);color:var(--red);font-weight:700">${sorunlar.length} sorun</span>
-          <button onclick="switchTab(document.getElementById('tab-btn-takvim'),'takvim');setTimeout(function(){openDayDetail(${d})},50)" style="margin-left:auto;font-size:10px;padding:3px 8px;border-radius:4px;background:var(--bg3);border:1px solid var(--bord);color:var(--w2);cursor:pointer;font-family:var(--font-sans)">Günü aç</button>
-        </div>
-        ${sorunlar.map(function(s){
-          var cozBtn = '';
-          if(isBasas && s.otoYapilabilir){
-            var cIdx = window._sorunCozCache.length;
-            window._sorunCozCache.push(s.cozumData);
-            var cozTip = s.tip==='max' ? 'cikar_alan' : s.tip==='kidem' ? 'ekle_kidem' : 'ekle_alan';
-            cozBtn = '<button onclick="sorunCoz('+cIdx+',\''+cozTip+'\')" style="flex-shrink:0;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(80,180,80,0.12);border:1px solid rgba(80,180,80,0.3);color:#80B840;cursor:pointer;font-weight:700;font-family:var(--font-sans)">Çöz</button>';
-          } else if(isBasas && !s.otoYapilabilir){
-            cozBtn = '<span style="flex-shrink:0;font-size:9px;padding:3px 8px;border-radius:4px;background:rgba(240,160,64,0.1);border:1px solid rgba(240,160,64,0.25);color:var(--orange);font-weight:600">Manuel</span>';
-          }
-          return '<div style="padding:8px 14px;border-bottom:1px solid var(--bord)">'+
-            '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
-              '<span style="display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:700;padding:2px 6px;border-radius:3px;background:'+BG[s.tip]+';color:'+RENK[s.tip]+';flex-shrink:0">'+
-                '<span style="width:5px;height:5px;border-radius:50%;background:'+RENK[s.tip]+';display:inline-block"></span>'+s.kural+
-              '</span>'+
-              '<span style="font-size:11px;color:var(--w2);flex:1">'+s.msg+'</span>'+
-              cozBtn+
-            '</div>'+
-            '<div style="font-size:10px;color:var(--w3);padding-left:4px">'+s.oneri+'</div>'+
-          '</div>';
-        }).join('')}
-      </div>`;
+      html += '<div style="border-bottom:1px solid var(--bord);padding:6px 12px;display:flex;align-items:center;gap:6px;background:var(--bg3)">'+
+        '<span style="font-size:12px;font-weight:800;color:var(--w1);font-family:\'DM Mono\',monospace">'+d+'</span>'+
+        '<span style="font-size:9px;color:var(--w3)">'+gunAdi+'</span>'+
+        '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(232,87,42,0.12);color:var(--red);font-weight:700">'+sorunlar.length+'</span>'+
+        '<button onclick="switchTab(document.getElementById(\'tab-btn-takvim\'),\'takvim\');setTimeout(function(){openDayDetail('+d+')},50)" style="margin-left:auto;font-size:9px;padding:2px 6px;border-radius:3px;background:var(--bg2);border:1px solid var(--bord);color:var(--w3);cursor:pointer;font-family:var(--font-sans)">Aç</button>'+
+      '</div>';
+      sorunlar.forEach(function(s){
+        var cozBtn = '';
+        if(isBasas && s.otoYapilabilir){
+          var cIdx = window._sorunCozCache.length;
+          window._sorunCozCache.push(s.cozumData);
+          var cozTip = s.tip==='max' ? 'cikar_alan' : s.tip==='kidem' ? 'ekle_kidem' : 'ekle_alan';
+          cozBtn = '<button onclick="sorunCoz('+cIdx+',\''+cozTip+'\')" style="flex-shrink:0;font-size:9px;padding:2px 8px;border-radius:3px;background:rgba(80,180,80,0.12);border:1px solid rgba(80,180,80,0.3);color:#80B840;cursor:pointer;font-weight:700;font-family:var(--font-sans)">Çöz</button>';
+        } else if(isBasas && !s.otoYapilabilir){
+          cozBtn = '<span style="flex-shrink:0;font-size:9px;padding:2px 6px;border-radius:3px;background:rgba(240,160,64,0.08);color:var(--orange);font-weight:600">Manuel</span>';
+        }
+        html += '<div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-bottom:1px solid var(--bord)">'+
+          '<span style="width:5px;height:5px;border-radius:50%;background:'+RENK[s.tip]+';flex-shrink:0"></span>'+
+          '<span style="font-size:11px;color:var(--w2);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+s.msg+'</span>'+
+          cozBtn+
+        '</div>';
+      });
     }
   }
 
-  // ── Hedef eksik/fazla asistanlar ──
-  var hedefHtml = '';
-  var moKey = y+'_'+m;
-  var eksikAst = [], fazlaAst = [];
-  ASSISTANTS.forEach(function(ast,i){
-    var h = _hesaplaHedef(i);
-    if(h<=0) return;
-    var mevcut = 0;
-    for(var d2=1;d2<=days;d2++) if(S.schedule[gk(i,d2)]) mevcut++;
-    if(mevcut < h) eksikAst.push({ast:ast, idx:i, hedef:h, mevcut:mevcut, fark:h-mevcut});
-    if(mevcut > h) fazlaAst.push({ast:ast, idx:i, hedef:h, mevcut:mevcut, fark:mevcut-h});
-  });
-
-  if(eksikAst.length > 0){
-    toplamSorun += eksikAst.length;
-    hedefHtml += '<div style="background:var(--bg2);border:1px solid rgba(240,160,64,0.2);border-left:3px solid var(--orange);border-radius:8px;overflow:hidden;margin-bottom:8px">'+
-      '<div style="padding:10px 14px;border-bottom:1px solid var(--bord);font-size:12px;font-weight:700;color:var(--orange)">▼ Hedef altında kalan asistanlar ('+eksikAst.length+')</div>';
-    eksikAst.forEach(function(e){
-      hedefHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bord)">'+
-        '<span class="kt '+KIDEM_CLS[e.ast.kidem]+'" style="font-size:9px;padding:1px 4px">K'+e.ast.kidem+'</span>'+
-        '<span style="font-size:11px;color:var(--w1);flex:1">'+shortName(e.ast.name)+'</span>'+
-        '<span style="font-size:10px;color:var(--orange);font-family:\'DM Mono\',monospace">'+e.mevcut+'/'+e.hedef+' <b>▼'+e.fark+'</b></span>'+
-      '</div>';
-    });
-    hedefHtml += '</div>';
-  }
-
-  if(fazlaAst.length > 0){
-    toplamSorun += fazlaAst.length;
-    hedefHtml += '<div style="background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-left:3px solid var(--red);border-radius:8px;overflow:hidden;margin-bottom:8px">'+
-      '<div style="padding:10px 14px;border-bottom:1px solid var(--bord);font-size:12px;font-weight:700;color:var(--red)">▲ Hedef üstünde kalan asistanlar ('+fazlaAst.length+')</div>';
-    fazlaAst.forEach(function(e){
-      hedefHtml += '<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--bord)">'+
-        '<span class="kt '+KIDEM_CLS[e.ast.kidem]+'" style="font-size:9px;padding:1px 4px">K'+e.ast.kidem+'</span>'+
-        '<span style="font-size:11px;color:var(--w1);flex:1">'+shortName(e.ast.name)+'</span>'+
-        '<span style="font-size:10px;color:var(--red);font-family:\'DM Mono\',monospace">'+e.mevcut+'/'+e.hedef+' <b>▲'+e.fark+'</b></span>'+
-      '</div>';
-    });
-    hedefHtml += '</div>';
-  }
-
-  html += hedefHtml;
-
   if(toplamSorun === 0){
     html = '<div style="text-align:center;padding:40px 20px">'+
-      '<div style="font-size:32px;margin-bottom:12px">✓</div>'+
+      '<div style="font-size:32px;margin-bottom:12px">&#10003;</div>'+
       '<div style="font-size:14px;font-weight:700;color:var(--w1);margin-bottom:6px">Sorun yok</div>'+
       '<div style="font-size:12px;color:var(--w3)">Tüm kurallar karşılanıyor.</div>'+
     '</div>';
   } else {
-    html = '<div style="background:rgba(232,87,42,0.06);border-radius:8px;margin-bottom:12px;overflow:hidden">'+
-      '<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;flex-wrap:wrap">'+
-        '<div><span style="font-size:16px;font-weight:800;color:var(--red)">'+toplamSorun+'</span>'+
-        '<span style="font-size:11px;color:var(--w3);margin-left:6px">kural ihlali</span></div>'+
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'+
-          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--red)"><span style="width:6px;height:6px;border-radius:50%;background:var(--red);display:inline-block"></span>Min</span>'+
-          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:var(--orange)"><span style="width:6px;height:6px;border-radius:50%;background:var(--orange);display:inline-block"></span>Max</span>'+
-          '<span style="display:flex;align-items:center;gap:3px;font-size:9px;color:#9B7AE0"><span style="width:6px;height:6px;border-radius:50%;background:#9B7AE0;display:inline-block"></span>Kıdem</span>'+
-        '</div>'+(isBasas?
-        '<button onclick="tumSorunlariCoz()" style="margin-left:auto;padding:5px 12px;border-radius:6px;background:var(--red);border:none;color:#fff;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--font-sans);display:flex;align-items:center;gap:4px">Tümünü Çöz</button>':'')+
-      '</div>'+
-    '</div>' + html;
+    html = '<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(232,87,42,0.06);border-radius:8px;margin-bottom:8px">'+
+      '<span style="font-size:16px;font-weight:800;color:var(--red)">'+toplamSorun+'</span>'+
+      '<span style="font-size:11px;color:var(--w3)">kural ihlali</span>'+
+      (isBasas?'<button onclick="tumSorunlariCoz()" style="margin-left:auto;padding:4px 10px;border-radius:5px;background:var(--red);border:none;color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font-sans)">Tümünü Çöz</button>':'')+
+    '</div>' +
+    '<div style="background:var(--bg2);border:1px solid rgba(232,87,42,0.15);border-radius:8px;overflow:hidden">' + html + '</div>';
   }
 
-  // Sorunlar badge güncelle
+  // Sorunlar badge güncelle — sadece kural ihlallerini say
   var badge = document.getElementById('tab-btn-sorunlar');
   if(badge) badge.textContent = toplamSorun > 0 ? 'Sorunlar ('+toplamSorun+')' : 'Sorunlar';
 
