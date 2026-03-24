@@ -3752,7 +3752,13 @@ function autoGen(){
       const mesA=enYakinMesafe(a,d),mesB=enYakinMesafe(b,d);
       const mesScoreA=mesA>=4?0:mesA===3?0.3:mesA===2?0.8:1.5;
       const mesScoreB=mesB>=4?0:mesB===3?0.3:mesB===2?0.8:1.5;
-      const skorA=dagA+riskA*2+mesScoreA,skorB=dagB+riskB*2+mesScoreB;
+      // Kıdem dağılım bonusu: bu günde aynı kıdemden az olan tercih edilir
+      const kdA=ASSISTANTS[a].kidem,kdB=ASSISTANTS[b].kidem;
+      const gundeKdA=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kdA).length;
+      const gundeKdB=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kdB).length;
+      const kdBonusA=gundeKdA===0?0.5:0;
+      const kdBonusB=gundeKdB===0?0.5:0;
+      const skorA=dagA+riskA*2+mesScoreA+kdBonusA,skorB=dagB+riskB*2+mesScoreB+kdBonusB;
       if(Math.abs(skorA-skorB)>0.01) return skorB-skorA;
       const tA=tercihScore(a,d),tB=tercihScore(b,d);
       if(tA!==tB) return tA-tB;
@@ -3771,9 +3777,99 @@ function autoGen(){
     };
   }
 
-  // ═══ ADIM 1: KIDEM KURALI — YALNIZ TUTAMAZ DÜZELTME ═══
-  // Atama sonrası yalnız kalan kıdemleri tespit et, uygun arkadaş ekle
-  // (Bu adım ADIM 1b'den sonra da tekrar çalışır — burada erken düzeltme)
+  // ═══ ADIM 1: KİDEM DAĞILIM PLANLAMASI ═══
+  // Kıdem kuralı olan alanlarda kıdemli asistanları aya eşit yay.
+  // Her kıdem için ideal aralık hesapla, günlere dengeli dağıt.
+  // Bu sayede kıdemliler ayın başında tükenmez.
+  {
+    BASE_AREA_ORDER.forEach(area=>{
+      const aId=area.id, r=S.defaultDayMin[aId];
+      if(!r||!r.kidemKurallari) return;
+
+      // Bu alanda hangi kıdemler "yalnız tutamaz" kuralına sahip?
+      // Ve hangi kıdemler onların "yanında" listesinde? Hepsini topla.
+      const kritikKidemler=new Set();
+      Object.keys(r.kidemKurallari).forEach(kStr=>{
+        const k=parseInt(kStr), kural=r.kidemKurallari[k];
+        if(!kural||!kural.yalnizTutamaz) return;
+        kritikKidemler.add(k);
+        (kural.yaninda||[]).forEach(yk=>kritikKidemler.add(yk));
+      });
+      if(!kritikKidemler.size) return;
+
+      // Aktif günleri topla
+      const aktifGunler=[];
+      for(let d=1;d<=days;d++){ if(isAlanAktif(d,aId)) aktifGunler.push(d); }
+      if(!aktifGunler.length) return;
+
+      // Her kritik kıdem için: bu kıdemdeki asistanları bul, toplam kotayı hesapla
+      // Sonra günlere dengeli dağıt
+      [...kritikKidemler].sort().forEach(k=>{
+        const alanKota=(S.quota[aId]||{})[k]||0;
+        if(alanKota<=0) return;
+
+        // Bu kıdemdeki uygun asistanlar
+        const kidemAstlar=ASSISTANTS.map((_,i)=>i).filter(i=>{
+          if(ASSISTANTS[i].kidem!==k) return false;
+          if(aRem(i,aId)<=0) return false;
+          if(kalan(i)<=0) return false;
+          const dur=astDurum(i);
+          if(dur==='izinli'||dur==='rot_hayir') return false;
+          return true;
+        });
+        if(!kidemAstlar.length) return;
+
+        // Toplam atanabilecek nöbet = min(tüm asistan aRem toplamı, aktifGün sayısı)
+        const toplamKota=kidemAstlar.reduce((s,i)=>s+Math.min(aRem(i,aId),kalan(i)),0);
+        if(toplamKota<=0) return;
+
+        // İdeal aralık: aktifGün / toplamKota
+        // Her ~aralik günde bir bu kıdemden biri atanmalı
+        const aralik=Math.max(1,Math.floor(aktifGunler.length/toplamKota));
+
+        // Asistanları kalan kotaya göre sırala (çok kotası olan önce)
+        kidemAstlar.sort((a,b)=>{
+          const ra=Math.min(aRem(a,aId),kalan(a));
+          const rb=Math.min(aRem(b,aId),kalan(b));
+          return rb-ra;
+        });
+
+        // Round-robin: her asistana sırayla gün ata, aralığa uyarak
+        let gunIdx=0;
+        let astIdx=0;
+        let yerlestirildi=0;
+
+        while(yerlestirildi<toplamKota && gunIdx<aktifGunler.length){
+          const d=aktifGunler[gunIdx];
+          const maxD=getDayRule(d,aId).max||99;
+
+          // Bu gün bu kıdemden zaten biri var mı?
+          const gundeKidem=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===k).length;
+          if(gundeKidem>0 || dCnt(d,aId)>=maxD){
+            gunIdx++;
+            continue;
+          }
+
+          // Uygun asistan bul (round-robin)
+          let bulduk=false;
+          for(let t=0;t<kidemAstlar.length;t++){
+            const idx=(astIdx+t)%kidemAstlar.length;
+            const i=kidemAstlar[idx];
+            if(canAssign(i,d,aId,false)){
+              put(i,d,aId);
+              yerlestirildi++;
+              astIdx=(idx+1)%kidemAstlar.length;
+              bulduk=true;
+              break;
+            }
+          }
+
+          // Sonraki gün: aralık kadar atla (dengeli dağılım)
+          gunIdx+=bulduk?aralik:1;
+        }
+      });
+    });
+  }
 
   // ═══ ADIM 1b: GENEL MIN DOLDURMA ═══
   BASE_AREA_ORDER.forEach(area=>{
@@ -3873,7 +3969,10 @@ function autoGen(){
           // (Eski kıdem grubu max kontrolü kaldırıldı — yeni sistemde grup max yok)
           let sc;
           if(acik>0){let artarda=0;for(const nd of[d-1,d+1])if(nd>=1&&nd<=days){const na=Math.max(0,(getDayRule(nd,aId).min||0)-dCnt(nd,aId));if(na>0)artarda+=na*15;}sc=-10000+artarda+(isWEday?3:0);}
-          else{const doluluk=dCnt(d,aId)*8;const idealFark=Math.abs(d-idealSonrakiGun);const erkenCeza=(gEksik>0&&d<idealSonrakiGun)?(idealSonrakiGun-d)*1.5:0;const wePenalty=WE_DENGESI==='yok'?0:isWEday&&weBudgetDoldu?500:isWEday?(mevcutWe+secilenWe)/Math.max(weBudget,1)*5:0;const mes=minMesafe(d);const aralikCeza=mes<2?2000:mes===2?50:mes===3?10:0;const tercihBonus=tercihScore(i,d)*3;sc=idealFark+erkenCeza+doluluk+wePenalty+aralikCeza+tercihBonus;}
+          else{const doluluk=dCnt(d,aId)*8;const idealFark=Math.abs(d-idealSonrakiGun);const erkenCeza=(gEksik>0&&d<idealSonrakiGun)?(idealSonrakiGun-d)*1.5:0;const wePenalty=WE_DENGESI==='yok'?0:isWEday&&weBudgetDoldu?500:isWEday?(mevcutWe+secilenWe)/Math.max(weBudget,1)*5:0;const mes=minMesafe(d);const aralikCeza=mes<2?2000:mes===2?50:mes===3?10:0;const tercihBonus=tercihScore(i,d)*3;
+          // Kıdem yığılma cezası: bu güne aynı kıdemden çok kişi atanmışsa cezalandır
+          const kd=ASSISTANTS[i].kidem;const gundeAyniKidem=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kd).length;const kidemCeza=gundeAyniKidem*25;
+          sc=idealFark+erkenCeza+doluluk+wePenalty+aralikCeza+tercihBonus+kidemCeza;}
           if(sc<bestSc){bestSc=sc;best=d;}
         }
         if(best!==null){secilen.push(best);if(isWE(y,mo,best))secilenWe++;}
