@@ -724,6 +724,16 @@ body {
       <div style="font-size:12px;color:var(--w3);margin-bottom:4px" id="profileEmail"></div>
       <div style="font-size:11px;color:var(--w4);margin-bottom:24px" id="profileGroup"></div>
 
+      <!-- Sonraki nöbet kartı -->
+      <div id="nextShiftCard" style="display:none;width:100%;max-width:320px;background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px 16px;margin-bottom:8px">
+        <div style="font-size:10px;font-weight:700;color:var(--w3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sonraki Nöbet</div>
+        <div style="font-size:18px;font-weight:800;color:var(--acc);font-family:'DM Mono',monospace" id="nextShiftDate">—</div>
+        <div style="font-size:11px;color:var(--w4);margin-top:4px" id="nextShiftArea"></div>
+      </div>
+
+      <!-- Tercihler butonu -->
+      <button id="openTercihBtn" onclick="openTercihFromProfile()" style="display:none;width:100%;max-width:320px;background:rgba(232,87,42,0.08);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px;font-size:13px;font-weight:600;color:var(--acc);cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">📋 Tercihlerimi Düzenle</button>
+
       <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
 
         <!-- Grup kodu kartı (sadece başasistan) -->
@@ -1199,6 +1209,74 @@ function updateAppUI(userData) {
     gcCard.style.display = 'block';
     document.getElementById('profileGroupCode').textContent = currentGroupCode;
   }
+
+  // Sonraki nöbet bilgisi + tercih butonu
+  loadNextShiftInfo();
+  var tercihBtn = document.getElementById('openTercihBtn');
+  if(tercihBtn) tercihBtn.style.display = 'block';
+}
+
+/* ── PROFİL: Sonraki nöbet ── */
+async function loadNextShiftInfo(){
+  var card = document.getElementById('nextShiftCard');
+  if(!card || !db || !currentUser) return;
+  try {
+    var gId = currentGroupId || 'default';
+    var now = new Date();
+    var y = now.getFullYear(), m = now.getMonth();
+    var snap = await db.collection('groups').doc(gId).collection('schedule').doc(y+'_'+m).get();
+    if(!snap.exists){ card.style.display='none'; return; }
+    var data = snap.data();
+    var schedule = data.schedule || {};
+    // ASSISTANTS'dan kendi index'imi bul
+    var astSnap = await db.collection('groups').doc(gId).collection('assistants').doc('list').get();
+    if(!astSnap.exists){ card.style.display='none'; return; }
+    var astList = astSnap.data().list || [];
+    var myIdx = astList.findIndex(function(a){ return a.uid === currentUser.uid; });
+    if(myIdx < 0){
+      var uSnap = await db.collection('users').doc(currentUser.uid).get();
+      if(uSnap.exists && uSnap.data().astIdx !== undefined) myIdx = uSnap.data().astIdx;
+    }
+    if(myIdx < 0){ card.style.display='none'; return; }
+    // Bugünden sonraki ilk nöbeti bul
+    var today = now.getDate();
+    var days = new Date(y, m+1, 0).getDate();
+    var aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    for(var d = today; d <= days; d++){
+      var key = myIdx + '_' + d;
+      if(schedule[key]){
+        card.style.display = 'block';
+        document.getElementById('nextShiftDate').textContent = d + ' ' + aylar[m];
+        // Alanları yükle
+        var areasSnap = await db.collection('groups').doc(gId).collection('areas').doc('list').get();
+        var areaName = schedule[key];
+        if(areasSnap.exists){
+          var areas = areasSnap.data().list || [];
+          var found = areas.find(function(a){ return a.id === schedule[key]; });
+          if(found) areaName = found.name;
+        }
+        document.getElementById('nextShiftArea').textContent = areaName;
+        return;
+      }
+    }
+    card.style.display = 'none';
+  } catch(e){ console.warn('nextShift:', e); }
+}
+
+function openTercihFromProfile(){
+  // Nöbet modülüne geç ve profil sekmesini aç
+  switchModule('nobet');
+  setTimeout(function(){
+    var frame = document.getElementById('nobetFrame');
+    if(frame && frame.contentWindow){
+      try {
+        var tabBtn = frame.contentWindow.document.getElementById('tab-btn-astprofile');
+        if(tabBtn) {
+          frame.contentWindow.switchTab(tabBtn, 'astprofile');
+        }
+      } catch(e){ /* cross-origin fallback */ }
+    }
+  }, 1500);
 }
 
 /* ── NÖBET FRAME ── */

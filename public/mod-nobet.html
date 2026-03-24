@@ -345,7 +345,6 @@ function niStep(btn,delta){
 </div>
 <div class="tabs" style="border-bottom:none;margin-bottom:0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none">
   <div class="tab active" id="tab-btn-takvim" onclick="switchTab(this,'takvim')">Takvim</div>
-  <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">👤 Profilim</div>
   <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
   <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
   <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
@@ -363,13 +362,6 @@ function niStep(btn,delta){
   <button class="btn btn-p" onclick="openAlanModal()" style="font-size:11px;padding:5px 11px">+ Alan Ekle</button>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;margin-bottom:1.5rem" id="minGrid"></div>
-  <div class="card">
-    <div class="card-title">Günlük kadro özeti</div>
-    <div id="dayConfigPanel"></div>
-    <div style="margin-top:10px;padding-top:10px;border-top:0.5px solid var(--bord);font-size:12px;color:var(--w3)">
-      Toplam günlük minimum: <strong id="totalMinDisplay" style="color:var(--w1)">—</strong> &nbsp;·&nbsp; Kadro: <strong style="color:var(--w1)">19</strong>
-    </div>
-  </div>
 </div>
 
 <!-- NÖBET DAĞILIMI -->
@@ -602,8 +594,8 @@ function niStep(btn,delta){
       <div id="apDayPanel" style="background:var(--bg2);border:1px solid var(--bord);border-radius:8px;padding:1rem;min-height:160px">
         <div style="color:var(--w4);font-size:12px;text-align:center;padding:2.5rem 0">Takvimden bir güne tıkla</div>
       </div>
-      <!-- Nöbet ekle — sadece başasistan görür -->
-      <div id="apAddShiftPanel" style="background:var(--bg2);border:1px solid var(--bord);border-radius:8px;padding:12px">
+      <!-- Nöbet ekle — kaldırıldı, sadece takvimden yapılır -->
+      <div id="apAddShiftPanel" style="display:none;background:var(--bg2);border:1px solid var(--bord);border-radius:8px;padding:12px">
         <div style="font-size:11px;font-weight:600;color:var(--w3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Nöbet Ekle</div>
         <div style="display:flex;flex-direction:column;gap:6px">
           <select id="apAddDay" style="width:100%;padding:6px 8px;border:1px solid var(--bord);border-radius:5px;font-size:12px;background:var(--bg3);color:var(--w1);font-family:var(--font-sans)"></select>
@@ -766,11 +758,7 @@ function niStep(btn,delta){
         <div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px">
           <div style="font-size:11px;font-weight:700;color:var(--w2);margin-bottom:6px">Alan öncelik sırası</div>
           <div style="font-size:10px;color:var(--w4);margin-bottom:8px">Hangi alan önce doldurulsun?</div>
-          <div id="alanOncelikListesi" style="display:flex;flex-direction:column;gap:4px;margin-bottom:8px"></div>
-          <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--w3);cursor:pointer">
-            <input type="checkbox" id="acAlanOto" onchange="toggleAlanOncelik()" style="accent-color:var(--red)">
-            Otomatik sıralama
-          </label>
+          <div id="alanOncelikListesi" style="display:flex;flex-direction:column;gap:4px"></div>
         </div>
 
       </div>
@@ -3524,6 +3512,37 @@ function autoGen(){
     });
   });
 
+  // ═══ ADIM 4b: HEDEF EKSİKLERİNİ ZORLA DOLDUR ═══
+  // Kota aşımı ve art arda kısıtlarını gevşeterek hedef doluluk garanti et
+  ASSISTANTS.forEach((_,i)=>{
+    if(kalan(i)<=0) return;
+    const dur=astDurum(i);
+    if(dur==='izinli'||dur==='rot_hayir') return;
+    // Tüm günleri tara, kota dolmuş bile olsa alan öncelik sırasında ata
+    for(let d=1;d<=days;d++){
+      if(kalan(i)<=0) break;
+      if(S.schedule[gk(i,d)]) continue;
+      if(astIzinliAylik(i).includes(d)) continue;
+      // Art arda kontrolünü gevşet — sadece bitişik gün engeli kalsın
+      if(d>1&&S.schedule[gk(i,d-1)]) continue;
+      if(d<days&&S.schedule[gk(i,d+1)]) continue;
+      // Alan öncelik sırasında dene
+      for(const area of BASE_AREA_ORDER){
+        const aId=area.id;
+        if(!isAlanAktif(d,aId)) continue;
+        const maxD=getDayRule(d,aId).max||99;
+        if(dCnt(d,aId)>=maxD) continue;
+        // Kota kontrolü — gevşetilmiş (0 kotası varsa atla, ama dolu kotayı aş)
+        if(((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)===0) continue;
+        S.schedule[gk(i,d)]=aId;
+        load[i].total++;
+        load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
+        if(isWE(y,mo,d)) load[i].weCount=(load[i].weCount||0)+1;
+        break;
+      }
+    }
+  });
+
   // ═══ ADIM 5: SON MAX DOĞRULAMA ═══
   BASE_AREA_ORDER.forEach(area=>{
     const aId=area.id,r=S.defaultDayMin[aId],gruplari=(r&&r.kidemGruplari)||[];
@@ -5355,11 +5374,25 @@ function _renderAstProfile(){
   const _tAyl=((_prof.tercihAylik&&_prof.tercihAylik[_moKey2])||[]).length;
   const _kAyl=((_prof.kacAylik&&_prof.kacAylik[_moKey2])||[]).length;
   const _iAyl=((_prof.izinliAylik&&_prof.izinliAylik[_moKey2])||[]).length;
+  // Sonraki nöbet hesapla
+  var _sonrakiNobet = '';
+  if(isCurrent){
+    var _bugun = new Date();
+    var _bugunD = _bugun.getDate();
+    for(var _nd = _bugunD; _nd <= days; _nd++){
+      if(_sched[gk(i,_nd)]){
+        var _nAlan = AREAS.find(function(a){return a.id===_sched[gk(i,_nd)];});
+        _sonrakiNobet = '&nbsp;&nbsp;<span style="font-size:11px;padding:2px 7px;border-radius:4px;background:rgba(232,87,42,0.1);color:var(--red);font-weight:700">Sonraki: '+_nd+' '+MONTHS[mo]+(_nAlan?' · '+_nAlan.name:'')+'</span>';
+        break;
+      }
+    }
+  }
   document.getElementById('apMeta').innerHTML =
     '<span style="padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;background:'+_DCOL[_durum]+'22;color:'+_DCOL[_durum]+'">'+_DLBL[_durum]+'</span>' +
     '&nbsp;<span style="font-size:11px;color:var(--w4);background:var(--bg4);padding:2px 6px;border-radius:4px">⏱ '+_siftStr+'</span>' +
     '&nbsp;&nbsp;Hedef: <strong style="color:var(--w1)">'+hedef+'</strong>' +
     ' &nbsp;·&nbsp; Tamamlanan: <strong style="color:'+(toplam>=hedef?'var(--red)':'#7DC44A')+'">'+toplam+'</strong>' +
+    _sonrakiNobet +
     (_tAyl?'&nbsp;&nbsp;<span style="font-size:10px;color:#7DC44A">✓ '+_tAyl+' gün tercih</span>':'') +
     (_kAyl?'&nbsp;<span style="font-size:10px;color:#E87070">✕ '+_kAyl+' gün kaçın</span>':'') +
     (_iAyl?'&nbsp;<span style="font-size:10px;color:#B090E0">⊘ '+_iAyl+' gün izinli</span>':'') +
@@ -5433,10 +5466,7 @@ function _renderAstProfile(){
           : '');
 
     // Nöbet kaldır butonu — sadece başasistan
-    const _removeBtn = (alan && isBasasistanLocal)
-      ? '<button data-day="'+d+'" onclick="event.stopPropagation();apRemoveShift(parseInt(this.dataset.day))"'+
-        ' style="position:absolute;bottom:2px;right:2px;font-size:11px;color:rgba(232,87,42,0.7);background:rgba(232,87,42,0.12);border:1px solid rgba(232,87,42,0.25);cursor:pointer;padding:2px 6px;border-radius:4px;line-height:1;font-weight:700">✕</button>'
-      : '';
+    const _removeBtn = ''; // Nöbet çıkarma sadece takvimden yapılır
 
     calHtml += '<div onclick="apCalClick('+d+')" style="'+
       'background:'+cellBg+';border:'+cellBorder+';'+
@@ -7190,9 +7220,6 @@ function loadAlgoConfigUI(){
   const acIzin = document.getElementById('acIzin');
   if(acIzin) acIzin.value = cfg.izinHedef||'otoDusManuel';
 
-  const acAlanOto = document.getElementById('acAlanOto');
-  if(acAlanOto) acAlanOto.checked = !cfg.alanOncelikleri || !cfg.alanOncelikleri.length;
-
   renderAlanOncelikListesi();
 }
 
@@ -7204,49 +7231,29 @@ function saveAlgoConfig(){
   S.algoConfig.tercihCakisma  = el('acTercih')?.value||'azTercih';
   S.algoConfig.weDengesi      = el('acWe')?.value||'toplamEsit';
   S.algoConfig.izinHedef      = el('acIzin')?.value||'otoDusManuel';
-  // Alan öncelikleri — otomatik checkbox'a bak
-  const otoCheck = el('acAlanOto');
-  if(otoCheck && otoCheck.checked){
-    S.algoConfig.alanOncelikleri = null;
-  }
-  // else: alanOncelikleri sürükle-bırak veya buton ile ayarlanır
+  // Alan öncelikleri — her zaman manuel sıralama
   save();
   showSaved('algoSaved');
 }
 
-function toggleAlanOncelik(){
-  const oto = document.getElementById('acAlanOto');
-  if(oto && oto.checked){
-    S.algoConfig.alanOncelikleri = null;
-    save();
-    showSaved('algoSaved');
-  }
-  renderAlanOncelikListesi();
-}
+function toggleAlanOncelik(){}
 
 function renderAlanOncelikListesi(){
   const el = document.getElementById('alanOncelikListesi');
   if(!el) return;
-  const cfg = S.algoConfig || {};
-  const oto = !cfg.alanOncelikleri || !cfg.alanOncelikleri.length;
-  const otoCheck = document.getElementById('acAlanOto');
-
-  if(oto){
-    // Otomatik mod — sırayı göster ama düzenlemeye izin verme
-    el.innerHTML = AREAS.map((a,idx)=>
-      '<div style="display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--bg2);border-radius:5px;opacity:.5">'+
-        '<span style="font-size:10px;font-weight:700;color:var(--w4);min-width:18px">'+(idx+1)+'.</span>'+
-        '<div style="width:8px;height:8px;border-radius:2px;background:'+a.color+'"></div>'+
-        '<span style="font-size:11px;color:var(--w3)">'+a.name+'</span>'+
-      '</div>'
-    ).join('');
-    return;
+  if(!S.algoConfig) S.algoConfig = {};
+  // Her zaman manuel — otomatik yok
+  if(!S.algoConfig.alanOncelikleri || !S.algoConfig.alanOncelikleri.length){
+    S.algoConfig.alanOncelikleri = AREAS.map(a=>a.id);
   }
+  // Yeni eklenen alanları sona ekle
+  AREAS.forEach(a=>{ if(!S.algoConfig.alanOncelikleri.includes(a.id)) S.algoConfig.alanOncelikleri.push(a.id); });
+  // Silinmiş alanları temizle
+  S.algoConfig.alanOncelikleri = S.algoConfig.alanOncelikleri.filter(id=>AREAS.find(a=>a.id===id));
 
-  // Manuel mod — sıralama butonlarıyla
-  const sira = cfg.alanOncelikleri || AREAS.map(a=>a.id);
-  el.innerHTML = sira.map((aId,idx)=>{
-    const a = AREAS.find(x=>x.id===aId);
+  const sira = S.algoConfig.alanOncelikleri;
+  el.innerHTML = sira.map(function(aId,idx){
+    var a = AREAS.find(function(x){return x.id===aId;});
     if(!a) return '';
     return '<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg2);border:1px solid var(--bord);border-radius:5px">'+
       '<span style="font-size:10px;font-weight:700;color:var(--red);min-width:18px">'+(idx+1)+'.</span>'+
