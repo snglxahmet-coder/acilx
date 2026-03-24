@@ -3805,6 +3805,13 @@ function autoGen(){
       score-=tp>0?Math.max(0,15-tp*3):0;
     } else if(TERCIH_CAKISMA==='kidemOnce'){
       score-=ASSISTANTS[i].kidem*5;
+    } else if(TERCIH_CAKISMA==='adaletli'){
+      // Adaletli: daha az nöbet almış olan önce (kalan nöbet sayısı yüksekse öncelik)
+      score-=kalan(i)*2;
+    } else if(TERCIH_CAKISMA==='karma'){
+      // Karma: kıdem + adalet birlikte
+      score-=ASSISTANTS[i].kidem*3;
+      score-=kalan(i)*1.5;
     }
     return score;
   }
@@ -3871,7 +3878,17 @@ function autoGen(){
       if(Math.abs(skorA-skorB)>0.01) return skorB-skorA;
       const tA=tercihScore(a,d),tB=tercihScore(b,d);
       if(tA!==tB) return tA-tB;
-      if(WE_DENGESI!=='yok'&&isWEday) return weScore(a)-weScore(b);
+      if(WE_DENGESI!=='yok'&&isWEday){
+        if(WE_DENGESI==='oranEsit'){
+          // Oran eşit: WE/toplam oranı düşük olan önce
+          const oranA=load[a].total>0?(load[a].weCount||0)/load[a].total:0;
+          const oranB=load[b].total>0?(load[b].weCount||0)/load[b].total:0;
+          if(Math.abs(oranA-oranB)>0.01) return oranA-oranB;
+        } else {
+          // toplamEsit: mutlak WE sayısı düşük olan önce
+          return weScore(a)-weScore(b);
+        }
+      }
       return kalan(b)-kalan(a);
     };
   }
@@ -4294,21 +4311,38 @@ function autoGen(){
 // ── MAX NÖBET KONTROLÜ — global yardımcı ──
 // Asistanın mevcut nöbet sayısı hedefine ulaşmış mı?
 // İzin günleri dikkate alınarak hesaplanır.
-function _maxNobetAsildimi(astIdx){
+// ── Merkezi hedef hesaplama — IZIN_HEDEF ayarını dikkate alır ──
+// Tüm hedef hesaplamaları bu fonksiyonu kullanmalı
+function _hesaplaHedef(astIdx){
   const {y,m}=S.currentDate;
   const days=daysInMonth(y,m);
   const moKey=y+'_'+m;
+  // Manuel override her zaman öncelikli
   const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][astIdx];
-  let hedef;
-  if(ov!==undefined&&ov!==null){ hedef=ov; }
-  else {
-    const baseH=Math.round(S.maxHours[ASSISTANTS[astIdx].kidem]/24);
+  if(ov!==undefined&&ov!==null) return ov;
+  if(!ASSISTANTS[astIdx]) return 0;
+  const baseH=Math.round(S.maxHours[ASSISTANTS[astIdx].kidem]/24);
+  const izinHedef=(S.algoConfig&&S.algoConfig.izinHedef)||'otoDusManuel';
+  // "sabit" modda izin düşürmesi yapılmaz
+  if(izinHedef==='sabit') return baseH;
+  const prof=S.astProfiles&&S.astProfiles[astIdx]?S.astProfiles[astIdx]:{};
+  const dur=prof.durum||'aktif';
+  if(dur==='izinli'||dur==='rot_hayir') return 0;
+  const izinG=((prof.izinliAylik&&prof.izinliAylik[moKey])||[]).length;
+  if(izinG>0) return Math.max(0,Math.round(baseH*((days-izinG)/days)));
+  return baseH;
+}
+
+function _maxNobetAsildimi(astIdx){
+  if(!ASSISTANTS[astIdx]) return true;
+  const hedef=_hesaplaHedef(astIdx);
+  if(hedef<=0){
     const prof=S.astProfiles&&S.astProfiles[astIdx]?S.astProfiles[astIdx]:{};
     const dur=prof.durum||'aktif';
-    if(dur==='izinli'||dur==='rot_hayir') return true; // hedef 0
-    const izinG=((prof.izinliAylik&&prof.izinliAylik[moKey])||[]).length;
-    hedef=izinG>0?Math.max(0,Math.round(baseH*((days-izinG)/days))):baseH;
+    if(dur==='izinli'||dur==='rot_hayir') return true;
   }
+  const {y,m}=S.currentDate;
+  const days=daysInMonth(y,m);
   let mevcut=0;
   for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut++;
   return mevcut>=hedef;
@@ -4335,9 +4369,7 @@ function canAssign(i, d, aId, ignoreHedef) {
     return (p&&p.kacAylik&&p.kacAylik[moKey])||[];
   }
   function _hedef(idx) {
-    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][idx];
-    if(ov!==undefined&&ov!==null) return ov;
-    return Math.round(S.maxHours[ASSISTANTS[idx].kidem]/24);
+    return _hesaplaHedef(idx);
   }
   function _kalan(idx) {
     let tot=0;
@@ -4555,7 +4587,7 @@ function renderSchedule(log){
   ASSISTANTS.forEach((ast,i)=>{
     const th=countAll(i);
     const _ov=S.monthOverride&&S.monthOverride[_schedMoKey]&&S.monthOverride[_schedMoKey][i];
-    const mh=(_ov!==undefined&&_ov!==null)?_ov:Math.round(S.maxHours[ast.kidem]/24);
+    const mh=_hesaplaHedef(i);
     const isRot=_ov!==undefined&&_ov!==null;
     html+=`<tr>
       <td class="cn" style="cursor:pointer" onclick="openAstProfile(${i})" title="Tıkla: asistan profili aç">
@@ -5096,10 +5128,7 @@ function _renderOzetBasasistan(){
       const aId=sched[ogk(i,d)];
       if(aId){ total++; if(alanCnt[aId]!==undefined) alanCnt[aId]++; }
     }
-    const moKey=y+'_'+m;
-    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-    const defH=Math.round(S.maxHours[ast.kidem]/24);
-    const hedef=(ov!==undefined&&ov!==null)?ov:defH;
+    const hedef=_hesaplaHedef(i);
     return {ast, i, total, alanCnt, hedef};
   }).sort((a,b)=>b.total-a.total);
 
@@ -5512,9 +5541,8 @@ function openAstOverride(i){
   const ast=ASSISTANTS[i];
   const y=S.currentDate.y,mo=S.currentDate.m;
   const moKey=y+'_'+mo;
-  const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
   const defHedef=Math.round(S.maxHours[ast.kidem]/24);
-  const mevcutHedef=ov!==undefined&&ov!==null?ov:defHedef;
+  const mevcutHedef=_hesaplaHedef(i);
   const MONTHS_TR=['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
   document.getElementById('aomTitle').textContent=ast.name;
@@ -5598,10 +5626,7 @@ function renderAsistanlar(){
     const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
     const prof=S.astProfiles&&S.astProfiles[i]?S.astProfiles[i]:{};
     const durum=prof.durum||'aktif';
-    // İzin günleri oranında hedef otomatik düşürülür
-    const izinGunleri=((prof.izinliAylik&&prof.izinliAylik[moKey])||[]).length;
-    const autoH=(durum==='izinli'||durum==='rot_hayir')?0:(izinGunleri>0?Math.max(0,Math.round(defH*((daysInMonth(y,mo)-izinGunleri)/daysInMonth(y,mo)))):defH);
-    const aktifH=(ov!==undefined&&ov!==null)?ov:autoH;
+    const aktifH=_hesaplaHedef(i);
     const isRot=(ov!==undefined&&ov!==null);
     const siftler=(prof.siftler&&prof.siftler.length)?prof.siftler:[prof.sift||'24h'];
     const DURUM_LABELS={'aktif':'Aktif','izinli':'İzinli','rot_evet':'Rotasyon+','rot_hayir':'Rotasyon-'};
@@ -6088,14 +6113,7 @@ function _renderAstProfile(){
   const badgeEl = document.getElementById('apIdxBadge');
   if(badgeEl) badgeEl.textContent = (i+1)+'/'+ASSISTANTS.length;
 
-  const ov = S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-  const defH = Math.round(S.maxHours[ast.kidem]/24);
-  // İzin günleri oranında hedef otomatik düşürülür
-  const _profH = S.astProfiles&&S.astProfiles[i]?S.astProfiles[i]:{};
-  const _izinGunH = ((_profH.izinliAylik&&_profH.izinliAylik[moKey])||[]).length;
-  const _durH = (_profH.durum||'aktif');
-  const autoHedef = (_durH==='izinli'||_durH==='rot_hayir') ? 0 : (_izinGunH>0?Math.max(0,Math.round(defH*((days-_izinGunH)/days))):defH);
-  const hedef = (ov!==undefined&&ov!==null) ? ov : autoHedef;
+  const hedef = _hesaplaHedef(i);
   const toplam = _countAll(i);
   const _prof = S.astProfiles&&S.astProfiles[i]?S.astProfiles[i]:{};
   const _durum = _prof.durum||'aktif';
@@ -6740,14 +6758,7 @@ function renderSorunlar(){
   var moKey = y+'_'+m;
   var eksikAst = [], fazlaAst = [];
   ASSISTANTS.forEach(function(ast,i){
-    var ov = S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-    var defH = Math.round(S.maxHours[ast.kidem]/24);
-    // İzin günleri oranında hedef otomatik düşürülür
-    var _prf = S.astProfiles&&S.astProfiles[i]?S.astProfiles[i]:{};
-    var _izG = ((_prf.izinliAylik&&_prf.izinliAylik[moKey])||[]).length;
-    var _dr = (_prf.durum||'aktif');
-    var autoH = (_dr==='izinli'||_dr==='rot_hayir') ? 0 : (_izG>0?Math.max(0,Math.round(defH*((days-_izG)/days))):defH);
-    var h = (ov!==undefined&&ov!==null) ? ov : autoH;
+    var h = _hesaplaHedef(i);
     if(h<=0) return;
     var mevcut = 0;
     for(var d2=1;d2<=days;d2++) if(S.schedule[gk(i,d2)]) mevcut++;
@@ -7110,9 +7121,7 @@ function _openSapmaOneriModal_disabled(astIdx, fark, alanSayim, alanHedef){
 function tümSapmalariEkle(astIdx){
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const ast=ASSISTANTS[astIdx]; if(!ast) return;
-  const moKey=y+'_'+m;
-  const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][astIdx];
-  const hedef=(ov!==undefined&&ov!==null)?ov:Math.round(S.maxHours[ast.kidem]/24);
+  const hedef=_hesaplaHedef(astIdx);
   let mevcut=0; for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut++;
   const eksik = hedef - mevcut;
   if(eksik<=0){ closeDayModal(); return; }
@@ -7163,9 +7172,7 @@ function tümSapmalariEkle(astIdx){
 function tümSapmalariCikar(astIdx){
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const ast=ASSISTANTS[astIdx]; if(!ast) return;
-  const moKey=y+'_'+m;
-  const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][astIdx];
-  const hedef=(ov!==undefined&&ov!==null)?ov:Math.round(S.maxHours[ast.kidem]/24);
+  const hedef=_hesaplaHedef(astIdx);
   let mevcut=[]; for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut.push(d);
   const fazla=mevcut.length-hedef;
   if(fazla<=0){ closeDayModal(); return; }
@@ -7328,11 +7335,8 @@ function tumSapmalariDengele(){
 function _hesaplaSapma(){
   const {y,m}=S.currentDate;
   const days=daysInMonth(y,m);
-  const moKey=y+'_'+m;
   return ASSISTANTS.map((ast,i)=>{
-    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-    const defH=Math.round(S.maxHours[ast.kidem]/24);
-    const hedef=(ov!==undefined&&ov!==null)?ov:defH;
+    const hedef=_hesaplaHedef(i);
     let mevcut=0;
     for(let d=1;d<=days;d++) if(S.schedule[gk(i,d)]) mevcut++;
     return {ast,i,hedef,mevcut,fark:mevcut-hedef};
@@ -7369,8 +7373,7 @@ function _sapmaModalYenile(astIdx){
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const moKey=y+'_'+m;
   const ast=ASSISTANTS[astIdx]; if(!ast){ closeDayModal(); return; }
-  const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][astIdx];
-  const hedef=(ov!==undefined&&ov!==null)?ov:Math.round(S.maxHours[ast.kidem]/24);
+  const hedef=_hesaplaHedef(astIdx);
   let mevcut=0; for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut++;
   const yeniFark = mevcut - hedef;
   if(yeniFark===0){ closeDayModal(); return; }
@@ -7459,18 +7462,7 @@ function akillicoz(){
   function izinliGunler(i){
     return ((S.astProfiles&&S.astProfiles[i]&&S.astProfiles[i].izinliAylik)||{})[moKey]||[];
   }
-  function hedef(i){
-    if(!ASSISTANTS[i]) return 0;
-    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
-    if(ov!==undefined&&ov!==null) return ov;
-    const baseH=Math.round(S.maxHours[ASSISTANTS[i].kidem]/24);
-    const dd=dur(i);
-    if(dd==='izinli'||dd==='rot_hayir') return 0;
-    // İzin günleri oranında düşür
-    const izinSayisi=izinliGunler(i).length;
-    if(izinSayisi>0) return Math.max(0, Math.round(baseH*((days-izinSayisi)/days)));
-    return baseH;
-  }
+  function hedef(i){ return _hesaplaHedef(i); }
   function nobetSay(i){ let n=0; for(let d=1;d<=days;d++) if(S.schedule[gk(i,d)]) n++; return n; }
   function alanCnt(d,aId){ return ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId).length; }
 
