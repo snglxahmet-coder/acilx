@@ -6697,101 +6697,296 @@ function _sorunlariTopla(){
 
 function akillicoz(){
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
-  let cozulen=0, cozulemeyen=0;
+  const moKey=y+'_'+m;
+  let cozulen=0;
+  const manuelLog=[]; // Çözülemeyen sorunlar + neden
 
-  // ── Geçiş 1: canAssign + kota içinde çöz ───────────────────
-  let gorevler=_sorunlariTopla();
-  for(const g of gorevler){
-    if(g.tip==='max'){
-      _cozumCikar(g.d,g.alan.id,[]).slice(0,g.fazla).forEach(i=>{
-        delete S.schedule[gk(i,g.d)]; cozulen++;
+  // ── Yardımcılar ──────────────────────────────────────────────
+  function dur(i){ return (S.astProfiles&&S.astProfiles[i]&&S.astProfiles[i].durum)||'aktif'; }
+  function izinliGunler(i){
+    return ((S.astProfiles&&S.astProfiles[i]&&S.astProfiles[i].izinliAylik)||{})[moKey]||[];
+  }
+  function hedef(i){
+    const ov=S.monthOverride&&S.monthOverride[moKey]&&S.monthOverride[moKey][i];
+    if(ov!==undefined&&ov!==null) return ov;
+    return Math.round(S.maxHours[ASSISTANTS[i].kidem]/24);
+  }
+  function nobetSay(i){ let n=0; for(let d=1;d<=days;d++) if(S.schedule[gk(i,d)]) n++; return n; }
+  function alanCnt(d,aId){ return ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId).length; }
+
+  // Tüm ihlalleri say
+  function ihlalSay(){
+    let toplam=0;
+    for(let d=1;d<=days;d++){
+      AREAS.forEach(a=>{
+        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+        const cnt=alanCnt(d,a.id);
+        if(cnt<rule.min) toplam+=(rule.min-cnt);
+        if(rule.max>0&&cnt>rule.max) toplam+=(cnt-rule.max);
+        const r2=S.defaultDayMin[a.id];
+        if(r2&&r2.kidemGruplari&&cnt>0){
+          r2.kidemGruplari.forEach(g=>{
+            const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
+            const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
+            if(grpCnt<(grp.min||1)) toplam+=((grp.min||1)-grpCnt);
+          });
+        }
       });
-    } else {
-      let eklendi=0;
-      // Direkt ekle
-      for(const i of _cozumEkle(g.d,g.alan.id,g.kidemler||[])){
-        if(eklendi>=g.eksik) break;
-        if(!S.schedule[gk(i,g.d)]&&canAssign(i,g.d,g.alan.id,true)){
-          S.schedule[gk(i,g.d)]=g.alan.id; eklendi++; cozulen++;
-        }
-      }
-      // Transfer/takas
-      if(eklendi<g.eksik){
-        for(const t of _cozumTakas(g.d,g.alan.id,g.kidemler||[])){
-          if(eklendi>=g.eksik) break;
-          if(t.tip==='transfer'){
-            delete S.schedule[gk(t.iB,t.dB)];
-            S.schedule[gk(t.iB,g.d)]=g.alan.id; eklendi++; cozulen++;
-          } else if(t.tip==='takas'){
-            const tmpA=S.schedule[gk(t.iA,g.d)], tmpB=S.schedule[gk(t.iB,t.dB)];
-            delete S.schedule[gk(t.iA,g.d)]; delete S.schedule[gk(t.iB,t.dB)];
-            S.schedule[gk(t.iA,t.dB)]=tmpB; S.schedule[gk(t.iB,g.d)]=g.alan.id;
-            eklendi++; cozulen++;
-          }
-        }
-      }
-      if(eklendi<g.eksik) cozulemeyen+=(g.eksik-eklendi);
     }
+    return toplam;
   }
 
-  // ── Geçiş 2: hâlâ sorun varsa — kota aşımına izin vererek çöz ──
-  // Hedefi dolmamış asistanları kullan, kota limitini aş
-  if(cozulemeyen>0){
-    cozulemeyen=0;
-    gorevler=_sorunlariTopla().filter(g=>g.tip!=='max');
-    for(const g of gorevler){
-      let eklendi=0;
-      // Hedefi dolmamış asistan bul — kota aşabilir
-      const {y:gy,m:gm}=S.currentDate;
-      const adaylar=ASSISTANTS.map((_,i)=>i).filter(i=>{
-        if(S.schedule[gk(i,g.d)]) return false;
-        if(g.kidemler&&g.kidemler.length&&!g.kidemler.includes(ASSISTANTS[i].kidem)) return false;
-        // Temel kısıtlar: izinli, artarda, eğitim
-        const dur=(S.astProfiles&&S.astProfiles[i]&&S.astProfiles[i].durum)||'aktif';
-        if(dur==='izinli'||dur==='rot_hayir') return false;
-        const moKey2=gy+'_'+gm;
-        const izinliAylik=((S.astProfiles&&S.astProfiles[i]&&S.astProfiles[i].izinliAylik)||{})[moKey2]||[];
-        if(izinliAylik.includes(g.d)) return false;
-        if(isEgtFull(gy,gm,g.d,ASSISTANTS[i].kidem)) return false;
-        if(g.d>1&&S.schedule[gk(i,g.d-1)]) return false;
-        if(g.d<days&&S.schedule[gk(i,g.d+1)]) return false;
-        // Kota: bu alana kotası sıfırsa atla, en azından genel kota olmalı
-        const kotaVar=((S.quota[g.alan.id]||{})[ASSISTANTS[i].kidem]||0)>0;
-        if(!kotaVar) return false;
-        // Günlük max
-        const maxD=getDayRule(g.d,g.alan.id).max||99;
-        if(ASSISTANTS.filter((_,j)=>S.schedule[gk(j,g.d)]===g.alan.id).length>=maxD) return false;
-        return true;
-      }).sort((a,b)=>{
-        // Hedeften en uzakta olan önce (en eksik asistan)
-        const hA=Math.round(S.maxHours[ASSISTANTS[a].kidem]/24);
-        const hB=Math.round(S.maxHours[ASSISTANTS[b].kidem]/24);
-        let nA=0,nB=0;
-        for(let dd=1;dd<=days;dd++){if(S.schedule[gk(a,dd)])nA++;if(S.schedule[gk(b,dd)])nB++;}
-        return (hA-nA)<(hB-nB)?1:-1;
-      }).filter(i=>{
-        // Hedefi dolmuş asistanlara ekleme yapma
-        const moKey2=gy+'_'+gm;
-        const ov=S.monthOverride&&S.monthOverride[moKey2]&&S.monthOverride[moKey2][i];
-        const h=(ov!==undefined&&ov!==null)?ov:Math.round(S.maxHours[ASSISTANTS[i].kidem]/24);
-        let n=0; for(let dd=1;dd<=days;dd++) if(S.schedule[gk(i,dd)]) n++;
-        return n < h;
-      });
-      for(const i of adaylar){
-        if(eklendi>=g.eksik) break;
-        S.schedule[gk(i,g.d)]=g.alan.id; eklendi++; cozulen++;
-      }
-      if(eklendi<g.eksik) cozulemeyen+=(g.eksik-eklendi);
+  // Bir hamlenin güvenli olup olmadığını kontrol et
+  // Hamleyi uygula, ihlal artıyorsa geri al
+  function guvenliEkle(i,d,aId){
+    if(S.schedule[gk(i,d)]) return false;
+    const onceki=ihlalSay();
+    S.schedule[gk(i,d)]=aId;
+    const sonraki=ihlalSay();
+    if(sonraki>onceki){
+      // Bu hamle yeni ihlal yarattı — geri al
+      delete S.schedule[gk(i,d)];
+      return false;
     }
+    return true;
+  }
+
+  function guvenliCikar(i,d){
+    const aId=S.schedule[gk(i,d)]; if(!aId) return false;
+    const onceki=ihlalSay();
+    delete S.schedule[gk(i,d)];
+    const sonraki=ihlalSay();
+    if(sonraki>onceki){
+      S.schedule[gk(i,d)]=aId;
+      return false;
+    }
+    return true;
+  }
+
+  // Temel uygunluk — izin, artarda, eğitim, durum
+  function temelUygun(i,d){
+    const dd=dur(i);
+    if(dd==='izinli'||dd==='rot_hayir') return false;
+    if(izinliGunler(i).includes(d)) return false;
+    if(isEgtFull(y,m,d,ASSISTANTS[i].kidem)) return false;
+    if(S.schedule[gk(i,d)]) return false;
+    if(d>1&&S.schedule[gk(i,d-1)]) return false;
+    if(d<days&&S.schedule[gk(i,d+1)]) return false;
+    if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[i]) return false;
+    if(d===days&&S.nextMonthFirstDay&&S.nextMonthFirstDay[i]) return false;
+    return true;
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // GEÇİŞ DÖNGÜSÜ — maksimum 3 geçiş
+  // ═══════════════════════════════════════════════════════════
+  for(let gecis=1; gecis<=3; gecis++){
+    const gecisBaslangic=ihlalSay();
+    if(gecisBaslangic===0) break;
+    console.log('[ACİLX] akillicoz geçiş '+gecis+', toplam ihlal:', gecisBaslangic);
+
+    // ── ADIM 1: MAX aşımlarını çöz — fazla asistanı çıkar ──
+    for(let d=1;d<=days;d++){
+      AREAS.forEach(a=>{
+        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+        const cnt=alanCnt(d,a.id);
+        if(rule.max>0&&cnt>rule.max){
+          const fazla=cnt-rule.max;
+          // En çok nöbetçi olan asistandan başla
+          const adaylar=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>S.schedule[gk(j,d)]===a.id)
+            .sort((x,z)=>nobetSay(z)-nobetSay(x));
+          let cikarilan=0;
+          for(const j of adaylar){
+            if(cikarilan>=fazla) break;
+            if(guvenliCikar(j,d)){ cikarilan++; cozulen++; }
+          }
+        }
+      });
+    }
+
+    // ── ADIM 2: MIN doluluk ihlallerini çöz — asistan ekle ──
+    for(let d=1;d<=days;d++){
+      AREAS.forEach(a=>{
+        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+        const cnt=alanCnt(d,a.id);
+        if(cnt>=rule.min) return;
+        const eksik=rule.min-cnt;
+        // Uygun asistanlar: temelUygun + alan kotası var + hedef dolmamış tercih
+        const adaylar=ASSISTANTS.map((_,j)=>j)
+          .filter(j=>{
+            if(!temelUygun(j,d)) return false;
+            if(!isAlanAktif(d,a.id)) return false;
+            const kotaVar=((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0;
+            if(!kotaVar) return false;
+            return true;
+          })
+          .sort((x,z)=>{
+            // Hedeften en uzak olan önce
+            const kalanX=hedef(x)-nobetSay(x), kalanZ=hedef(z)-nobetSay(z);
+            return kalanZ-kalanX;
+          });
+        let eklendi=0;
+        for(const j of adaylar){
+          if(eklendi>=eksik) break;
+          if(guvenliEkle(j,d,a.id)){ eklendi++; cozulen++; }
+        }
+        // Çözemediyse — kota aşımına izin vererek dene (2. ve 3. geçiş)
+        if(eklendi<eksik && gecis>=2){
+          const adaylar2=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>temelUygun(j,d)&&isAlanAktif(d,a.id)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
+            .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
+          for(const j of adaylar2){
+            if(eklendi>=eksik) break;
+            if(guvenliEkle(j,d,a.id)){ eklendi++; cozulen++; }
+          }
+        }
+      });
+    }
+
+    // ── ADIM 3: KIDEM ihlallerini çöz — takas ile ──
+    for(let d=1;d<=days;d++){
+      AREAS.forEach(a=>{
+        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+        const r2=S.defaultDayMin[a.id];
+        if(!r2||!r2.kidemGruplari) return;
+        const cnt=alanCnt(d,a.id); if(cnt<=0) return;
+
+        r2.kidemGruplari.forEach(g=>{
+          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
+          const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
+          if(grpCnt>=(grp.min||1)) return;
+          const eksik=(grp.min||1)-grpCnt;
+
+          // Yol 1: Boşta doğru kıdemde biri direkt eklenebilir mi?
+          let eklendi=0;
+          const kidemAdaylar=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>grp.kidemler.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
+            .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
+          for(const j of kidemAdaylar){
+            if(eklendi>=eksik) break;
+            // Eklemeden önce max kontrolü
+            const maxD=getDayRule(d,a.id).max||99;
+            if(alanCnt(d,a.id)>=maxD) break;
+            if(guvenliEkle(j,d,a.id)){ eklendi++; cozulen++; }
+          }
+          if(eklendi>=eksik) return;
+
+          // Yol 2: Mevcut yanlış kıdemdeki biriyle doğru kıdemdeki birini takasla
+          const yanlilar=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>S.schedule[gk(j,d)]===a.id&&!grp.kidemler.includes(ASSISTANTS[j].kidem));
+
+          for(const iYanlis of yanlilar){
+            if(eklendi>=eksik) break;
+            // Doğru kıdemde olan ve başka günde nöbetçi olan birini bul
+            for(let iDogru=0;iDogru<ASSISTANTS.length;iDogru++){
+              if(!grp.kidemler.includes(ASSISTANTS[iDogru].kidem)) continue;
+              if(S.schedule[gk(iDogru,d)]) continue;
+              if(!temelUygun(iDogru,d)) continue;
+              // iYanlis'i gün d'den çıkar, başka güne taşı
+              // iDogru'yu gün d'ye koy
+              const onceki=ihlalSay();
+              const eskiAlan=S.schedule[gk(iYanlis,d)];
+              delete S.schedule[gk(iYanlis,d)];
+              S.schedule[gk(iDogru,d)]=a.id;
+              const sonraki=ihlalSay();
+              if(sonraki<onceki){
+                // Takas başarılı — min bozulmadı ve kıdem düzeldi
+                eklendi++; cozulen++;
+                // iYanlis'ı başka güne taşımaya çalış (opsiyonel)
+                let tasinabildi=false;
+                for(let dX=1;dX<=days;dX++){
+                  if(dX===d) continue;
+                  if(S.schedule[gk(iYanlis,dX)]) continue;
+                  if(!temelUygun(iYanlis,dX)) continue;
+                  // iYanlis o güne doğru alana atanabilir mi?
+                  for(const aX of AREAS){
+                    if(!isAlanAktif(dX,aX.id)) continue;
+                    if(((S.quota[aX.id]||{})[ASSISTANTS[iYanlis].kidem]||0)===0) continue;
+                    const onceki2=ihlalSay();
+                    S.schedule[gk(iYanlis,dX)]=aX.id;
+                    if(ihlalSay()<=onceki2){ tasinabildi=true; cozulen++; break; }
+                    delete S.schedule[gk(iYanlis,dX)];
+                  }
+                  if(tasinabildi) break;
+                }
+                break;
+              } else {
+                // Geri al
+                delete S.schedule[gk(iDogru,d)];
+                S.schedule[gk(iYanlis,d)]=eskiAlan;
+              }
+            }
+          }
+        });
+      });
+    }
+
+    const gecisSonu=ihlalSay();
+    console.log('[ACİLX] akillicoz geçiş '+gecis+' tamamlandı, ihlal: '+gecisBaslangic+' → '+gecisSonu);
+    if(gecisSonu===0||gecisSonu>=gecisBaslangic) break; // İyileşme yoksa döngüden çık
+  }
+
+  // ── Çözülemeyen sorunları tespit et ──
+  for(let d=1;d<=days;d++){
+    AREAS.forEach(a=>{
+      const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+      const cnt=alanCnt(d,a.id);
+      if(cnt<rule.min){
+        // Neden çözülemedi?
+        const uygunAst=ASSISTANTS.filter((_,j)=>temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0);
+        let neden='';
+        if(uygunAst.length===0) neden='Uygun asistan yok (tümü izinli, art arda engeli veya eğitimde)';
+        else neden='Atanabilir asistan var ama atama yeni ihlal yaratıyor ('+uygunAst.length+' aday)';
+        manuelLog.push({tip:'min',d,alan:a.name,eksik:rule.min-cnt,neden});
+      }
+      if(rule.max>0&&cnt>rule.max){
+        manuelLog.push({tip:'max',d,alan:a.name,fazla:cnt-rule.max,neden:'Çıkarılabilecek asistan yok (min doluluk bozulur)'});
+      }
+      const r2=S.defaultDayMin[a.id];
+      if(r2&&r2.kidemGruplari&&cnt>0){
+        r2.kidemGruplari.forEach(g=>{
+          const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
+          const grpCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[j].kidem)).length;
+          if(grpCnt<(grp.min||1)){
+            const kidemStr='K'+grp.kidemler.join('/K');
+            manuelLog.push({tip:'kidem',d,alan:a.name,eksik:(grp.min||1)-grpCnt,
+              neden:kidemStr+' grubundan uygun asistan bulunamadı veya takas yeni ihlal yaratıyor'});
+          }
+        });
+      }
+    });
   }
 
   save(); renderSchedule(); renderTakStats(); renderUyarilar();
-  if(cozulemeyen>0)
-    showToast('✓ '+cozulen+' çözüldü, '+cozulemeyen+' çözülemedi (izin/artarda engeli)');
-  else if(cozulen>0)
+
+  // ── Sonuç bildirimi ──
+  if(manuelLog.length>0){
+    console.log('[ACİLX] akillicoz: çözülemeyen sorunlar:', manuelLog);
+    let body='<div style="font-size:11px;color:var(--w3);margin-bottom:10px">'+
+      '✓ <b>'+cozulen+'</b> sorun çözüldü, <b>'+manuelLog.length+'</b> sorun manuel müdahale gerektiriyor.</div>';
+    body+='<div style="max-height:300px;overflow:auto">';
+    const TIP_LABEL={min:'Min eksik',max:'Max aşımı',kidem:'Kıdem ihlali'};
+    const TIP_COLOR={min:'var(--red)',max:'var(--orange)',kidem:'#9B7AE0'};
+    manuelLog.forEach(m=>{
+      body+='<div style="padding:8px 10px;border-bottom:1px solid var(--bord)">'+
+        '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px">'+
+          '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,0,0,0.1);color:'+TIP_COLOR[m.tip]+'">'+TIP_LABEL[m.tip]+'</span>'+
+          '<span style="font-size:11px;font-weight:600;color:var(--w1)">'+m.d+'. gün — '+m.alan+'</span>'+
+        '</div>'+
+        '<div style="font-size:10px;color:var(--w4);padding-left:4px">'+m.neden+'</div>'+
+      '</div>';
+    });
+    body+='</div>';
+    document.getElementById('dmTitle').innerHTML='<span style="color:var(--orange)">Manuel Müdahale Gerekiyor</span>';
+    document.getElementById('dmSub').textContent=manuelLog.length+' sorun otomatik çözülemedi';
+    document.getElementById('dmBody').innerHTML=body;
+    document.getElementById('dayModal').classList.add('open');
+  } else if(cozulen>0){
     showToast('✓ '+cozulen+' sorun çözüldü');
-  else
+  } else {
     showToast('Çözülecek sorun bulunamadı ✓');
+  }
 }
 
 function tumUyarilariCoz(){
