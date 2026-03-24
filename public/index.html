@@ -481,23 +481,231 @@ body {
   position: absolute; bottom: 28px;
   font-size: 10px; color: var(--w4); letter-spacing: .3px;
 }
+/* ── AUTH GATE: VITAL SIGNS LOADING ── */
+#authGate {
+  position:fixed;inset:0;z-index:999999;background:#0A0908;
+  overflow:hidden;transition:opacity .6s ease;
+}
+#authGate.fade-out { opacity:0; pointer-events:none; }
+
+/* Arka plan vital dalga kanalları */
+.ag-bg-waves {
+  position:absolute;inset:0;overflow:hidden;opacity:.12;
+}
+.ag-wave-row {
+  position:absolute;left:0;right:0;height:40px;
+}
+.ag-wave-row:nth-child(1){top:12%}
+.ag-wave-row:nth-child(2){top:32%}
+.ag-wave-row:nth-child(3){top:75%}
+.ag-wave-svg {
+  width:200%;height:100%;
+  animation:agWaveScroll 8s linear infinite;
+}
+.ag-wave-row:nth-child(2) .ag-wave-svg { animation-duration:10s; animation-direction:reverse; }
+.ag-wave-row:nth-child(3) .ag-wave-svg { animation-duration:12s; }
+@keyframes agWaveScroll { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+
+/* Ana EKG ortada */
+.ag-ekg-wrap {
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-54%);
+  width:min(380px,80vw);height:80px;
+}
+.ag-ekg-svg { width:100%;height:100%; }
+.ag-ekg-line {
+  fill:none;stroke:#E8572A;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 6px rgba(232,87,42,0.5));
+  stroke-dasharray:600;stroke-dashoffset:600;
+  animation:agEkgDraw 2.4s ease-in-out infinite;
+}
+.ag-ekg-glow {
+  fill:none;stroke:rgba(232,87,42,0.2);stroke-width:6;stroke-linecap:round;stroke-linejoin:round;
+  filter:blur(4px);
+  stroke-dasharray:600;stroke-dashoffset:600;
+  animation:agEkgDraw 2.4s ease-in-out infinite;
+}
+@keyframes agEkgDraw {
+  0%   { stroke-dashoffset:600; opacity:0; }
+  8%   { opacity:1; }
+  55%  { stroke-dashoffset:0; opacity:1; }
+  80%  { stroke-dashoffset:0; opacity:.3; }
+  100% { stroke-dashoffset:0; opacity:0; }
+}
+
+/* Logo */
+.ag-logo {
+  position:absolute;top:50%;left:50%;transform:translate(-50%,36px);
+  text-align:center;
+}
+.ag-logo-text {
+  font-family:'DM Mono',monospace;font-size:28px;font-weight:900;letter-spacing:6px;
+  background:linear-gradient(135deg,#E8572A,#F0A040);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;
+}
+.ag-logo-sub {
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:2px;
+  text-transform:uppercase;color:rgba(232,87,42,0.4);margin-top:4px;
+}
+
+/* Sağ üst vital değerler */
+.ag-vitals {
+  position:absolute;top:calc(16px + env(safe-area-inset-top,0px));right:calc(16px + env(safe-area-inset-right,0px));
+  font-family:'DM Mono',monospace;text-align:right;
+}
+.ag-vital-row {
+  display:flex;align-items:baseline;justify-content:flex-end;gap:6px;
+  margin-bottom:4px;opacity:.7;
+}
+.ag-vital-label { font-size:9px;color:#888;letter-spacing:.5px; }
+.ag-vital-val {
+  font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;
+  min-width:44px;text-align:right;
+}
+.ag-vital-unit { font-size:9px;color:#666; }
+.ag-v-hr .ag-vital-val { color:#4AE88A; }
+.ag-v-spo2 .ag-vital-val { color:#4AC8E8; }
+.ag-v-bp .ag-vital-val { color:#E8E84A;font-size:14px; }
+
+/* Sol alt yükleme adımları */
+.ag-steps {
+  position:absolute;bottom:calc(48px + env(safe-area-inset-bottom,0px));left:calc(20px + env(safe-area-inset-left,0px));
+  font-family:'DM Mono',monospace;
+}
+.ag-step {
+  font-size:11px;color:rgba(232,87,42,0.5);
+  height:18px;overflow:hidden;
+  transition:color .3s,opacity .3s;
+}
+.ag-step.active { color:rgba(232,87,42,0.9); }
+.ag-step.done { color:rgba(80,180,80,0.6); }
+
+/* Alt progress bar */
+.ag-progress {
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:rgba(255,255,255,0.03);
+}
+.ag-progress-bar {
+  height:100%;width:0;
+  background:linear-gradient(90deg,#E8572A,#F0A040);
+  transition:width .4s ease;
+  box-shadow:0 0 8px rgba(232,87,42,0.4);
+}
 </style>
 </head>
 <body>
 
 <!-- ══ LOGIN SCREEN ══ -->
-<div id="authGate" style="position:fixed;inset:0;z-index:999999;background:#0E0D0C;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s ease">
-  <div class="nlo-icon-wrap" style="margin-bottom:20px">
-    <div class="nlo-ring"></div>
-    <div class="nlo-ring2"></div>
-    <div class="nlo-center"><div class="nlo-cross"></div></div>
+<div id="authGate">
+  <!-- Arka plan vital dalga kanalları -->
+  <div class="ag-bg-waves">
+    <div class="ag-wave-row">
+      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0,20 L60,20 L70,8 L80,32 L90,14 L100,26 L110,20 L200,20 L210,8 L220,32 L230,14 L240,26 L250,20 L340,20 L350,8 L360,32 L370,14 L380,26 L390,20 L460,20 L470,8 L480,32 L490,14 L500,26 L510,20 L600,20 L610,8 L620,32 L630,14 L640,26 L650,20 L740,20 L750,8 L760,32 L770,14 L780,26 L790,20 L800,20" fill="none" stroke="#E8572A" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="ag-wave-row">
+      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0,28 Q40,28 80,10 Q120,28 160,28 Q200,28 240,10 Q280,28 320,28 Q360,28 400,10 Q440,28 480,28 Q520,28 560,10 Q600,28 640,28 Q680,28 720,10 Q760,28 800,28" fill="none" stroke="#4AC8E8" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div class="ag-wave-row">
+      <svg class="ag-wave-svg" viewBox="0 0 800 40" preserveAspectRatio="none">
+        <path d="M0,20 L100,20 L110,20 L120,12 L130,20 L140,20 L250,20 L260,20 L270,12 L280,20 L290,20 L400,20 L410,20 L420,12 L430,20 L440,20 L550,20 L560,20 L570,12 L580,20 L590,20 L700,20 L710,20 L720,12 L730,20 L740,20 L800,20" fill="none" stroke="#E8E84A" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
   </div>
-  <svg class="nlo-ekg" width="120" height="32" viewBox="0 0 120 32" style="margin-bottom:20px">
-    <path class="nlo-ekg-path" d="M0,16 L28,16 L34,4 L40,28 L46,10 L52,22 L58,16 L92,16 L98,4 L104,28 L110,10 L116,22 L120,16" fill="none" stroke="rgba(232,87,42,0.8)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-  </svg>
-  <div style="font-size:22px;font-weight:900;letter-spacing:4px;color:#F2EEE8;font-family:'DM Mono',monospace">ACİLX</div>
-  <div style="font-size:10px;letter-spacing:1px;text-transform:uppercase;color:rgba(232,87,42,0.5);font-family:'DM Mono',monospace;margin-top:4px">Acil Tıp Platformu</div>
+
+  <!-- Ana EKG animasyonu -->
+  <div class="ag-ekg-wrap">
+    <svg class="ag-ekg-svg" viewBox="0 0 380 80">
+      <path class="ag-ekg-glow" d="M0,40 L80,40 L100,40 L115,40 L125,38 L135,42 L145,36 L150,40 L158,40 L165,20 L170,70 L178,10 L186,58 L192,32 L198,40 L220,40 L300,40 L310,40 L318,36 L325,44 L332,38 L336,40 L345,40 L350,28 L356,52 L362,24 L368,48 L374,40 L380,40"/>
+      <path class="ag-ekg-line" d="M0,40 L80,40 L100,40 L115,40 L125,38 L135,42 L145,36 L150,40 L158,40 L165,20 L170,70 L178,10 L186,58 L192,32 L198,40 L220,40 L300,40 L310,40 L318,36 L325,44 L332,38 L336,40 L345,40 L350,28 L356,52 L362,24 L368,48 L374,40 L380,40"/>
+    </svg>
+  </div>
+
+  <!-- Logo -->
+  <div class="ag-logo">
+    <div class="ag-logo-text">ACILX</div>
+    <div class="ag-logo-sub">Acil Tip Platformu</div>
+  </div>
+
+  <!-- Sağ üst vital değerler -->
+  <div class="ag-vitals">
+    <div class="ag-vital-row ag-v-hr">
+      <span class="ag-vital-label">HR</span>
+      <span class="ag-vital-val" id="agHr">--</span>
+      <span class="ag-vital-unit">bpm</span>
+    </div>
+    <div class="ag-vital-row ag-v-spo2">
+      <span class="ag-vital-label">SpO2</span>
+      <span class="ag-vital-val" id="agSpo2">--</span>
+      <span class="ag-vital-unit">%</span>
+    </div>
+    <div class="ag-vital-row ag-v-bp">
+      <span class="ag-vital-label">BP</span>
+      <span class="ag-vital-val" id="agBp">--/--</span>
+    </div>
+  </div>
+
+  <!-- Sol alt yükleme adımları -->
+  <div class="ag-steps">
+    <div class="ag-step active" id="agStep0">Sisteme baglaniyor...</div>
+    <div class="ag-step" id="agStep1">Kullanici dogrulaniyor...</div>
+    <div class="ag-step" id="agStep2">Veriler yukleniyor...</div>
+  </div>
+
+  <!-- Alt progress bar -->
+  <div class="ag-progress">
+    <div class="ag-progress-bar" id="agProgressBar"></div>
+  </div>
 </div>
+
+<script>
+// ── Vital değerler animasyonu ──
+(function(){
+  var hrEl=document.getElementById('agHr');
+  var spo2El=document.getElementById('agSpo2');
+  var bpEl=document.getElementById('agBp');
+  var hr=72,spo2=98,bpS=120,bpD=80;
+  function tick(){
+    hr=Math.max(60,Math.min(100,hr+Math.round((Math.random()-0.5)*4)));
+    spo2=Math.max(95,Math.min(100,spo2+Math.round((Math.random()-0.5)*2)));
+    bpS=Math.max(110,Math.min(135,bpS+Math.round((Math.random()-0.5)*4)));
+    bpD=Math.max(70,Math.min(90,bpD+Math.round((Math.random()-0.5)*3)));
+    if(hrEl) hrEl.textContent=hr;
+    if(spo2El) spo2El.textContent=spo2;
+    if(bpEl) bpEl.textContent=bpS+'/'+bpD;
+  }
+  tick();
+  var iv=setInterval(tick,1200);
+  window._agVitalInterval=iv;
+})();
+
+// ── Loading adımları yönetimi ──
+function agSetStep(n){
+  for(var i=0;i<3;i++){
+    var el=document.getElementById('agStep'+i);
+    if(!el) continue;
+    if(i<n){ el.className='ag-step done'; }
+    else if(i===n){ el.className='ag-step active'; }
+    else { el.className='ag-step'; }
+  }
+  var bar=document.getElementById('agProgressBar');
+  if(bar) bar.style.width=Math.min(100,Math.round((n+1)/3*100))+'%';
+}
+function agFadeOut(){
+  var gate=document.getElementById('authGate');
+  if(!gate) return;
+  var bar=document.getElementById('agProgressBar');
+  if(bar) bar.style.width='100%';
+  setTimeout(function(){
+    gate.classList.add('fade-out');
+    clearInterval(window._agVitalInterval);
+    setTimeout(function(){ gate.style.display='none'; },600);
+  },300);
+}
+</script>
 
 <div class="screen" id="loginScreen" style="opacity:0;transition:opacity .3s ease">
   <!-- Splash ekranı -->
@@ -854,18 +1062,25 @@ const FIREBASE_CONFIG = {
 let app, auth, db;
 window.addEventListener('load', async () => {
   try {
+    // ADIM 0: Firebase başlat — Auth + Firestore paralel
+    agSetStep(0);
     app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth(app);
     db   = firebase.firestore(app);
 
-    // Oturumu kalıcı tut — PWA/mobilde kapanınca bile giriş hatırlanır
-    await auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    // Persistence ve Firestore ayarlarını paralel başlat
+    await Promise.all([
+      auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
+      db.enablePersistence({synchronizeTabs:true}).catch(()=>{})
+    ]);
+
+    // ADIM 1: Auth dinlemeye başla
+    agSetStep(1);
 
     // Redirect'ten dönüş bekleniyor mu?
     window._redirectPending = sessionStorage.getItem('acilx_redirect') === '1';
     if (window._redirectPending) {
       sessionStorage.removeItem('acilx_redirect');
-      // Redirect dönüşünde login ekranını göster (yükleniyor adımıyla)
       const loginEl = document.getElementById('loginScreen');
       if (loginEl) { loginEl.classList.remove('hidden'); loginEl.style.opacity = '1'; }
       showStep('step-loading');
@@ -879,14 +1094,13 @@ window.addEventListener('load', async () => {
       window._redirectPending = false;
 
       if (!user) {
-        // Giriş yok — frame + overlay temizle, login göster
+        // Giriş yok — login ekranına geç
         nobetFrameLoaded = false;
         window._iframeReadyBound = false;
         const fr = document.getElementById('nobetFrame');
         if (fr) { fr.onload = null; }
         if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
-        const gate2 = document.getElementById('authGate');
-        if(gate2){ gate2.style.opacity='0'; setTimeout(()=>{ gate2.style.display='none'; },300); }
+        agFadeOut();
         const loginEl = document.getElementById('loginScreen');
         if(loginEl){
           loginEl.style.display = '';
@@ -894,11 +1108,10 @@ window.addEventListener('load', async () => {
           requestAnimationFrame(()=>{ loginEl.style.opacity='1'; });
         }
       } else {
-        // Giriş VAR — loginScreen ve gate ANINDA gizle, appScreen göster
+        // Giriş VAR — ADIM 2: veri yükleme
+        agSetStep(2);
         const loginEl = document.getElementById('loginScreen');
         if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
-        const gate3 = document.getElementById('authGate');
-        if(gate3){ gate3.style.cssText = 'display:none!important;opacity:0!important'; }
         // appScreen'i hemen göster — launchApp'ı bekleme (Firestore gecikmesi var)
         const appEl = document.getElementById('appScreen');
         if(appEl) appEl.classList.remove('hidden');
@@ -1443,21 +1656,17 @@ function showScreen(s) {
   const appEl   = document.getElementById('appScreen');
 
   if(s === 'app') {
-    // Gate + loginScreen ANINDA gizle
-    if(gate)    { gate.style.cssText    = 'display:none!important;opacity:0!important'; }
+    // Gate: yumuşak fade out
+    if(typeof agFadeOut==='function') agFadeOut();
     if(loginEl) { loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
     appEl.classList.remove('hidden');
   } else {
     // App gizle, login göster
     appEl.classList.add('hidden');
-    // Frame ve overlay temizle
     if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
-    if(gate && gate.style.display !== 'none'){
-      gate.style.opacity='0';
-      setTimeout(()=>{ gate.style.display='none'; }, 280);
-    }
+    if(typeof agFadeOut==='function') agFadeOut();
     if(loginEl){
-      loginEl.style.cssText = ''; // inline style sıfırla
+      loginEl.style.cssText = '';
       loginEl.classList.remove('hidden');
       requestAnimationFrame(()=>{ loginEl.style.opacity = '1'; });
     }
