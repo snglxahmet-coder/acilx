@@ -1594,7 +1594,7 @@ function resetState(){
   // defaultDayMin, minNobet, quota, maxHours, algoConfig KORUNUR
   save();
   // Render güncelle
-  try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+  try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
   try { renderNewCal(); } catch(e){}
   updateTercihUI();
   showToast('Liste sıfırlandı. Asistan ve alan verileri korundu.');
@@ -1701,6 +1701,7 @@ function renderEgitim(){}
 function renderMinConf(){
   let html='';
   AREAS.forEach(a=>{
+    if(!S.defaultDayMin[a.id]) S.defaultDayMin[a.id]={min:1,max:3,kidemMin:{1:0,2:0,3:0,4:0,5:0},kidemGruplari:[],aktifGunler:[0,1,2,3,4,5,6],siftler:['24h']};
     const r=S.defaultDayMin[a.id];
     if(!r.kidemMin) r.kidemMin={1:0,2:0,3:0,4:0,5:0};
     if(!r.kidemGruplari) r.kidemGruplari=[];
@@ -1875,7 +1876,7 @@ function saveAlan(){
     _fsSaveAreas().catch(e => console.warn('Alan kayıt hatası:', e));
   }
   save();showSaved('minSaved');
-  renderMinConf();renderDagilim();renderKota();
+  try{renderMinConf();}catch(e){} try{renderDagilim();}catch(e){} try{renderKota();}catch(e){}
 }
 
 function deleteAlan(aId){
@@ -1899,7 +1900,7 @@ function deleteAlan(aId){
     _fsSaveAreas().catch(e => console.warn('Alan silme kayıt hatası:', e));
   }
   save();showSaved('minSaved');
-  renderMinConf();renderDagilim();renderKota();
+  try{renderMinConf();}catch(e){} try{renderDagilim();}catch(e){} try{renderKota();}catch(e){}
   renderNewCal(); // takvimi güncelle
   // Uyarılar içeriğini de temizle
   const uyEl = document.getElementById('uyarilarContent');
@@ -3089,6 +3090,11 @@ function renderDayConfigPanel(){
 
 /* ── NÖBET DAĞILIMI ── */
 function renderDagilim(){
+  const dagEl=document.getElementById('dagTbl');
+  if(!dagEl) return;
+  if(!AREAS||AREAS.length===0){ dagEl.innerHTML='<tr><td style="padding:20px;color:var(--w4);text-align:center">Alan verisi yükleniyor…</td></tr>'; return; }
+  if(!S.quota) S.quota={};
+  if(!S.minNobet) S.minNobet={};
   let html='<thead><tr>';
   html+='<th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:600;color:var(--w3);border-bottom:1px solid var(--bord);background:var(--bg3);position:sticky;left:0;z-index:2">Alan</th>';
   [1,2,3,4,5].forEach(k=>{
@@ -3131,11 +3137,14 @@ function renderDagilim(){
     html+='</tr>';
   });
   html+='</tbody>';
-  document.getElementById('dagTbl').innerHTML=html;
+  dagEl.innerHTML=html;
 }
 
 /* ── KOTA ── */
 function renderKota(){
+  const saatEl=document.getElementById('saatRow');
+  if(!saatEl) return;
+  if(!S.maxHours) S.maxHours={1:216,2:192,3:168,4:144,5:120};
   let sh='';
   [1,2,3,4,5].forEach(k=>{
     sh+=`<div style="background:var(--bg3);border-radius:var(--border-radius-md);padding:8px">
@@ -3149,7 +3158,7 @@ function renderKota(){
       </div>
     </div>`;
   });
-  document.getElementById('saatRow').innerHTML=sh;
+  saatEl.innerHTML=sh;
 }
 
 /* ── AUTO GEN v3 — algoConfig destekli ── */
@@ -4587,7 +4596,7 @@ function changeMonth(dir){
   } catch(e) { console.warn('[ACİLX] cache okuma hatası:', e); }
 
   // Anında render — localStorage verisiyle
-  try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+  try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
   try { renderNewCal(); } catch(e) {}
   updateTercihUI();
   _changeMonthBusy = false; // Kullanıcı tekrar tıklayabilir
@@ -4627,7 +4636,7 @@ function changeMonth(dir){
       // Firestore'dan yeni veri geldiyse re-render
       if(loaded){
         console.log('[ACİLX] changeMonth re-render (' + newKey + ')');
-        try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+        try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
         try { renderNewCal(); } catch(e) {}
         updateTercihUI();
       }
@@ -5201,6 +5210,8 @@ function switchTab(el,name){
     if(tabEl) tabEl.style.display=n===name?'block':'none';
   });
   if(name==='takvim') try { renderNewCal(); } catch(e) {}
+  if(name==='nobet_dagilim'){ try { renderDagilim(); } catch(e){ console.warn('renderDagilim:', e); } try { renderKota(); } catch(e){ console.warn('renderKota:', e); } }
+  if(name==='minconf') try { renderMinConf(); } catch(e){ console.warn('renderMinConf:', e); }
   if(name==='ozet'){ _ozetDate={y:S.currentDate.y,m:S.currentDate.m}; _ozetSchedule=null; renderOzet(); }
   if(name==='sorunlar') renderSorunlar();
   if(name==='asistanlar') renderAsistanlar();
@@ -7652,7 +7663,7 @@ function initApp(){
   if(typeof loadNobetSettings==='function') {
     loadNobetSettings().then(()=>{
       // Asistan ve alan verileri yüklendi — ŞİMDİ render yap
-      try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) { console.warn('initApp render:', e); }
+      try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
       // KRİTİK: Takvimi ilk açılışta render et
       try { renderNewCal(); renderTakStats(); } catch(e) { console.warn('initApp takvim:', e); }
 
@@ -7678,7 +7689,7 @@ function initApp(){
   } else {
     // loadNobetSettings yoksa — fallback ile render
     _applyFallbackData();
-    try { renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+    try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
   }
   function fixMobileGrids() {
     if(window.innerWidth <= 768) {
@@ -7708,7 +7719,7 @@ initApp();
       if(loaded){
         // KRİTİK: ASSISTANTS/AREAS yüklendiyse render yap, yoksa loadNobetSettings zaten halleder
         if(ASSISTANTS.length > 0) {
-          try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
           try { renderNewCal(); } catch(e){}
         }
         updateListNameHeader();
@@ -7717,7 +7728,7 @@ initApp();
         // Firestore'a bağlanamazsa localStorage'daki veriyle devam et
         console.warn('[ACİLX] Startup: Firestore yüklenemedi, localStorage kullanılıyor');
         if(ASSISTANTS.length > 0) {
-          try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
           try { renderNewCal(); } catch(e){}
         }
         updateListNameHeader();
@@ -7726,7 +7737,7 @@ initApp();
     } else {
       // DB yok — fallback + localStorage ile devam
       _applyFallbackData();
-      try { renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+      try{renderMinConf();}catch(e){console.warn('renderMinConf:',e);} try{renderDagilim();}catch(e){console.warn('renderDagilim:',e);} try{renderKota();}catch(e){console.warn('renderKota:',e);}
       try { renderNewCal(); } catch(e){}
     }
   } catch(e) {
