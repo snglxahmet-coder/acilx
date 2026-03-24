@@ -1705,6 +1705,35 @@ function renderMinConf(){
     const r=S.defaultDayMin[a.id];
     if(!r.kidemMin) r.kidemMin={1:0,2:0,3:0,4:0,5:0};
     if(!r.kidemGruplari) r.kidemGruplari=[];
+    if(!r.kidemBagimliligi) r.kidemBagimliligi=[];
+
+    // Kıdem bağımlılık kuralı satırları
+    const bagHtml=r.kidemBagimliligi.map((b,bi)=>{
+      const bagimliCb=[1,2,3,4,5].map(k=>`
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--w2)">
+          <input type="checkbox" ${(b.bagimli||[]).includes(k)?'checked':''} style="accent-color:#e85c2a"
+            onchange="toggleBagKidem('${a.id}',${bi},'bagimli',${k},this.checked)">
+          <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 4px">K${k}</span>
+        </label>`).join('');
+      const refansCb=[1,2,3,4,5].map(k=>`
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--w2)">
+          <input type="checkbox" ${(b.refans||[]).includes(k)?'checked':''} style="accent-color:#4ade80"
+            onchange="toggleBagKidem('${a.id}',${bi},'refans',${k},this.checked)">
+          <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 4px">K${k}</span>
+        </label>`).join('');
+      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bord);flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span style="font-size:11px;color:var(--orange);font-weight:600;min-width:60px">Bağımlı:</span>
+          ${bagimliCb}
+        </div>
+        <span style="font-size:13px;color:var(--w4)">→</span>
+        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
+          <span style="font-size:11px;color:#4ade80;font-weight:600;min-width:60px">Yanında:</span>
+          ${refansCb}
+        </div>
+        <button onclick="deleteBagimlilik('${a.id}',${bi})" class="del-btn">✕</button>
+      </div>`;
+    }).join('');
 
     // Kıdem grubu satırları
     const grupHtml=r.kidemGruplari.map((g,gi)=>{
@@ -1769,6 +1798,13 @@ function renderMinConf(){
           <button class="eg-adv-toggle" onclick="var el=document.getElementById('${advId}');el.classList.toggle('open');this.textContent=el.classList.contains('open')?'Gelişmiş ▴':'Gelişmiş ▾'">Gelişmiş ▾</button>
         </div>
         <div id="${advId}" class="eg-adv">
+          <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
+              <span class="eg-lbl">Kıdem bağımlılık kuralı <span style="font-size:11px;color:var(--w4)">(yalnız tutulamaz)</span></span>
+              <button onclick="addBagimlilik('${a.id}')" style="font-size:12px;padding:5px 12px;border-radius:5px;border:1px solid var(--bord-r);background:var(--red-sub);color:var(--red);cursor:pointer;touch-action:manipulation">+ Kural</button>
+            </div>
+            ${bagHtml||'<span style="font-size:12px;color:var(--w4)">Henüz kural yok — Örn: K3 yalnız olamaz, yanında K1 veya K2 olmalı</span>'}
+          </div>
           <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
             <span class="eg-lbl">Kıdem bazlı bireysel min <span style="font-size:11px;color:var(--w4)">(0 = yok)</span></span>
             <div style="display:flex;flex-wrap:wrap;gap:8px">${[1,2,3,4,5].map(k=>`
@@ -1865,6 +1901,7 @@ function saveAlan(){
     max: parseInt(document.getElementById('alanMax').value)||3,
     kidemMin:{1:0,2:0,3:0,4:0,5:0},
     kidemGruplari:[],
+    kidemBagimliligi:[],
     aktifGunler:[0,1,2,3,4,5,6],
     siftler:['24h']
   };
@@ -2054,6 +2091,10 @@ function renderNewCal(){
           const grpCnt = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id&&grp.kidemler.includes(ASSISTANTS[i].kidem)).length;
           if(grpCnt < (grp.min||1)){ if(violType===null) violType='kidem'; }
         });
+      }
+      // Kıdem bağımlılık kuralı
+      if(cnt>0 && kidemBagimlilikIhlali(d,a.id).length>0){
+        if(violType===null) violType='kidem';
       }
     });
 
@@ -2457,6 +2498,46 @@ function setGrupMax(aId,gi,val){
   if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
   g.max=Math.max(g.min||1, val||99);
   save();showSaved('minSaved');
+}
+
+/* ── KIDEM BAĞIMLILIK KURALI FONKSİYONLARI ── */
+function addBagimlilik(aId){
+  if(!S.defaultDayMin[aId].kidemBagimliligi) S.defaultDayMin[aId].kidemBagimliligi=[];
+  S.defaultDayMin[aId].kidemBagimliligi.push({bagimli:[3],refans:[1,2]});
+  save();showSaved('minSaved');renderMinConf();
+}
+function deleteBagimlilik(aId,bi){
+  S.defaultDayMin[aId].kidemBagimliligi.splice(bi,1);
+  save();showSaved('minSaved');renderMinConf();
+}
+function toggleBagKidem(aId,bi,field,k,checked){
+  const arr=S.defaultDayMin[aId].kidemBagimliligi[bi];
+  if(!arr[field]) arr[field]=[];
+  if(checked){if(!arr[field].includes(k))arr[field].push(k);}
+  else{const idx=arr[field].indexOf(k);if(idx>-1)arr[field].splice(idx,1);}
+  save();showSaved('minSaved');
+}
+
+// Kıdem bağımlılık kontrolü: Verilen gün+alan'da bağımlı kıdem varsa refans kıdemi de olmalı
+function kidemBagimlilikIhlali(d, aId){
+  const r=S.defaultDayMin[aId];
+  if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return [];
+  const ihlaller=[];
+  const atananKidemler=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId).map(ast=>ast.kidem);
+  if(!atananKidemler.length) return [];
+  r.kidemBagimliligi.forEach(b=>{
+    const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+    if(!bagimliVar) return;
+    const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
+    if(!refansVar){
+      ihlaller.push({
+        bagimli:b.bagimli.filter(k=>atananKidemler.includes(k)),
+        refans:b.refans,
+        kural:b
+      });
+    }
+  });
+  return ihlaller;
 }
 
 /* ══════════════════════════════════════════
@@ -3621,6 +3702,34 @@ function autoGen(){
         const atananIdx=ASSISTANTS.map((_,j)=>j).filter(j=>S.schedule[gk(j,d)]===aId&&grp.kidemler.includes(ASSISTANTS[j].kidem));
         const fazla=atananIdx.length-maxG; if(fazla<=0) return;
         [...atananIdx].sort((a,b)=>load[b].total-load[a].total).slice(0,fazla).forEach(idx=>remove(idx,d));
+      });
+    }
+  });
+
+  // ═══ ADIM 5b: KIDEM BAĞIMLILIK KURALI ═══
+  // Bağımlı kıdem yalnızsa refans kıdeminden birini eklemeye çalış
+  BASE_AREA_ORDER.forEach(area=>{
+    const aId=area.id, r=S.defaultDayMin[aId];
+    if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return;
+    for(let d=1;d<=days;d++){
+      if(!isAlanAktif(d,aId)) continue;
+      const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId).map(a2=>a2.kidem);
+      if(!atananKidemler.length) continue;
+      r.kidemBagimliligi.forEach(b=>{
+        const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+        if(!bagimliVar) return;
+        const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
+        if(refansVar) return;
+        // İhlal var — refans kıdeminden birini eklemeye çalış
+        const maxD=getDayRule(d,aId).max||99;
+        if(dCnt(d,aId)>=maxD) return; // Alan max'ı doluysa ekleyemeyiz
+        const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
+          if(S.schedule[gk(j,d)]) return false;
+          if(!(b.refans||[]).includes(ASSISTANTS[j].kidem)) return false;
+          if(kalan(j)<=0) return false;
+          return canAssign(j,d,aId,false);
+        }).sort((a2,b2)=>kalan(b2)-kalan(a2));
+        if(adaylar.length>0) put(adaylar[0],d,aId);
       });
     }
   });
@@ -6040,6 +6149,33 @@ function renderSorunlar(){
           }
         });
       }
+
+      // Kıdem bağımlılık kuralı ihlali
+      if(cnt>0){
+        const bagIhlaller=kidemBagimlilikIhlali(d,a.id);
+        bagIhlaller.forEach(ih=>{
+          const bagLbl='K'+ih.bagimli.join('/K');
+          const refLbl='K'+ih.refans.join('/K');
+          // Refans kıdeminden müsait asistan var mı?
+          const refBoslar=ASSISTANTS.filter((ast,i)=>
+            !S.schedule[gk(i,d)]&&ih.refans.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0
+          );
+          const uygunRef=refBoslar.some((ast)=>{
+            const realIdx=ASSISTANTS.indexOf(ast);
+            return canAssign(realIdx,d,a.id,true);
+          });
+          sorunlar.push({
+            tip:'kidem', alan:a, gun:d,
+            msg:`${a.name}: ${bagLbl} yalnız — yanında ${refLbl} olmalı`,
+            kural:'Kıdem bağımlılık kuralı ihlali',
+            oneri: uygunRef
+              ? `<b>Öneri:</b> ${refLbl} kıdeminden müsait asistan ata`
+              : `<b>Otomatik çözülemez:</b> ${refLbl} kıdeminden müsait asistan yok. Manuel takas veya atama yapın`,
+            otoYapilabilir: uygunRef,
+            cozumData: {d, aId:a.id, kidemler:ih.refans, bagimlilik:true}
+          });
+        });
+      }
     });
 
     if(sorunlar.length > 0){
@@ -6831,6 +6967,14 @@ function akillicoz(){
             if(grpCnt<(grp.min||1)) toplam+=((grp.min||1)-grpCnt);
           });
         }
+        // Kıdem bağımlılık kuralı ihlali
+        if(r2&&r2.kidemBagimliligi&&cnt>0){
+          const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
+          r2.kidemBagimliligi.forEach(b=>{
+            const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+            if(bagimliVar&&!(b.refans||[]).some(k=>atananKidemler.includes(k))) toplam++;
+          });
+        }
       });
     }
     return toplam;
@@ -7024,6 +7168,32 @@ function akillicoz(){
       });
     }
 
+    // ── ADIM 4: KIDEM BAĞIMLILIK ihlallerini çöz ──
+    for(let d=1;d<=days;d++){
+      AREAS.forEach(a=>{
+        const rule=getDayRule(d,a.id); if(!rule.aktif) return;
+        const r3=S.defaultDayMin[a.id];
+        if(!r3||!r3.kidemBagimliligi||!r3.kidemBagimliligi.length) return;
+        const cnt=alanCnt(d,a.id); if(cnt<=0) return;
+        const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
+        r3.kidemBagimliligi.forEach(b=>{
+          const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+          if(!bagimliVar) return;
+          const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
+          if(refansVar) return;
+          // Refans kıdeminden birini eklemeye çalış
+          const maxD=getDayRule(d,a.id).max||99;
+          if(alanCnt(d,a.id)>=maxD) return;
+          const adaylar=ASSISTANTS.map((_,j)=>j)
+            .filter(j=>(b.refans||[]).includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
+            .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
+          for(const j of adaylar){
+            if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
+          }
+        });
+      });
+    }
+
     const gecisSonu=ihlalSay();
     console.log('[ACİLX] akillicoz geçiş '+gecis+' tamamlandı, ihlal: '+gecisBaslangic+' → '+gecisSonu);
     if(gecisSonu===0||gecisSonu>=gecisBaslangic) break; // İyileşme yoksa döngüden çık
@@ -7060,6 +7230,19 @@ function akillicoz(){
             if(kidemAdaylar.length>0&&kidemMaxOlmayan.length===0) kidemNeden='Çözülemiyor: '+kidemStr+' grubundaki tüm asistanlar max nöbet sayısına ulaştı';
             manuelLog.push({tip:'kidem',d,alan:a.name,eksik:(grp.min||1)-grpCnt,neden:kidemNeden});
           }
+        });
+      }
+      // Kıdem bağımlılık ihlali
+      if(r2&&r2.kidemBagimliligi&&cnt>0){
+        const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
+        r2.kidemBagimliligi.forEach(b=>{
+          const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
+          if(!bagimliVar) return;
+          const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
+          if(refansVar) return;
+          const bagLbl='K'+(b.bagimli||[]).filter(k=>atananKidemler.includes(k)).join('/K');
+          const refLbl='K'+(b.refans||[]).join('/K');
+          manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:bagLbl+' yalnız — yanında '+refLbl+' olmalı ama müsait refans asistanı yok'});
         });
       }
     });
