@@ -1185,6 +1185,27 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
   }
 })();
 
+/* ── Sunucu tarafı rol doğrulama ── */
+// Firestore'dan kullanıcının gerçek rolünü çeker, cache'ler (30sn TTL)
+var _verifiedRole = null;
+var _roleVerifiedAt = 0;
+async function verifyRole() {
+  if (_verifiedRole && Date.now() - _roleVerifiedAt < 30000) return _verifiedRole;
+  if (!_db || !window.ACILX_UID) { _verifiedRole = 'asistan'; return _verifiedRole; }
+  try {
+    var snap = await _db.collection('users').doc(window.ACILX_UID).get();
+    _verifiedRole = (snap.exists && snap.data().role) || 'asistan';
+  } catch(e) {
+    _verifiedRole = _verifiedRole || 'asistan';
+  }
+  _roleVerifiedAt = Date.now();
+  window.ACILX_ROLE = _verifiedRole;
+  return _verifiedRole;
+}
+async function isVerifiedBasasistan() {
+  return (await verifyRole()) === 'basasistan';
+}
+
 /* ── Firestore bağlantısı (shell ile aynı config kullanılır) ──────────── */
 /* Config shell'den mesaj olarak da alınabilir; şimdilik aynı config kopyalanır. */
 const FIREBASE_CONFIG = {
@@ -1230,13 +1251,15 @@ let _fsSaveTimer = null;
 function fsSaveState() {
   if (!_db) return;
   if (window.ACILX_ROLE !== 'basasistan') return;
-  // KRİTİK: Asistan/Alan verileri Firestore'dan yüklenmeden yazma yapma
-  if (!window._assistantsLoaded) {
-    console.warn('[ACİLX] fsSaveState engellendi — asistan verileri henüz yüklenmedi');
-    return;
-  }
+  if (!window._assistantsLoaded) return;
   clearTimeout(_fsSaveTimer);
-  _fsSaveTimer = setTimeout(_fsSaveNow, 1500);
+  _fsSaveTimer = setTimeout(function(){
+    // Yazma anında Firestore'dan rol doğrula
+    isVerifiedBasasistan().then(function(ok){
+      if (!ok) { console.warn('[ACİLX] fsSaveState engellendi — rol doğrulanamadı'); return; }
+      _fsSaveNow();
+    });
+  }, 1500);
 }
 async function _fsSaveNow() {
   if (!_db) return;
@@ -1272,7 +1295,8 @@ async function _fsSaveNow() {
 // ── AREAS Firestore Kaydet/Yükle ──
 async function _fsSaveAreas() {
   if (!_db || window.ACILX_ROLE !== 'basasistan') return;
-  if (!window._areasLoaded && AREAS.length === 0) return; // Boş veri yazma
+  if (!(await isVerifiedBasasistan())) return;
+  if (!window._areasLoaded && AREAS.length === 0) return;
   const gId = window.ACILX_GROUP || 'default';
   try {
     await _db.collection('groups').doc(gId).collection('assistants').doc('areas').set({
@@ -2828,14 +2852,17 @@ function saveAstEkle(){
   ASSISTANTS.push(newAst);
   window._assistantsLoaded = true; // Artık asistan verisi mevcut
 
-  // Firestore'a da kaydet (başasistan için)
+  // Firestore'a kaydet (rol doğrulamalı)
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    const _gId = window.ACILX_GROUP || 'default';
-    _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
-      list: ASSISTANTS,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: window.ACILX_UID
-    }).catch(e=>console.warn('Asistan kayıt hatası:', e));
+    isVerifiedBasasistan().then(function(ok){
+      if(!ok) return;
+      var _gId = window.ACILX_GROUP || 'default';
+      _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
+        list: ASSISTANTS,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: window.ACILX_UID
+      }).catch(function(e){ console.warn('Asistan kayıt hatası:', e); });
+    });
   }
 
   closeAstEkleModal();
@@ -2865,14 +2892,17 @@ function deleteAst(idx){
   // ID'leri güncelle
   ASSISTANTS.forEach((a,i)=>{ a.id=i; });
 
-  // Firestore'a kaydet
+  // Firestore'a kaydet (rol doğrulamalı)
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    const _gIdDel = window.ACILX_GROUP || 'default';
-    _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
-      list: ASSISTANTS,
-      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy: window.ACILX_UID
-    }).catch(e=>console.warn('Asistan silme hatası:', e));
+    isVerifiedBasasistan().then(function(ok){
+      if(!ok) return;
+      var _gIdDel = window.ACILX_GROUP || 'default';
+      _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
+        list: ASSISTANTS,
+        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        updatedBy: window.ACILX_UID
+      }).catch(function(e){ console.warn('Asistan silme hatası:', e); });
+    });
   }
 
   save();
@@ -2954,6 +2984,7 @@ function togglePendingKidem(uid, val){
 }
 
 async function approveUser(uid, email, name){
+  if(!(await isVerifiedBasasistan())){ showToast('Yetkiniz yok'); return; }
   const action = document.getElementById('pendingAction_'+uid)?.value;
   if(!action){ alert('Lütfen bir seçim yapın.'); return; }
 
@@ -3002,6 +3033,7 @@ async function approveUser(uid, email, name){
 }
 
 async function rejectUser(uid){
+  if(!(await isVerifiedBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Bu kullaniciyi reddetmek istediginizden emin misiniz?')) return;
   await _db.collection('users').doc(uid).update({status:'rejected'});
   loadPendingUsers();
@@ -3027,13 +3059,15 @@ function fsSettingsRef(y, m) {
 async function loadNobetSettings() {
   window._myAstIdx = -1;
   if(!_db) {
-    // Firestore yok — fallback'leri kullan
     _applyFallbackData();
     return;
   }
   showSpinner();
   try {
-    // 0. Grup bilgisini çek (kıdem yapısı)
+    // 0. Rolü Firestore'dan doğrula (URL parametresine güvenme)
+    await verifyRole();
+
+    // 0b. Grup bilgisini çek (kıdem yapısı)
     const gId = window.ACILX_GROUP || 'default';
     const groupSnap = await _db.collection('groups').doc(gId).get();
     if(groupSnap.exists) {
@@ -3264,6 +3298,7 @@ async function nobetSil(){
 
 async function nobetYayindanKaldir(){
   if(!_db) return;
+  if(!(await isVerifiedBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbeti yayından kaldırmak istediğinden emin misin?')) return;
   window._nobetYayinda = false;
   showSpinner();
@@ -3279,6 +3314,7 @@ async function nobetYayindanKaldir(){
 
 async function toggleTercihDonem() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
+  if(!(await isVerifiedBasasistan())){ showToast('Yetkiniz yok'); return; }
   const {y,m} = S.currentDate;
   const yeni = !window._tercihAcik;
   window._tercihAcik = yeni;
@@ -3303,6 +3339,7 @@ async function toggleTercihDonem() {
 
 async function nobetYayinla() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
+  if(!(await isVerifiedBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbet listesini yayınlamak istediğinizden emin misiniz? Asistanlar bildirim alacak.')) return;
   window._nobetYayinda = true;
   showSpinner();
