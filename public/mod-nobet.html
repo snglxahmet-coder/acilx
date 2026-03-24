@@ -2968,20 +2968,219 @@ function updateTercihUI() {
 async function nobetOlustur(){
   autoGen();
   // ── KRİTİK: listeyi HEMEN kaydet ──────────────────────────────
-  // 1. localStorage'a yaz (anında)
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
-  // 2. Firestore'a HEMEN yaz — AWAIT ile (sayfa kapansa bile yazılmış olsun)
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
     window._pendingSave = true;
     try { await _fsSaveNow(); } catch(e) { console.warn('nobetOlustur kayıt:', e); }
     window._pendingSave = false;
   }
   updateTercihUI();
-
-  // ── Hedefi dolmamış asistanları tespit et ve başasistana sun ──
   _checkHedefEksikleri();
-
   showToast('Nöbet oluşturuldu ve kaydedildi');
+
+  // ── Analiz modalı: sadece ihlal varsa göster ──
+  _showGenAnaliz();
+}
+
+function _showGenAnaliz(){
+  const {y,m}=S.currentDate;
+  const days=daysInMonth(y,m);
+
+  // ── Alan × Kıdem analizi: hedef vs gerçekleşen ──
+  const alanKidemData=[];  // {alan, kidem, hedef, gercek, fark}
+  const oneriler=[];       // {metin, uygula: function}
+
+  AREAS.forEach(a=>{
+    const aId=a.id;
+    [1,2,3,4,5].forEach(k=>{
+      const hedefKota=(S.quota[aId]||{})[k]||0;
+      if(hedefKota===0) return; // Bu kıdem bu alana giremiyor
+      // Gerçekleşen: bu ay bu alana atanan K{k} nöbet sayısı
+      let gercek=0;
+      for(let d=1;d<=days;d++){
+        const atananlar=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId&&ASSISTANTS[i].kidem===k);
+        gercek+=atananlar.length;
+      }
+      // Hedef: kota × aktif gün sayısı DEĞİL, kota direkt aylık hedef
+      const fark=gercek-hedefKota;
+      if(fark<0){
+        alanKidemData.push({alan:a, kidem:k, hedef:hedefKota, gercek, fark});
+      }
+    });
+  });
+
+  // İhlaller: gunIhlalleri ile tutarlı
+  let toplamIhlal=0;
+  for(let d=1;d<=days;d++){
+    const gundeAtanan=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]).length;
+    if(gundeAtanan===0) continue;
+    toplamIhlal+=gunIhlalleri(d).length;
+  }
+
+  // İhlal yoksa ve eksik kota yoksa modal açma
+  if(toplamIhlal===0&&alanKidemData.length===0) return;
+
+  // ── Öneriler üret ──
+  // 1) Eksik kota → kota artırma önerisi
+  alanKidemData.forEach(item=>{
+    const artis=Math.abs(item.fark);
+    oneriler.push({
+      metin: item.alan.name+' alanında K'+item.kidem+' hedefini '+artis+' artırın ('+item.gercek+'/'+item.hedef+')',
+      tip:'kota',
+      alanId:item.alan.id, kidem:item.kidem, artis:artis,
+      uygula: function(){
+        if(!S.quota[item.alan.id]) S.quota[item.alan.id]={};
+        S.quota[item.alan.id][item.kidem]=(S.quota[item.alan.id][item.kidem]||0)+artis;
+      }
+    });
+  });
+
+  // 2) Min doluluk ihlali → min kuralını düşür veya kota artır
+  const minIhlalAlanlar=new Set();
+  for(let d=1;d<=days;d++){
+    gunIhlalleri(d).forEach(ih=>{
+      if(ih.tip==='min'&&ih.alan) minIhlalAlanlar.add(ih.alan.id);
+    });
+  }
+  minIhlalAlanlar.forEach(aId=>{
+    const alan=AREAS.find(a=>a.id===aId);
+    if(!alan) return;
+    // Zaten kota önerisinde varsa tekrar ekleme
+    if(oneriler.some(o=>o.tip==='kota'&&o.alanId===aId)) return;
+    const r=S.defaultDayMin[aId];
+    const minVal=r&&r.min?r.min:0;
+    if(minVal>0){
+      // Toplam kotanın yeterli olup olmadığını kontrol et
+      let toplamKota=0;
+      [1,2,3,4,5].forEach(k=>{ toplamKota+=((S.quota[aId]||{})[k]||0); });
+      let aktifGun=0;
+      for(let d=1;d<=days;d++){ if(isAlanAktif(d,aId)) aktifGun++; }
+      const gereken=aktifGun*minVal;
+      if(toplamKota<gereken){
+        const eksik=gereken-toplamKota;
+        // En çok kotası olan kıdemi bul, oraya ekle
+        let bestK=1,bestV=0;
+        [1,2,3,4,5].forEach(k=>{ const v=(S.quota[aId]||{})[k]||0; if(v>bestV){bestV=v;bestK=k;} });
+        oneriler.push({
+          metin: alan.name+' toplam kotası yetersiz ('+toplamKota+'/'+gereken+' gerekli) — K'+bestK+' kotasını '+eksik+' artırın',
+          tip:'kota_toplam',
+          alanId:aId, kidem:bestK, artis:eksik,
+          uygula: function(){
+            if(!S.quota[aId]) S.quota[aId]={};
+            S.quota[aId][bestK]=(S.quota[aId][bestK]||0)+eksik;
+          }
+        });
+      }
+    }
+  });
+
+  // 3) Kıdem bağımlılık ihlali → gevşetme önerisi
+  const bagIhlalAlanlar=new Set();
+  for(let d=1;d<=days;d++){
+    gunIhlalleri(d).forEach(ih=>{
+      if(ih.tip==='kidem'&&ih.msg&&ih.msg.includes('yalnız')&&ih.alan) bagIhlalAlanlar.add(ih.alan.id);
+    });
+  }
+  bagIhlalAlanlar.forEach(aId=>{
+    const alan=AREAS.find(a=>a.id===aId);
+    if(!alan) return;
+    const r=S.defaultDayMin[aId];
+    if(r&&r.kidemBagimliligi&&r.kidemBagimliligi.length){
+      r.kidemBagimliligi.forEach(b=>{
+        const refLbl='K'+(b.refans||[]).join('/K');
+        // Refans kıdeminde yeterli asistan var mı?
+        const refKota=(b.refans||[]).reduce((s,k)=>s+((S.quota[aId]||{})[k]||0),0);
+        if(refKota===0){
+          oneriler.push({
+            metin: alan.name+' '+refLbl+' kıdem bağımlılık kuralını gevşetin veya '+refLbl+' kotası ekleyin',
+            tip:'bagimlilik',
+            alanId:aId, refans:b.refans,
+            uygula: function(){
+              // Refans kıdemlerine kota ekle
+              (b.refans||[]).forEach(k=>{
+                if(!S.quota[aId]) S.quota[aId]={};
+                if((S.quota[aId][k]||0)===0) S.quota[aId][k]=2;
+              });
+            }
+          });
+        }
+      });
+    }
+  });
+
+  if(oneriler.length===0&&toplamIhlal===0) return;
+
+  // ── Modal HTML ──
+  let mhtml='<div id="genAnalizModal" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);backdrop-filter:blur(4px)">';
+  mhtml+='<div style="background:var(--bg1);border:1px solid var(--bord);border-radius:12px;width:min(520px,92vw);max-height:80vh;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5)">';
+
+  // Header
+  mhtml+='<div style="padding:16px 20px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:10px">';
+  mhtml+='<div style="width:8px;height:8px;border-radius:50%;background:var(--red)"></div>';
+  mhtml+='<div style="flex:1"><div style="font-size:14px;font-weight:800;color:var(--w1)">Nöbet Analizi</div>';
+  mhtml+='<div style="font-size:11px;color:var(--w3)">'+toplamIhlal+' kural ihlali · '+oneriler.length+' öneri</div></div>';
+  mhtml+='<button onclick="document.getElementById(\'genAnalizModal\').remove()" style="background:none;border:none;color:var(--w3);font-size:18px;cursor:pointer;padding:4px">&#10005;</button>';
+  mhtml+='</div>';
+
+  // Eksik alan × kıdem tablosu
+  if(alanKidemData.length>0){
+    mhtml+='<div style="padding:12px 20px;border-bottom:1px solid var(--bord)">';
+    mhtml+='<div style="font-size:11px;font-weight:700;color:var(--w2);margin-bottom:8px">Eksik Kalan Alan × Kıdem</div>';
+    mhtml+='<table style="width:100%;border-collapse:collapse;font-size:11px">';
+    mhtml+='<thead><tr><th style="text-align:left;padding:4px 8px;color:var(--w3);font-weight:600;border-bottom:1px solid var(--bord)">Alan</th><th style="padding:4px;color:var(--w3);font-weight:600;border-bottom:1px solid var(--bord)">Kıdem</th><th style="padding:4px;color:var(--w3);font-weight:600;border-bottom:1px solid var(--bord)">Hedef</th><th style="padding:4px;color:var(--w3);font-weight:600;border-bottom:1px solid var(--bord)">Gerçek</th><th style="padding:4px;color:var(--w3);font-weight:600;border-bottom:1px solid var(--bord)">Fark</th></tr></thead><tbody>';
+    alanKidemData.forEach(item=>{
+      mhtml+='<tr><td style="padding:4px 8px;border-bottom:1px solid var(--bord)"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+item.alan.color+';margin-right:4px"></span>'+item.alan.name+'</td>';
+      mhtml+='<td style="text-align:center;padding:4px;border-bottom:1px solid var(--bord)"><span class="kt '+KIDEM_CLS[item.kidem]+'" style="font-size:9px;padding:1px 4px">K'+item.kidem+'</span></td>';
+      mhtml+='<td style="text-align:center;padding:4px;border-bottom:1px solid var(--bord);color:var(--w2)">'+item.hedef+'</td>';
+      mhtml+='<td style="text-align:center;padding:4px;border-bottom:1px solid var(--bord);color:var(--w1);font-weight:700">'+item.gercek+'</td>';
+      mhtml+='<td style="text-align:center;padding:4px;border-bottom:1px solid var(--bord);color:var(--red);font-weight:700">'+item.fark+'</td></tr>';
+    });
+    mhtml+='</tbody></table></div>';
+  }
+
+  // Öneriler listesi
+  if(oneriler.length>0){
+    mhtml+='<div style="padding:12px 20px;border-bottom:1px solid var(--bord)">';
+    mhtml+='<div style="font-size:11px;font-weight:700;color:var(--w2);margin-bottom:8px">Öneriler</div>';
+    window._genAnalizOneriler=oneriler;
+    oneriler.forEach((o,idx)=>{
+      const tipIcon=o.tip==='bagimlilik'?'&#9881;':'&#9650;';
+      const tipColor=o.tip==='bagimlilik'?'#9B7AE0':'var(--orange)';
+      mhtml+='<div style="display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--bord)">';
+      mhtml+='<span style="font-size:10px;color:'+tipColor+';flex-shrink:0;margin-top:2px">'+tipIcon+'</span>';
+      mhtml+='<span style="font-size:11px;color:var(--w2);flex:1">'+o.metin+'</span>';
+      mhtml+='</div>';
+    });
+    mhtml+='</div>';
+  }
+
+  // Footer butonları
+  mhtml+='<div style="padding:14px 20px;display:flex;align-items:center;gap:8px;justify-content:flex-end">';
+  if(oneriler.length>0){
+    mhtml+='<button onclick="_genAnalizUygula()" style="padding:7px 16px;border-radius:6px;background:var(--red);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-sans)">Ayarları Güncelle</button>';
+  }
+  mhtml+='<button onclick="document.getElementById(\'genAnalizModal\').remove()" style="padding:7px 16px;border-radius:6px;background:var(--bg3);border:1px solid var(--bord);color:var(--w2);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font-sans)">Kapat</button>';
+  mhtml+='</div>';
+
+  mhtml+='</div></div>';
+
+  // Eski modal varsa kaldır
+  const eski=document.getElementById('genAnalizModal');
+  if(eski) eski.remove();
+  document.body.insertAdjacentHTML('beforeend',mhtml);
+}
+
+function _genAnalizUygula(){
+  const oneriler=window._genAnalizOneriler;
+  if(!oneriler||!oneriler.length) return;
+  oneriler.forEach(o=>{ if(typeof o.uygula==='function') o.uygula(); });
+  save();
+  // Modal kapat
+  const m=document.getElementById('genAnalizModal');
+  if(m) m.remove();
+  // Yeniden oluştur
+  showToast('Ayarlar güncellendi — yeniden oluşturuluyor');
+  setTimeout(function(){ nobetOlustur(); },200);
 }
 
 async function nobetSil(){
