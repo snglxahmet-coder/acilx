@@ -1,7 +1,9 @@
-/* ACİLX Service Worker v3 */
+/* ACİLX Service Worker — auto-versioned */
 
-const CACHE     = 'acilx-v3';
-const RUNTIME   = 'acilx-rt-v3';
+const BUILD_TS  = '__BUILD_TS__';   // deploy script veya CI tarafından değiştirilir
+const VERSION   = BUILD_TS !== '__BUILD_TS__' ? BUILD_TS : Date.now().toString();
+const CACHE     = 'acilx-' + VERSION;
+const RUNTIME   = 'acilx-rt-' + VERSION;
 
 const PRECACHE = [
   '/',
@@ -63,19 +65,17 @@ self.addEventListener('fetch', e => {
     return;
   }
 
-  // Statik → Cache First, arka planda güncelle
+  // Statik → Network First (deploy sonrası anında güncelleme)
   e.respondWith(
-    caches.match(e.request).then(cached => {
-      const net = fetch(e.request).then(res => {
-        if (res && res.status === 200 && res.type !== 'opaque') {
+    fetch(e.request)
+      .then(res => {
+        if (res && res.status === 200) {
           const resClone = res.clone();
           caches.open(RUNTIME).then(c => c.put(e.request, resClone));
         }
         return res;
-      }).catch(() => null);
-
-      return cached || net.then(r => r || fallback(url));
-    })
+      })
+      .catch(() => caches.match(e.request).then(c => c || fallback(url)))
   );
 });
 
