@@ -2160,6 +2160,16 @@ function gunIhlalleri(d){
         ihlaller.push({tip:'kidem',alan:a,msg:a.name+': '+ih.msg});
       });
     }
+    // kidemMin ihlali
+    const kMinObj=rule.kidemMin||{};
+    for(const kk of Object.keys(kMinObj)){
+      const kMinReq=kMinObj[kk]||0;
+      if(kMinReq<=0) continue;
+      const kCnt=atananlar.filter(x=>x.kidem===Number(kk)).length;
+      if(kCnt<kMinReq){
+        ihlaller.push({tip:'kidemMin',alan:a,msg:a.name+': K'+kk+' min '+kMinReq+' gerekli, mevcut '+kCnt+' — '+(kMinReq-kCnt)+' eksik'});
+      }
+    }
   });
   return ihlaller;
 }
@@ -4015,10 +4025,20 @@ function autoGen(){
     const rule=getDayRule(d,aId);
     const cnt=dCnt(d,aId);
     if(cnt<(rule.min||0)) sc+=500;
+    // kidemMin bonusu — bu gün/alan'da bu kıdemden minimum gerekiyorsa ve henüz yeterli yoksa
+    const kMinObj=rule.kidemMin||{};
+    const kMinReq=kMinObj[kidem]||0;
+    if(kMinReq>0){
+      const gundeKidemMin=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidem).length;
+      if(gundeKidemMin<kMinReq) sc+=600;
+    }
+    // Cross-area kıdem cezası — aynı gün TÜM alanlarda aynı kıdemden çok kişi varsa
+    const gunToplamKidem=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]&&ASSISTANTS[j].kidem===kidem).length;
+    if(gunToplamKidem>=3) sc-=gunToplamKidem*40;
     // Kıdem çeşitlilik bonusu — bu günde bu kıdem yoksa tercih et
     const gundeKidem=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidem).length;
-    if(gundeKidem===0) sc+=80;
-    else sc-=gundeKidem*30;
+    if(gundeKidem===0) sc+=200;
+    else sc-=gundeKidem*80;
     // Doluluk — az dolu günleri tercih et
     sc-=cnt*15;
     // İdeal aralık — nöbetleri aya eşit yay
@@ -4092,6 +4112,44 @@ function autoGen(){
 
   console.log('[CSP] Min doldurma sonrası:', Object.keys(S.schedule).length, 'atama');
 
+  // Geçiş 1b: kidemMin doldurma — her (gün,alan) için kıdem seviyesi minimum karşılansın
+  for(let pass=0;pass<3;pass++){
+    const ignoreMesafe=pass>=2;
+    const ignoreKacinma=pass>=1;
+    for(const sl of slotList){
+      const {d,aId}=sl;
+      const rule=getDayRule(d,aId);
+      if(!rule.aktif) continue;
+      const kMinObj=rule.kidemMin||{};
+      for(const kk of Object.keys(kMinObj)){
+        const kMinReq=kMinObj[kk]||0;
+        if(kMinReq<=0) continue;
+        const kidemNum=Number(kk);
+        const mevcutK=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidemNum).length;
+        let eksikK=kMinReq-mevcutK;
+        if(eksikK<=0) continue;
+        // Bu kıdemden aday bul
+        const adaylar=[];
+        for(let i=0;i<N;i++){
+          if(hedefler[i]<=0) continue;
+          if(ASSISTANTS[i].kidem!==kidemNum) continue;
+          if(!astDayAreas[i][d]||!astDayAreas[i][d].includes(aId)) continue;
+          if(canPlace(i,d,aId,false,ignoreMesafe,ignoreKacinma)) adaylar.push(i);
+        }
+        adaylar.sort((a,b)=>dayScore(b,d,aId)-dayScore(a,d,aId));
+        for(const i of adaylar){
+          if(eksikK<=0) break;
+          if(dCnt(d,aId)>=(rule.max||99)) break;
+          if(canPlace(i,d,aId,false,ignoreMesafe,ignoreKacinma)){
+            assign(i,d,aId);
+            eksikK--;
+          }
+        }
+      }
+    }
+  }
+  console.log('[CSP] kidemMin doldurma sonrası:', Object.keys(S.schedule).length, 'atama');
+
   // Geçiş 2: Kalan hedefleri doldur — her asistanı en uygun günlere yerleştir
   // Asistanları kalan hedeflerine göre sırala (çok ihtiyacı olan önce)
   const astOrder=ASSISTANTS.map((_,i)=>i)
@@ -4159,6 +4217,14 @@ function autoGen(){
         if((rule.max||99)<99 && cnt>(rule.max)) v+=cnt-(rule.max);
         // Kıdem kuralı ihlali
         if(cnt>0) v+=kidemKuralIhlali(d,aId).length;
+        // kidemMin ihlali
+        const kMinObj=rule.kidemMin||{};
+        for(const kk of Object.keys(kMinObj)){
+          const kMinReq=kMinObj[kk]||0;
+          if(kMinReq<=0) continue;
+          const kCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===Number(kk)).length;
+          if(kCnt<kMinReq) v+=(kMinReq-kCnt);
+        }
       }
     }
     // Hedef ihlali
@@ -4342,6 +4408,64 @@ function autoGen(){
       }
     }
 
+    // Strateji 6: kidemMin ihlalleri — her (gün,alan) için kıdem minimum eksiklerini gider
+    for(let d=1;d<=days&&repairIter<REPAIR_LIMIT;d++){
+      for(const area of AREAS){
+        const aId=area.id;
+        if(!isAlanAktif(d,aId)) continue;
+        const rule=getDayRule(d,aId);
+        if(!rule.aktif) continue;
+        const kMinObj=rule.kidemMin||{};
+        for(const kk of Object.keys(kMinObj)){
+          repairIter++;
+          const kMinReq=kMinObj[kk]||0;
+          if(kMinReq<=0) continue;
+          const kidemNum=Number(kk);
+          const kCnt=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidemNum).length;
+          if(kCnt>=kMinReq) continue;
+          const eksik=kMinReq-kCnt;
+          const maxSlot=(rule.max||99);
+          const cnt=dCnt(d,aId);
+          if(cnt<maxSlot){
+            // Max dolmamış — doğrudan ekle
+            for(let i=0;i<N&&(kMinReq-ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===kidemNum).length)>0;i++){
+              if(hedefler[i]<=0) continue;
+              if(ASSISTANTS[i].kidem!==kidemNum) continue;
+              if(S.schedule[gk(i,d)]) continue;
+              if(astIzinliAylik(i).includes(d)) continue;
+              if(isEgtFull(y,mo,d,ASSISTANTS[i].kidem)) continue;
+              assign(i,d,aId);
+              improved=true;
+            }
+          } else {
+            // Max dolu — gerekli olmayan kıdemden biriyle swap
+            const atananlar=ASSISTANTS.map((_,j)=>j).filter(j=>S.schedule[gk(j,d)]===aId);
+            const swapAday=atananlar.find(j=>{
+              const jKidem=ASSISTANTS[j].kidem;
+              if(jKidem===kidemNum) return false;
+              // Bu kıdemin minimum'u yoksa veya fazlası varsa swap edilebilir
+              const jKMin=kMinObj[jKidem]||0;
+              const jKCnt=ASSISTANTS.filter((_,jj)=>S.schedule[gk(jj,d)]===aId&&ASSISTANTS[jj].kidem===jKidem).length;
+              return jKCnt>jKMin;
+            });
+            if(swapAday!==undefined){
+              // Gerekli kıdemden aday bul
+              for(let i=0;i<N;i++){
+                if(hedefler[i]<=0||ASSISTANTS[i].kidem!==kidemNum) continue;
+                if(S.schedule[gk(i,d)]) continue;
+                if(astIzinliAylik(i).includes(d)) continue;
+                if(isEgtFull(y,mo,d,ASSISTANTS[i].kidem)) continue;
+                unassign(swapAday,d);
+                assign(i,d,aId);
+                improved=true;
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+
     const newV=countViolations();
     if(newV>=violations&&!improved) break; // İyileşme yok — çık
     violations=newV;
@@ -4397,7 +4521,16 @@ function autoGen(){
         if(atananlar.length<=1) continue;
         const kidemSayi={};
         atananlar.forEach(a=>{kidemSayi[a.kidem]=(kidemSayi[a.kidem]||0)+1;});
-        Object.values(kidemSayi).forEach(c=>{if(c>1)score-=(c-1)*25;});
+        Object.values(kidemSayi).forEach(c=>{if(c>1)score-=(c-1)*50;});
+        // kidemMin soft cezası — eksik her kişi için -200
+        const rule=getDayRule(d,aId);
+        const kMinObj=rule.kidemMin||{};
+        for(const kk of Object.keys(kMinObj)){
+          const kMinReq=kMinObj[kk]||0;
+          if(kMinReq<=0) continue;
+          const kCnt=atananlar.filter(a=>a.kidem===Number(kk)).length;
+          if(kCnt<kMinReq) score-=(kMinReq-kCnt)*200;
+        }
       }
     }
     return score;
