@@ -1691,7 +1691,7 @@ function renderMinConf(){
       const kosul=kural.kosul||'enAz1';
       let detayHtml='';
       if(yalniz){
-        const yanindaCbs=[1,2,3,4,5].filter(k2=>k2!==k).map(k2=>`
+        const yanindaCbs=[1,2,3,4,5].map(k2=>`
           <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
             <input type="checkbox" ${yaninda.includes(k2)?'checked':''} style="accent-color:#4ade80"
               onchange="toggleKidemYaninda('${a.id}',${k},${k2},this.checked)">
@@ -2449,21 +2449,23 @@ function kidemKuralIhlali(d, aId){
     if(!atananKidemler.includes(k)) return;
     const yaninda=kural.yaninda||[];
     const kosul=kural.kosul||'enAz1';
+    // Yanında kontrol: yk===k ise aynı kıdemden en az 2 olmalı, farklı kıdemse en az 1 olmalı
+    function yanindaVar(yk){
+      if(yk===k) return atananKidemler.filter(ak=>ak===k).length>=2;
+      return atananKidemler.includes(yk);
+    }
     if(!yaninda.length){
       // Yanında listesi boş → aynı kıdemden en az 2 kişi olmalı
-      const sayi=atananKidemler.filter(ak=>ak===k).length;
-      if(sayi===1){
+      if(atananKidemler.filter(ak=>ak===k).length===1){
         ihlaller.push({kidem:k,yaninda:[],kosul,msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
       }
     } else if(kosul==='hepsi'){
-      // Hepsi gerekli
-      const eksikler=yaninda.filter(yk=>!atananKidemler.includes(yk));
+      const eksikler=yaninda.filter(yk=>!yanindaVar(yk));
       if(eksikler.length>0){
         ihlaller.push({kidem:k,yaninda,kosul,eksikler,msg:'K'+k+' yalnız — yanında K'+eksikler.join('/K')+' olmalı (hepsi)'});
       }
     } else {
-      // En az 1 tanesi
-      const varMi=yaninda.some(yk=>atananKidemler.includes(yk));
+      const varMi=yaninda.some(yk=>yanindaVar(yk));
       if(!varMi){
         ihlaller.push({kidem:k,yaninda,kosul,msg:'K'+k+' yalnız — yanında K'+yaninda.join('/K')+"'ten en az 1 olmalı"});
       }
