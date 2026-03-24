@@ -357,12 +357,13 @@ function niStep(btn,delta){
 </div>
 <div class="tabs" style="border-bottom:none;margin-bottom:0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;scrollbar-width:none">
   <div class="tab active" id="tab-btn-takvim" onclick="switchTab(this,'takvim')">Takvim</div>
-  <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">👤 Profilim</div>
-  <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
-  <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
-  <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
-  <div class="tab" id="tab-btn-egitim" onclick="switchTab(this,'egitim')">Eğitim Günleri</div>
-  <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">⚙ Ayarlar</div>
+  <div class="tab" id="tab-btn-astprofile" onclick="switchTab(this,'astprofile')">Profilim</div>
+  <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">Ayarlar</div>
+  <!-- Gizli tablar — JS erişimi için mevcut, menüde gösterilmez -->
+  <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')" style="display:none">Özet</div>
+  <div class="tab" onclick="switchTab(this,'nobet_dagilim')" style="display:none">Nöbet Dağılımı</div>
+  <div class="tab" onclick="switchTab(this,'minconf')" style="display:none">Alanlar</div>
+  <div class="tab" id="tab-btn-egitim" onclick="switchTab(this,'egitim')" style="display:none">Eğitim Günleri</div>
 </div>
 </div>
 </div>
@@ -428,56 +429,46 @@ function niStep(btn,delta){
       <button class="nav-btn" onclick="changeMonth(1)">&#8594;</button>
     </div>
     <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap">
-      <button id="olusturBtn" class="btn btn-g" onclick="nobetOlustur()" style="font-size:11px;padding:5px 9px">↺ Oluştur</button>
-      <button id="silBtn" onclick="nobetSil()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(232,87,42,0.3);background:rgba(232,87,42,0.08);color:var(--red);cursor:pointer;font-family:var(--font-sans)">🗑 Sil</button>
-      <button id="tercihBtn" onclick="toggleTercihDonem()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans);display:none">📋 Tercih Aç</button>
-      <button id="yayinlaBtn" onclick="nobetYayinla()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(80,180,80,0.4);background:rgba(80,180,80,0.08);color:#80B840;cursor:pointer;font-family:var(--font-sans);font-weight:700;display:none">✓ Yayınla</button>
-      <button id="yayindanKaldirBtn" onclick="nobetYayindanKaldir()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans)">⊘ Kaldır</button>
-      <button onclick="exportPDF()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(55,138,221,0.4);background:rgba(55,138,221,0.08);color:#378ADD;cursor:pointer;font-family:var(--font-sans);font-weight:600">📄 PDF</button>
+      <button id="olusturBtn" onclick="nobetOlustur()" style="font-size:12px;padding:7px 14px;border-radius:8px;border:none;background:var(--red);color:#fff;cursor:pointer;font-family:var(--font-sans);font-weight:700;letter-spacing:.3px;transition:opacity .15s">Nobet Olustur</button>
+      <button id="silBtn" onclick="nobetSil()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(232,87,42,0.3);background:rgba(232,87,42,0.08);color:var(--red);cursor:pointer;font-family:var(--font-sans)">Sil</button>
+      <button id="tercihBtn" onclick="toggleTercihDonem()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans);display:none">Tercih Ac</button>
+      <button id="yayinlaBtn" onclick="nobetYayinla()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(80,180,80,0.4);background:rgba(80,180,80,0.08);color:#80B840;cursor:pointer;font-family:var(--font-sans);font-weight:700;display:none">Yayinla</button>
+      <button id="yayindanKaldirBtn" onclick="nobetYayindanKaldir()" style="display:none;font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans)">Kaldir</button>
+      <button onclick="exportPDF()" style="font-size:11px;padding:5px 9px;border-radius:6px;border:1px solid rgba(55,138,221,0.4);background:rgba(55,138,221,0.08);color:#378ADD;cursor:pointer;font-family:var(--font-sans);font-weight:600">PDF</button>
     </div>
   </div>
 
-  <!-- İSTATİSTİK BARLARI -->
+  <!-- TAKAS MODU BANNER -->
+  <div id="swapModeBanner" style="display:none;background:rgba(240,160,64,0.1);border:1px solid rgba(240,160,64,0.3);border-radius:8px;padding:8px 14px;margin-bottom:8px;font-size:12px;color:var(--orange);display:none">
+    <span id="swapModeText">Takas: ilk hucreyi sec...</span>
+    <button onclick="cancelSwapMode()" style="float:right;background:none;border:1px solid rgba(240,160,64,0.4);border-radius:4px;color:var(--orange);cursor:pointer;font-size:11px;padding:2px 8px;font-family:var(--font-sans)">Iptal</button>
+  </div>
+
+  <!-- İSTATİSTİK BARLARI (sadece ihlal varsa küçük uyarı) -->
   <div id="takStats" style="display:flex;gap:8px;margin-bottom:0;flex-wrap:wrap"></div>
-  <!-- Kıdem hedef sapma barı -->
   <div id="takHedefBar"></div>
-  <!-- Uyarı kutusu -->
+  <!-- Uyarı kutusu — sadece kural ihlali varsa görünür -->
   <div id="alertBox"></div>
   <!-- Tercih dönemi banner (asistan için) -->
   <div id="tercihBannerTakvim" style="display:none;background:rgba(240,160,64,0.08);border:1px solid rgba(240,160,64,0.2);border-radius:8px;padding:8px 12px;margin-bottom:8px;font-size:11px;color:var(--orange)">
-    📋 <b>Tercih dönemi açık</b> — Profilim sekmesinden tercihlerinizi girebilirsiniz.
+    <b>Tercih donemi acik</b> — Profilim sekmesinden tercihlerinizi girebilirsiniz.
   </div>
 
   <!-- Renk paleti açıklaması -->
   <div id="calLegend" style="display:none;gap:10px;flex-wrap:wrap;margin-bottom:8px;padding:6px 10px;background:var(--bg2);border:1px solid var(--bord);border-radius:7px;align-items:center">
     <span style="font-size:9px;font-weight:700;color:var(--w4);text-transform:uppercase;letter-spacing:.5px">Takvim:</span>
     <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--red)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(232,87,42,0.35);display:inline-block;border:1px solid rgba(232,87,42,0.6)"></span>Min eksik</span>
-    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--orange)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(240,160,64,0.35);display:inline-block;border:1px solid rgba(240,160,64,0.6)"></span>Max aşım</span>
-    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#9B7AE0"><span style="width:8px;height:8px;border-radius:2px;background:rgba(155,122,224,0.35);display:inline-block;border:1px solid rgba(155,122,224,0.6)"></span>Kıdem grubu eksik</span>
+    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:var(--orange)"><span style="width:8px;height:8px;border-radius:2px;background:rgba(240,160,64,0.35);display:inline-block;border:1px solid rgba(240,160,64,0.6)"></span>Max asim</span>
+    <span style="display:flex;align-items:center;gap:4px;font-size:10px;color:#9B7AE0"><span style="width:8px;height:8px;border-radius:2px;background:rgba(155,122,224,0.35);display:inline-block;border:1px solid rgba(155,122,224,0.6)"></span>Kidem grubu eksik</span>
   </div>
 
-  <!-- YZ Sohbet -->
-  <div id="yzPanel" style="display:none!important;display:none;margin-bottom:10px;background:var(--bg2);border:1px solid var(--bord-r);border-radius:8px;overflow:hidden">
-    <div style="padding:8px 12px;border-bottom:1px solid var(--bord);display:flex;align-items:center;gap:8px">
-      <span style="font-size:12px;font-weight:600;color:var(--w1)">🤖 YZ Asistan</span>
-      <input id="apiKeyInput" type="password" placeholder="API Key (sk-ant-...)" style="padding:3px 7px;border:1px solid var(--bord);border-radius:5px;background:var(--bg3);color:var(--w1);font-size:10px;width:140px;font-family:monospace;margin-left:auto" oninput="saveApiKey(this.value)">
-      <button onclick="document.getElementById('yzPanel').style.display='none'" style="background:none;border:none;color:var(--w3);cursor:pointer;font-size:14px;flex-shrink:0">✕</button>
-    </div>
-    <div id="yzMesajlar" style="max-height:160px;overflow-y:auto;padding:8px 12px;display:flex;flex-direction:column;gap:6px;min-height:40px">
-      <div style="font-size:11px;color:var(--w3);font-style:italic">Değişiklik yapmak için yazın...</div>
-    </div>
-    <div style="padding:6px 8px;border-top:1px solid var(--bord);display:flex;gap:6px">
-      <input id="yzInput" type="text" placeholder="Örn: Süleyman'a daha az kırmızı nöbet yaz..."
-        style="flex:1;padding:6px 8px;border:1px solid var(--bord);border-radius:6px;background:var(--bg3);color:var(--w1);font-family:var(--font-sans);font-size:11px"
-        onkeydown="if(event.key==='Enter')yzGonder()">
-      <button onclick="yzGonder()" id="yzGonderBtn" class="btn btn-p" style="padding:6px 12px;font-size:11px">Gönder</button>
-    </div>
-  </div>
+  <!-- YZ Panel gizli tutuldu, erişim Ayarlar sekmesinden -->
+  <div id="yzPanel" style="display:none!important"></div>
 
-  <!-- GÖRÜNÜM SEÇİCİ -->
+  <!-- GÖRÜNÜM: Takvim varsayılan, Asistan görünümü gizli -->
   <div style="display:flex;gap:4px;margin-bottom:10px">
-    <button id="vBtn0" onclick="setNewView(0)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--red);color:#fff;font-family:var(--font-sans)">📅 Takvim</button>
-    <button id="vBtn1" onclick="setNewView(1)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--bg3);color:var(--w3);font-family:var(--font-sans)">👤 Asistan</button>
+    <button id="vBtn0" onclick="setNewView(0)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--red);color:#fff;font-family:var(--font-sans)">Takvim</button>
+    <button id="vBtn1" onclick="setNewView(1)" style="flex:1;padding:6px;font-size:11px;font-weight:600;border:1px solid var(--bord);border-radius:6px;cursor:pointer;background:var(--bg3);color:var(--w3);font-family:var(--font-sans)">Asistan</button>
   </div>
 
   <!-- TAKVİM GÖRÜNÜMÜ (Aylık grid) -->
@@ -1024,6 +1015,75 @@ function niStep(btn,delta){
 
 let _swapAst = null; // {i, d, alanId}
 
+/* ── İKİ TIKLA TAKAS MODU ── */
+// Gün detayından iki nöbetçiye tıkla → otomatik takas
+let _swapModeFirst = null; // {astIdx, d, alanId} — ilk seçim
+function enterSwapMode(astIdx, d, alanId) {
+  if(!_swapModeFirst) {
+    // İlk tıklama
+    _swapModeFirst = {astIdx, d, alanId};
+    const banner = document.getElementById('swapModeBanner');
+    if(banner) {
+      banner.style.display = 'block';
+      document.getElementById('swapModeText').textContent =
+        ASSISTANTS[astIdx].name + ' (' + d + ' ' + MONTHS[S.currentDate.m] + ') secildi — simdi takas edilecek hucreye tikla';
+    }
+    // İlk seçilen hücreyi vurgula
+    _highlightSwapCell(d, true);
+  } else {
+    // İkinci tıklama — takası yap
+    const A = _swapModeFirst;
+    const B = {astIdx, d, alanId};
+
+    if(A.astIdx === B.astIdx && A.d === B.d) {
+      // Aynı hücre — iptal
+      cancelSwapMode();
+      return;
+    }
+
+    // Takası uygula
+    const keyA = gk(A.astIdx, A.d);
+    const keyB = gk(B.astIdx, B.d);
+    const valA = S.schedule[keyA];
+    const valB = S.schedule[keyB];
+
+    // Çapraz takas: A alır B'nin yerini, B alır A'nin yerini
+    if(valB) S.schedule[gk(A.astIdx, B.d)] = valB; else delete S.schedule[gk(A.astIdx, B.d)];
+    if(valA) S.schedule[gk(B.astIdx, A.d)] = valA; else delete S.schedule[gk(B.astIdx, A.d)];
+    // Eski atamaları temizle (eğer farklı asistanlarsa)
+    if(A.astIdx !== B.astIdx) {
+      delete S.schedule[keyA];
+      delete S.schedule[keyB];
+    }
+
+    // Anında kaydet
+    saveImmediate();
+    renderNewCal();
+    if(typeof renderTakStats === 'function') renderTakStats();
+    showToast('Takas yapildi');
+    cancelSwapMode();
+    // Gün detayını güncelle
+    if(typeof openDayDetail === 'function') openDayDetail(B.d);
+  }
+}
+
+function cancelSwapMode() {
+  if(_swapModeFirst) _highlightSwapCell(_swapModeFirst.d, false);
+  _swapModeFirst = null;
+  const banner = document.getElementById('swapModeBanner');
+  if(banner) banner.style.display = 'none';
+}
+
+function _highlightSwapCell(d, on) {
+  const cells = document.querySelectorAll('#newCalGrid > div');
+  cells.forEach(cell => {
+    if(cell.dataset && cell.dataset.gun === String(d)) {
+      cell.style.outline = on ? '2px solid var(--orange)' : '';
+      cell.style.outlineOffset = on ? '-2px' : '';
+    }
+  });
+}
+
 function openSwapModal(astIdx, d, alanId){
   _swapAst = {i:astIdx, d, alanId};
   const ast = ASSISTANTS[astIdx];
@@ -1153,12 +1213,10 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
   S.schedule[gk(iA,dB)] = alanB;  // A, B'nin alanına gider
   S.schedule[gk(iB,dA)] = alanA;  // B, A'nın alanına gider
 
-  save();
-  renderSchedule(); renderTakStats(); renderUyarilar();
+  saveImmediate();
+  renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
   closeSwapModal();
-  // Takas sonrası: dA günü açık kalsın (kullanıcının baktığı gün)
   openDayDetail(dA);
-  // Her iki günü de flash ile vurgula
   [dA, dB].filter((g,i,a)=>a.indexOf(g)===i).forEach(gFlash=>{
     const el = document.querySelector('[data-gun="'+gFlash+'"]');
     if(el){
@@ -1166,7 +1224,7 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
       setTimeout(()=>{ el.style.outline=''; },1400);
     }
   });
-  showToast('Değişim uygulandı ✓');
+  showToast('Takas uygulandi');
 }
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1675,6 +1733,16 @@ function save(){
       save._rafPending=false;
       try{ refreshUI(); }catch(e){ console.warn('[ACİLX] save→refreshUI:',e); }
     });
+  }
+}
+
+// Anında Firestore'a kaydet — debounce atlanır, kritik işlemler için
+function saveImmediate() {
+  save(); // localStorage + debounced Firestore
+  // Debounce'u atla, Firestore'a hemen yaz
+  if(_db && window._fsReady && window._assistantsLoaded && window.ACILX_ROLE === 'basasistan') {
+    clearTimeout(_fsSaveTimer);
+    _fsSaveNow().catch(e => console.warn('[ACİLX] saveImmediate hata:', e));
   }
 }
 
@@ -2671,10 +2739,10 @@ function openDayDetail(d){
           const isMe = astI===myAstIdx;
           return `<div style="display:flex;align-items:center;gap:4px;background:${isMe?'rgba(232,87,42,0.12)':'var(--bg4)'};border:1px solid ${isMe?'rgba(232,87,42,0.4)':'var(--bord)'};border-radius:5px;padding:3px 8px;">
             <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 3px">K${ast.kidem}</span>
-            <span style="font-size:11px;font-weight:600;color:${isMe?'var(--w1)':'var(--w2)'};${isBasasistan?'cursor:pointer;text-decoration:underline;text-underline-offset:2px;':''}" 
-              ${isBasasistan?`onclick="openSwapModal(${astI},${d},'${a.id}')" title="Değişim yap"`:''}>${shortName(ast.name)}</span>
-            ${isBasasistan?`<span style="font-size:10px;color:var(--w4);cursor:pointer" onclick="removeAssign(${astI},${d},'${a.id}')" title="Kaldır">✕</span>`:''}
-            ${isMe?'<span style="font-size:8px;color:var(--acc)">●</span>':''}
+            <span style="font-size:11px;font-weight:600;color:${isMe?'var(--w1)':'var(--w2)'}">${shortName(ast.name)}</span>
+            ${isBasasistan?`<span style="font-size:10px;color:var(--orange);cursor:pointer" onclick="enterSwapMode(${astI},${d},'${a.id}')" title="Takas icin sec">&#8644;</span>`:''}
+            ${isBasasistan?`<span style="font-size:10px;color:var(--w4);cursor:pointer" onclick="removeAssign(${astI},${d},'${a.id}')" title="Kaldir">&#10005;</span>`:''}
+            ${isMe?'<span style="font-size:8px;color:var(--acc)">&#9679;</span>':''}
           </div>`;
         }).join(''):`<span style="font-size:10px;color:var(--w4)">Nöbetçi yok</span>`}
       </div>
@@ -2721,8 +2789,8 @@ function removeAssign(astIdx, d, aId){
   const key = gk(astIdx,d);
   if(S.schedule[key]===aId){
     delete S.schedule[key];
-    save();
-    renderSchedule(); renderTakStats(); renderUyarilar();
+    saveImmediate();
+    renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
     openDayDetail(d);
   }
 }
@@ -2731,8 +2799,8 @@ function quickAssign(astIdxStr, d, aId){
   if(!astIdxStr) return;
   const astIdx = parseInt(astIdxStr);
   S.schedule[gk(astIdx,d)] = aId;
-  save();
-  renderSchedule(); renderTakStats(); renderUyarilar();
+  saveImmediate();
+  renderSchedule(); if(typeof renderTakStats==='function') renderTakStats();
   openDayDetail(d);
 }
 
@@ -3291,33 +3359,45 @@ function updateTercihUI() {
 
 /* ── NÖBET OLUŞTUR / SİL / YAYINLA ── */
 async function nobetOlustur(){
+  showSpinner();
   autoGen();
-  // ── KRİTİK: listeyi HEMEN kaydet ──────────────────────────────
-  // 1. localStorage'a yaz (anında)
+  // Anında kaydet — localStorage + Firestore
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
-  // 2. Firestore'a HEMEN yaz — AWAIT ile (sayfa kapansa bile yazılmış olsun)
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
     window._pendingSave = true;
-    try { await _fsSaveNow(); } catch(e) { console.warn('nobetOlustur kayıt:', e); }
+    try { await _fsSaveNow(); } catch(e) { console.warn('nobetOlustur kayit:', e); }
     window._pendingSave = false;
   }
   updateTercihUI();
+  hideSpinner();
 
-  // ── Hedefi dolmamış asistanları tespit et ve başasistana sun ──
-  _checkHedefEksikleri();
-
-  showToast('Nöbet oluşturuldu ve kaydedildi');
+  // Sadece kural ihlali varsa uyarı göster
+  const {y,m} = S.currentDate;
+  const days = daysInMonth(y,m);
+  let ihlalSayisi = 0;
+  for(let d=1; d<=days; d++) {
+    AREAS.forEach(a => {
+      const rule = getDayRule(d, a.id);
+      if(!rule.aktif || rule.min === 0) return;
+      const cnt = getAreaCount(d, a.id);
+      if(cnt < rule.min) ihlalSayisi++;
+    });
+  }
+  if(ihlalSayisi > 0) {
+    showToast('Nobet olusturuldu — ' + ihlalSayisi + ' kural ihlali var');
+  } else {
+    showToast('Nobet olusturuldu — sorun yok');
+  }
 }
 
 async function nobetSil(){
-  if(!confirm('Bu ayın nöbet listesini silmek istediğinden emin misin?')) return;
+  if(!confirm('Bu ayin nobet listesini silmek istediginizden emin misiniz?')) return;
   S.schedule = {};
   S.dayOverride = {};
   S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
-  // localStorage'a da yaz
+  // Anında kaydet
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
-  // Firestore'a hemen yaz — AWAIT ile
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
     window._pendingSave = true;
     try { await _fsSaveNow(); } catch(e) {}
@@ -3325,11 +3405,7 @@ async function nobetSil(){
   }
   renderNewCal();
   updateTercihUI();
-  const uyEl = document.getElementById('uyarilarContent');
-  if(uyEl) uyEl.innerHTML = '';
-  const uyTab = document.getElementById('tab-uyarilar');
-  if(uyTab && uyTab.style.display !== 'none') renderUyarilar();
-  showToast('Nöbet listesi silindi');
+  showToast('Nobet listesi silindi');
 }
 
 async function nobetYayindanKaldir(){
@@ -4528,39 +4604,29 @@ function openCellModal(i,d){
   const we=isWE(y,mo,d);
   const egt=getEgtStatus(y,mo,d,ast.kidem);
   document.getElementById('cmTitle').textContent=`${ast.name} · ${d} ${MONTHS[mo]}`;
-  document.getElementById('cmSub').textContent=`Kıdem ${ast.kidem} · ${DAYS_TR[dw]}${we?' · Hafta sonu':''}${egt?' · '+egt.name:''}`;
+  document.getElementById('cmSub').textContent=`K${ast.kidem} · ${DAYS_TR[dw]}${we?' · HaftaSonu':''}${egt?' · '+egt.name:''}`;
   let html='';
   if(egt&&egt.type==='full'){
-    html+=`<div class="alert al-e">&#9888; Tam gün eğitim bloğu — nöbet ataması yapılamaz.</div>`;
+    html+=`<div class="alert al-e">Tam gun egitim — nobet atanamaz.</div>`;
     document.getElementById('cmSaveBtn').style.display='none';
   } else {
-    document.getElementById('cmSaveBtn').style.display='';
-    if(egt&&egt.type==='half') html+=`<div class="info-box">&#9432; Yarım gün eğitim (${egt.name}). Nöbet atanabilir.</div>`;
+    document.getElementById('cmSaveBtn').style.display='none'; // Otomatik kayıt — buton gerekmez
+    if(egt&&egt.type==='half') html+=`<div class="info-box">Yarim gun egitim. Nobet atanabilir.</div>`;
     const cur=S.schedule[gk(i,d)]||'';
-    html+=`<div class="field"><label>Alan ataması</label><select id="cmSel"><option value="">— Boş —</option>`;
+    // Dropdown — onChange ile anında kaydet
+    html+=`<div class="field"><label>Alan atamasi (sec = aninda kaydet)</label><select id="cmSel" onchange="saveCellModal()"><option value="">— Bos —</option>`;
     AREAS.forEach(a=>{
       const q=(S.quota[a.id]||{})[ast.kidem]||0;
       const cnt=countArea(i,a.id);
-      const mn=(S.minNobet[a.id]||{})[ast.kidem]||0;
       const dis=q===0?'disabled':'';
-      const hint=q===0?'(giremez)':cnt>=q?'(kota doldu)':`${cnt}/${q}${mn>0?' min'+mn:''}`;
+      const hint=q===0?'(giremez)':cnt>=q?'(dolu)':`${cnt}/${q}`;
       html+=`<option value="${a.id}" ${cur===a.id?'selected':''} ${dis}>${a.name} ${hint}</option>`;
     });
     html+=`</select></div>`;
   }
-  html+=`<div style="background:var(--bg3);border-radius:var(--border-radius-md);padding:10px;font-size:12px">
-    <div style="font-weight:500;margin-bottom:8px;color:var(--w1)">Alan doluluk — ${d} ${MONTHS[mo]}</div>`;
-  AREAS.forEach(a=>{
-    const rule=getDayRule(d,a.id);
-    const cnt=getAreaCount(d,a.id);
-    const pct=rule.max>0?Math.min(100,Math.round(cnt/rule.max*100)):0;
-    const col=cnt<rule.min?'#E24B4A':cnt>=rule.max?'#BA7517':'#378ADD';
-    html+=`<div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:var(--w3)">${a.name}</span><span style="font-weight:500;color:${col}">${cnt}<span style="font-size:10px;font-weight:400"> min${rule.min}–max${rule.max}</span></span></div>
-    <div class="pb-wrap" style="margin-bottom:5px"><div class="pb-fill" style="width:${pct}%;background:${col}"></div></div>`;
-  });
+  // Kısa doluluk özeti
   const th=countAll(i)*24,mh=S.maxHours[ast.kidem];
-  html+=`<div style="padding-top:6px;border-top:0.5px solid var(--bord)"><span style="color:var(--w3)">Saat: </span><span style="font-weight:500;color:${th>=mh?'#A32D2D':'var(--w1)'}">${th}/${mh}s</span>
-    <div class="pb-wrap" style="margin-top:2px"><div class="pb-fill" style="width:${Math.min(100,Math.round(th/mh*100))}%;background:${th>=mh?'#E24B4A':'#378ADD'}"></div></div></div></div>`;
+  html+=`<div style="font-size:11px;color:var(--w3);margin-top:6px">Toplam: ${th}/${mh}s</div>`;
   document.getElementById('cmBody').innerHTML=html;
   document.getElementById('cellModal')._cell={i,d};
   document.getElementById('cellModal').classList.add('open');
@@ -4574,9 +4640,13 @@ function saveCellModal(){
   const v=sel.value;
   const k=gk(c.i,c.d);
   if(!v) delete S.schedule[k]; else S.schedule[k]=v;
-  save();closeCellModal();
-  renderNewCal(); renderTakStats(); renderUyarilar();
-  if(_newView===1) renderAsstList();
+  // Anında kaydet — Firestore dahil
+  saveImmediate();
+  closeCellModal();
+  renderNewCal(); if(typeof renderTakStats==='function') renderTakStats();
+  if(_newView===1 && typeof renderAsstList==='function') renderAsstList();
+  // Gün detayını güncelle
+  if(document.getElementById('dayDetailPanel').style.display!=='none') openDayDetail(c.d);
 }
 document.getElementById('cellModal').addEventListener('click',function(e){if(e.target===this)closeCellModal();});
 
@@ -6801,9 +6871,11 @@ function _sapmaModalYenile(astIdx){
 
 
 function ddSorunTikla(idx){
+  // Basitlestirildi: kural ihlali tiklayinca sadece gun detayinda gosterilir
   const cache = window._ddSorunlarCache;
   if(!cache || !cache[idx]) return;
-  openUyariOneriModal(cache[idx]);
+  const s = cache[idx];
+  showToast(s.msg);
 }
 
 function uyariGunCoz(d){
