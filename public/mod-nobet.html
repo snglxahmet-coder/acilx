@@ -1765,25 +1765,27 @@ function renderMinConf(){
             onchange="toggleKidemGrupKidem('${a.id}',${gi},${k},this.checked)">
           <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
         </label>`).join('');
-      const grupLen=Math.max((g.kidemler||[]).length,1);
-      const minOptHtml=Array.from({length:grupLen+1},(_,i)=>i).map(n=>`<option value="${n}" ${(g.enAzKac||0)===n?'selected':''}>${n}</option>`).join('');
-      const enFazla=g.enFazlaKac||0;
-      const maxOptHtml=Array.from({length:grupLen+1},(_,i)=>i).map(n=>`<option value="${n}" ${enFazla===n?'selected':''}>${n}</option>`).join('');
-      const deaktif=(g.enAzKac||0)===0&&enFazla===0;
-      const ozet=deaktif?'yazılmaz':enFazla===0?'en az '+(g.enAzKac||0)+', max sınırsız':'en az '+(g.enAzKac||0)+', en fazla '+enFazla;
+      const gMin=g.enAzKac||0;
+      const gMax=g.enFazlaKac||0;
+      // Gruptaki toplam asistan sayısı
+      let grupAstSayi=0;
+      (g.kidemler||[]).forEach(k=>{grupAstSayi+=ASSISTANTS.filter(ast=>ast.kidem===k).length;});
+      const deaktif=gMin===0&&gMax===0;
+      const ozet=deaktif?'yazılmaz':'min '+gMin+', max '+gMax+(grupAstSayi>0?' ('+grupAstSayi+' asistan)':'');
       return `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:5px;padding:6px 8px;margin-bottom:4px;${deaktif?'opacity:.5':''}">
         <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
           ${cbHtml}
           <button onclick="silKidemGrupKurali('${a.id}',${gi})" style="margin-left:auto;background:none;border:none;color:var(--w4);cursor:pointer;font-size:11px;padding:1px 4px" title="Grubu sil">&#10005;</button>
         </div>
-        <div style="display:flex;align-items:center;gap:4px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--bord);flex-wrap:wrap">
-          <span style="font-size:10px;color:var(--w3)">En az</span>
-          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:#4ade80;font-weight:600;font-family:var(--font-sans)"
-            onchange="setKidemGrupEnAz('${a.id}',${gi},parseInt(this.value))">${minOptHtml}</select>
-          <span style="font-size:10px;color:var(--w4)">—</span>
-          <span style="font-size:10px;color:var(--w3)">En fazla</span>
-          <select style="font-size:11px;padding:1px 4px;border-radius:4px;border:1px solid var(--bord);background:var(--bg3);color:var(--acc);font-weight:600;font-family:var(--font-sans)"
-            onchange="setKidemGrupEnFazla('${a.id}',${gi},parseInt(this.value))">${maxOptHtml}</select>
+        <div style="display:flex;align-items:center;gap:5px;margin-top:5px;padding-top:5px;border-top:1px dashed var(--bord);flex-wrap:wrap">
+          <span style="font-size:10px;font-weight:600;color:var(--w3)">Min</span>
+          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="99" value="${gMin}"
+            style="width:28px;font-size:11px;font-weight:600;color:${gMin>0?'#4ade80':'var(--w4)'}"
+            onchange="setKidemGrupEnAz('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
+          <span style="font-size:10px;font-weight:600;color:var(--w3);margin-left:4px">Max</span>
+          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="99" value="${gMax}"
+            style="width:28px;font-size:11px;font-weight:600;color:${gMax>0?'var(--acc)':'var(--w4)'}"
+            onchange="setKidemGrupEnFazla('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
           <span style="font-size:10px;color:var(--w3)">kişi</span>
           <span style="font-size:9px;color:var(--w4);margin-left:2px">(${ozet})</span>
         </div>
@@ -2580,32 +2582,51 @@ function silKidemGrupKurali(aId,gi){
   r.kidemGrupKurallari.splice(gi,1);
   save();showSaved('minSaved');renderMinConf();
 }
+// Gruptaki toplam asistan sayısını hesapla
+function _kidemGrupAstSayi(g){
+  let toplam=0;
+  (g.kidemler||[]).forEach(k=>{toplam+=ASSISTANTS.filter(ast=>ast.kidem===k).length;});
+  return toplam;
+}
 function toggleKidemGrupKidem(aId,gi,k,checked){
   const r=S.defaultDayMin[aId];
   const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
   if(!g.kidemler) g.kidemler=[];
   if(checked){if(!g.kidemler.includes(k))g.kidemler.push(k);}
   else{g.kidemler=g.kidemler.filter(x=>x!==k);}
-  const maxK=g.kidemler.length;
-  if((g.enAzKac||0)>maxK) g.enAzKac=maxK;
-  if((g.enFazlaKac||0)>maxK) g.enFazlaKac=maxK;
-  if(g.enFazlaKac>0 && g.enAzKac>g.enFazlaKac) g.enAzKac=g.enFazlaKac;
+  // Max'ı toplam asistan sayısına clamp et
+  const topAst=_kidemGrupAstSayi(g);
+  if((g.enFazlaKac||0)>topAst) g.enFazlaKac=topAst;
+  if((g.enAzKac||0)>topAst) g.enAzKac=topAst;
+  // Min > max ise max'ı min'e eşitle
+  if((g.enFazlaKac||0)>0 && (g.enAzKac||0)>(g.enFazlaKac||0)) g.enFazlaKac=g.enAzKac;
   save();showSaved('minSaved');renderMinConf();
 }
 function setKidemGrupEnAz(aId,gi,val){
   const r=S.defaultDayMin[aId];
   const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
-  g.enAzKac=Math.max(0,val);
-  // Min > max ise max'ı da yükselt (0 = sınırsız değil, en fazla clamp)
-  if(g.enFazlaKac>0 && g.enAzKac>g.enFazlaKac) g.enFazlaKac=g.enAzKac;
+  val=Math.max(0,val);
+  // Toplam asistan sayısına clamp
+  const topAst=_kidemGrupAstSayi(g);
+  if(topAst>0 && val>topAst) val=topAst;
+  g.enAzKac=val;
+  // Min > max ise max'ı min'e eşitle
+  if((g.enFazlaKac||0)>0 && g.enAzKac>(g.enFazlaKac||0)) g.enFazlaKac=g.enAzKac;
+  else if((g.enFazlaKac||0)===0 && g.enAzKac>0) g.enFazlaKac=g.enAzKac;
   save();showSaved('minSaved');renderMinConf();
 }
 function setKidemGrupEnFazla(aId,gi,val){
   const r=S.defaultDayMin[aId];
   const g=(r.kidemGrupKurallari||[])[gi]; if(!g) return;
-  g.enFazlaKac=Math.max(0,val);
+  val=Math.max(0,val);
+  // Toplam asistan sayısına clamp
+  const topAst=_kidemGrupAstSayi(g);
+  if(topAst>0 && val>topAst){ val=topAst; _showCalToast('Max, gruptaki toplam asistan sayısına ('+topAst+') düşürüldü.'); }
+  g.enFazlaKac=val;
   // Max < min ise min'i düşür
-  if(g.enFazlaKac>0 && (g.enAzKac||0)>g.enFazlaKac) g.enAzKac=g.enFazlaKac;
+  if(val>0 && (g.enAzKac||0)>val) g.enAzKac=val;
+  // Max 0 yapıldığında min de 0 olmalı (hiç yazılmaz)
+  if(val===0 && (g.enAzKac||0)>0) g.enAzKac=0;
   save();showSaved('minSaved');renderMinConf();
 }
 
