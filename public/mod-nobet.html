@@ -264,8 +264,7 @@ select:focus,input[type=number]:focus{outline:none;border-color:var(--bord-r)}
 .eg-lbl{font-size:12px;color:var(--w3);font-weight:500;flex-shrink:0}
 .eg-adv-toggle{font-size:11px;padding:5px 12px;border-radius:5px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;font-family:var(--font-sans);touch-action:manipulation}
 .eg-adv-toggle:active{background:var(--bg4)}
-.eg-adv{display:none;border-top:1px solid var(--bord);padding-top:10px;margin-top:6px}
-.eg-adv.open{display:block}
+.eg-adv{display:block;border-top:1px solid var(--bord);padding-top:10px;margin-top:6px}
 @media(max-width:768px){
   .eg-head{padding:14px 12px;min-height:52px}
   .eg-body{padding:0 12px 12px}
@@ -1703,53 +1702,55 @@ function renderMinConf(){
     if(!r.kidemGruplari) r.kidemGruplari=[];
     if(!r.kidemBagimliligi) r.kidemBagimliligi=[];
 
-    // Kıdem bağımlılık kuralı satırları
-    const bagHtml=r.kidemBagimliligi.map((b,bi)=>{
-      const bagimliCb=[1,2,3,4,5].map(k=>`
-        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--w2)">
-          <input type="checkbox" ${(b.bagimli||[]).includes(k)?'checked':''} style="accent-color:#e85c2a"
-            onchange="toggleBagKidem('${a.id}',${bi},'bagimli',${k},this.checked)">
-          <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 4px">K${k}</span>
-        </label>`).join('');
-      const refansCb=[1,2,3,4,5].map(k=>`
-        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--w2)">
-          <input type="checkbox" ${(b.refans||[]).includes(k)?'checked':''} style="accent-color:#4ade80"
-            onchange="toggleBagKidem('${a.id}',${bi},'refans',${k},this.checked)">
-          <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 4px">K${k}</span>
-        </label>`).join('');
-      return `<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bord);flex-wrap:wrap">
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-          <span style="font-size:11px;color:var(--orange);font-weight:600;min-width:60px">Bağımlı:</span>
-          ${bagimliCb}
-        </div>
-        <span style="font-size:13px;color:var(--w4)">→</span>
-        <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap">
-          <span style="font-size:11px;color:#4ade80;font-weight:600;min-width:60px">Yanında:</span>
-          ${refansCb}
-        </div>
-        <button onclick="deleteBagimlilik('${a.id}',${bi})" class="del-btn">✕</button>
-      </div>`;
-    }).join('');
-
-    // Kıdem grubu satırları
+    // Kıdem grubu kartları — bağımlılık kuralı entegre
     const grupHtml=r.kidemGruplari.map((g,gi)=>{
       const grp=Array.isArray(g)?{kidemler:g,min:1,max:99}:g;
       if(grp.max===undefined) grp.max=99;
+      // Bu gruba bağlı bağımlılık kuralı bul (bagimli kıdemleri grubun kıdemleriyle eşleşen)
+      const bagIdx=r.kidemBagimliligi.findIndex(b=>{
+        const bk=b.bagimli||[];
+        return bk.length>0&&bk.every(k=>grp.kidemler.includes(k));
+      });
+      const hasBag=bagIdx>=0;
+      const bag=hasBag?r.kidemBagimliligi[bagIdx]:null;
       const checkboxler=[1,2,3,4,5].map(k=>`
-        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;font-size:11px;color:var(--w2)">
+        <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
           <input type="checkbox" ${grp.kidemler.includes(k)?'checked':''} style="accent-color:var(--red)"
             onchange="toggleGrupKidem('${a.id}',${gi},${k},this.checked)">
-          <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 4px">K${k}</span>
+          <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
         </label>`).join('');
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bord);flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--w3);min-width:30px">Grup ${gi+1}</span>
-        <div style="display:flex;flex-wrap:wrap;gap:4px">${checkboxler}</div>
-        <span style="font-size:11px;color:var(--w3)">→ en az</span>
-        <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="10" value="${grp.min!==undefined?grp.min:1}" onchange="setGrupMin('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
-        <span style="font-size:11px;color:var(--w3)">en fazla</span>
-        <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="1" max="19" value="${grp.max>=99?'':grp.max}" placeholder="∞" onchange="setGrupMax('${a.id}',${gi},parseInt(this.value)||99)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
-        <span style="font-size:11px;color:var(--w3)">kişi</span>
-        <button onclick="deleteGrup('${a.id}',${gi})" class="del-btn">✕</button>
+      // Yanında kıdem checkboxları (bağımlılık)
+      let bagHtml='';
+      if(hasBag){
+        const refCbs=[1,2,3,4,5].map(k=>`
+          <label style="display:inline-flex;align-items:center;gap:2px;cursor:pointer">
+            <input type="checkbox" ${(bag.refans||[]).includes(k)?'checked':''} style="accent-color:#4ade80"
+              onchange="toggleBagKidem('${a.id}',${bagIdx},'refans',${k},this.checked)">
+            <span class="kt ${KIDEM_CLS[k]}" style="font-size:9px;padding:1px 4px">K${k}</span>
+          </label>`).join('');
+        bagHtml=`<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;padding:4px 0 0;margin-top:4px;border-top:1px dashed var(--bord)">
+          <span style="font-size:10px;color:#4ade80;font-weight:600">Yanında:</span>
+          ${refCbs}
+        </div>`;
+      }
+      return `<div style="background:var(--bg3);border-radius:6px;padding:8px 10px;margin-bottom:6px">
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div style="display:flex;flex-wrap:wrap;gap:3px;flex:1">${checkboxler}</div>
+          <button onclick="deleteGrup('${a.id}',${gi})" class="del-btn" style="flex-shrink:0">&#10005;</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px;margin-top:6px;flex-wrap:wrap">
+          <span style="font-size:10px;color:var(--w3)">En az</span>
+          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="0" max="10" value="${grp.min!==undefined?grp.min:1}" style="width:28px" onchange="setGrupMin('${a.id}',${gi},parseInt(this.value)||0)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
+          <span style="font-size:10px;color:var(--w3)">en fazla</span>
+          <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button><input class="ni" type="number" min="1" max="19" value="${grp.max>=99?'':grp.max}" placeholder="∞" style="width:28px" onchange="setGrupMax('${a.id}',${gi},parseInt(this.value)||99)"><button class="ni-btn" type="button" onclick="niStep(this,1)">+</button></div>
+          <span style="font-size:10px;color:var(--w3)">kişi</span>
+          <label style="display:inline-flex;align-items:center;gap:4px;margin-left:auto;cursor:pointer">
+            <span style="font-size:10px;color:${hasBag?'#4ade80':'var(--w4)'}">Yalnız tutulamaz</span>
+            <input type="checkbox" ${hasBag?'checked':''} style="accent-color:#4ade80"
+              onchange="toggleGrupBagimlilik('${a.id}',${gi},this.checked)">
+          </label>
+        </div>
+        ${bagHtml}
       </div>`;
     }).join('');
 
@@ -1790,17 +1791,7 @@ function renderMinConf(){
           </div>
           ${grupHtml||'<span style="font-size:12px;color:var(--w4)">Henüz grup yok</span>'}
         </div>
-        <div style="text-align:center;padding:6px 0">
-          <button class="eg-adv-toggle" onclick="var el=document.getElementById('${advId}');el.classList.toggle('open');this.textContent=el.classList.contains('open')?'Gelişmiş ▴':'Gelişmiş ▾'">Gelişmiş ▾</button>
-        </div>
         <div id="${advId}" class="eg-adv">
-          <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
-            <div style="display:flex;align-items:center;justify-content:space-between;width:100%">
-              <span class="eg-lbl">Kıdem bağımlılık kuralı <span style="font-size:11px;color:var(--w4)">(yalnız tutulamaz)</span></span>
-              <button onclick="addBagimlilik('${a.id}')" style="font-size:12px;padding:5px 12px;border-radius:5px;border:1px solid var(--bord-r);background:var(--red-sub);color:var(--red);cursor:pointer;touch-action:manipulation">+ Kural</button>
-            </div>
-            ${bagHtml||'<span style="font-size:12px;color:var(--w4)">Henüz kural yok — Örn: K3 yalnız olamaz, yanında K1 veya K2 olmalı</span>'}
-          </div>
           <div class="eg-row" style="flex-direction:column;align-items:flex-start;gap:6px">
             <span class="eg-lbl">Kıdem bazlı bireysel min <span style="font-size:11px;color:var(--w4)">(0 = yok)</span></span>
             <div style="display:flex;flex-wrap:wrap;gap:8px">${[1,2,3,4,5].map(k=>`
@@ -2473,16 +2464,33 @@ function addGrup(aId){
   save();showSaved('minSaved');renderMinConf();
 }
 function deleteGrup(aId,gi){
-  S.defaultDayMin[aId].kidemGruplari.splice(gi,1);
+  const r=S.defaultDayMin[aId];
+  const grp=Array.isArray(r.kidemGruplari[gi])?{kidemler:r.kidemGruplari[gi]}:r.kidemGruplari[gi];
+  // Bağlı bağımlılık kuralını da kaldır
+  if(r.kidemBagimliligi&&grp&&grp.kidemler){
+    const bagIdx=r.kidemBagimliligi.findIndex(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
+    if(bagIdx>=0) r.kidemBagimliligi.splice(bagIdx,1);
+  }
+  r.kidemGruplari.splice(gi,1);
   save();showSaved('minSaved');renderMinConf();
 }
 function toggleGrupKidem(aId,gi,k,checked){
-  const gruplari=S.defaultDayMin[aId].kidemGruplari;
+  const r=S.defaultDayMin[aId];
+  const gruplari=r.kidemGruplari;
   let g=gruplari[gi];
   if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
+  const eskiKidemler=[...g.kidemler];
   if(checked){if(!g.kidemler.includes(k))g.kidemler.push(k);}
   else{const idx=g.kidemler.indexOf(k);if(idx>-1)g.kidemler.splice(idx,1);}
-  save();showSaved('minSaved');
+  // Bağlı bağımlılık kuralının bagimli listesini senkronize et
+  if(r.kidemBagimliligi){
+    const bagIdx=r.kidemBagimliligi.findIndex(b=>{
+      const bk=b.bagimli||[];
+      return bk.length>0&&bk.every(kk=>eskiKidemler.includes(kk));
+    });
+    if(bagIdx>=0) r.kidemBagimliligi[bagIdx].bagimli=[...g.kidemler];
+  }
+  save();showSaved('minSaved');renderMinConf();
 }
 function setGrupMin(aId,gi,val){
   const gruplari=S.defaultDayMin[aId].kidemGruplari;
@@ -2498,6 +2506,26 @@ function setGrupMax(aId,gi,val){
   if(Array.isArray(g)) g=gruplari[gi]={kidemler:g,min:1,max:99};
   g.max=Math.max(g.min||1, val||99);
   save();showSaved('minSaved');
+}
+
+// Grup kartındaki "Yalnız tutulamaz" toggle
+function toggleGrupBagimlilik(aId,gi,checked){
+  const r=S.defaultDayMin[aId];
+  if(!r) return;
+  if(!r.kidemBagimliligi) r.kidemBagimliligi=[];
+  const grp=Array.isArray(r.kidemGruplari[gi])?{kidemler:r.kidemGruplari[gi],min:1,max:99}:r.kidemGruplari[gi];
+  if(checked){
+    // Bu grubun kıdemleriyle eşleşen bağımlılık kuralı yoksa ekle
+    const zatenVar=r.kidemBagimliligi.some(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
+    if(!zatenVar){
+      r.kidemBagimliligi.push({bagimli:[...grp.kidemler],refans:[]});
+    }
+  } else {
+    // Bu grubun kıdemleriyle eşleşen bağımlılık kuralını kaldır
+    const idx=r.kidemBagimliligi.findIndex(b=>(b.bagimli||[]).every(k=>grp.kidemler.includes(k))&&(b.bagimli||[]).length>0);
+    if(idx>=0) r.kidemBagimliligi.splice(idx,1);
+  }
+  save();showSaved('minSaved');renderMinConf();
 }
 
 /* ── KIDEM BAĞIMLILIK KURALI FONKSİYONLARI ── */
