@@ -3725,9 +3725,10 @@ function autoGen(){
     const _dur=astDurum(i);
     if(_dur==='izinli'||_dur==='rot_hayir') return false;
     if(astIzinliAylik(i).includes(d)) return false;
-    // Alan kotası kontrolü
+    // Alan kotası kontrolü — 0=giremez, N=üst limit
     const kotaLimit = (S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
-    if(kotaLimit > 0 && (load[i].byArea[aId]||0) >= kotaLimit) return false;
+    if(kotaLimit <= 0) return false;
+    if((load[i].byArea[aId]||0) >= kotaLimit) return false;
     S.schedule[gk(i,d)]=aId;
     load[i].total++;
     load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
@@ -3975,7 +3976,8 @@ function autoGen(){
     if(S.schedule[gk(i,d)]) return false;
     const kidem=ASSISTANTS[i].kidem;
     const alanKota=(S.quota[aId]||{})[kidem]||0;
-    if(alanKota>0 && (load[i].byArea[aId]||0)>=alanKota) return false;
+    if(alanKota<=0) return false; // Kota 0 → bu kıdem bu alana giremez
+    if((load[i].byArea[aId]||0)>=alanKota) return false; // Kota dolu → üst limit aşılamaz
     // Günlük max
     if(dCnt(d,aId)>=(getDayRule(d,aId).max||99)) return false;
     // Art arda mesafe
@@ -3999,6 +4001,16 @@ function autoGen(){
   function dayScore(i,d,aId){
     let sc=0;
     const kidem=ASSISTANTS[i].kidem;
+    // ── Kota hedef bonusu — alan×kıdem kotasına yakınlık ──
+    const kotaLimit=(S.quota[aId]||{})[kidem]||0;
+    const mevcutAlan=load[i].byArea[aId]||0;
+    if(kotaLimit>0){
+      const kotaKalan=kotaLimit-mevcutAlan;
+      if(kotaKalan>0) sc+=300+kotaKalan*40; // Kota dolmamış → güçlü bonus
+      else sc-=2000; // Kota dolu → yerleştirme
+    } else {
+      sc-=5000; // Kota 0 → bu alana giremez
+    }
     // Min eksik gün bonusu — min karşılanmamış günlere öncelik
     const rule=getDayRule(d,aId);
     const cnt=dCnt(d,aId);
@@ -4154,11 +4166,14 @@ function autoGen(){
       const diff=Math.abs(load[i].total-hedefler[i]);
       if(diff>0) v+=diff;
     }
-    // Alan kota ihlali
+    // Alan kota ihlali — hem aşım hem eksik (kota = hedef + üst limit)
     for(let i=0;i<N;i++){
+      if(hedefler[i]<=0) continue;
       for(const aId of areaIds){
         const limit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
-        if(limit>0 && (load[i].byArea[aId]||0)>limit) v+=(load[i].byArea[aId]||0)-limit;
+        const mevcut=load[i].byArea[aId]||0;
+        if(limit>0 && mevcut>limit) v+=(mevcut-limit)*2; // Aşım — ağır ihlal
+        if(limit>0 && mevcut<limit) v+=(limit-mevcut);   // Eksik — kota hedefine ulaşılamamış
       }
     }
     return v;
@@ -4184,7 +4199,8 @@ function autoGen(){
         if(S.schedule[gk(i,d)]) continue;
         const kidem=ASSISTANTS[i].kidem;
         const alanKota=(S.quota[aId]||{})[kidem]||0;
-        if(alanKota>0 && (load[i].byArea[aId]||0)>=alanKota) continue;
+        if(alanKota<=0) continue;
+        if((load[i].byArea[aId]||0)>=alanKota) continue;
         if(dCnt(d,aId)>=(getDayRule(d,aId).max||99)) continue;
         // Mesafe kontrolü (esnek)
         let mesafeOk=true;
@@ -4275,10 +4291,13 @@ function autoGen(){
       for(let d=1;d<=days;d++){
         const aId=S.schedule[gk(i,d)];
         if(!aId) continue;
-        // Bu nöbeti kaldırmanın maliyeti
         const rule=getDayRule(d,aId);
         const cnt=dCnt(d,aId);
-        const cost=cnt<=(rule.min||0)?1000:0; // min bozulursa yüksek maliyet
+        // Maliyet: min bozulursa yüksek, kota dolmamışsa düşük (kota eksik olan alandan kaldırmayı tercih etme)
+        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        const mevcutAlan=load[i].byArea[aId]||0;
+        const kotaCost=kotaLimit>0&&mevcutAlan<=kotaLimit?500:0;
+        const cost=(cnt<=(rule.min||0)?1000:0)+kotaCost;
         myShifts.push({d,aId,cost});
       }
       myShifts.sort((a,b)=>a.cost-b.cost);
@@ -4288,6 +4307,38 @@ function autoGen(){
         unassign(i,sh.d);
         removed++;
         improved=true;
+      }
+    }
+
+    // Strateji 5: Kota hedefi eksik — alan×kıdem kotasına ulaşılamamış asistanlara nöbet ekle
+    for(let i=0;i<N&&repairIter<REPAIR_LIMIT;i++){
+      if(hedefler[i]<=0) continue;
+      for(const aId of areaIds){
+        repairIter++;
+        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        if(kotaLimit<=0) continue;
+        const mevcut=load[i].byArea[aId]||0;
+        const eksik=kotaLimit-mevcut;
+        if(eksik<=0) continue;
+        // Bu asistanı bu alana yerleştirebileceğimiz en iyi günleri bul
+        let placed=0;
+        for(let d=1;d<=days&&placed<eksik;d++){
+          if(S.schedule[gk(i,d)]) continue;
+          if(!isAlanAktif(d,aId)) continue;
+          if(dCnt(d,aId)>=(getDayRule(d,aId).max||99)) continue;
+          // Mesafe kontrolü (esnek)
+          let mesafeOk=true;
+          for(let delta=1;delta<=ART_ARDA_MESAFE;delta++){
+            if(d-delta>=1&&S.schedule[gk(i,d-delta)]){mesafeOk=false;break;}
+            if(d+delta<=days&&S.schedule[gk(i,d+delta)]){mesafeOk=false;break;}
+          }
+          if(!mesafeOk) continue;
+          if(astIzinliAylik(i).includes(d)) continue;
+          if(isEgtFull(y,mo,d,ASSISTANTS[i].kidem)) continue;
+          assign(i,d,aId);
+          placed++;
+          improved=true;
+        }
       }
     }
 
@@ -4328,6 +4379,14 @@ function autoGen(){
         const avg=gaps.reduce((s,g)=>s+g,0)/gaps.length;
         const dev=Math.sqrt(gaps.reduce((s,g)=>s+(g-avg)*(g-avg),0)/gaps.length);
         score-=dev*20;
+      }
+      // Alan×kıdem kota sapması — kotaya yakınlık ödüllendirmesi
+      for(const aId of areaIds){
+        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        if(kotaLimit<=0) continue;
+        const mevcut=load[i].byArea[aId]||0;
+        const sapma=Math.abs(mevcut-kotaLimit);
+        score-=sapma*80; // Her 1 sapma = -80 puan
       }
     }
     // Kıdem karışımı
@@ -4415,7 +4474,7 @@ function autoGen(){
   // ═══════════════════════════════════════════════════════════════════════
   // FAZ SON: HEDEF SINIRI — kesin clamp
   // ═══════════════════════════════════════════════════════════════════════
-  // Hedefi aşan asistanlardan en az zararlı nöbetleri kaldır
+  // Hedefi aşan asistanlardan en az zararlı nöbetleri kaldır (kota hedefini koru)
   ASSISTANTS.forEach((_,i)=>{
     const fazla=load[i].total-hedefler[i];
     if(fazla<=0) return;
@@ -4425,7 +4484,11 @@ function autoGen(){
       if(!aId) continue;
       const rule=getDayRule(d,aId);
       const cnt=dCnt(d,aId);
-      const cost=cnt<=(rule.min||0)?1000:cnt<=((rule.min||0)+1)?100:0;
+      // Kota hedefi koruması: kotaya tam uyan nöbetleri kaldırmaktan kaçın
+      const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+      const mevcutAlan=load[i].byArea[aId]||0;
+      const kotaCost=kotaLimit>0&&mevcutAlan<=kotaLimit?500:0; // Kota dolmamışsa kaldırma
+      const cost=(cnt<=(rule.min||0)?1000:cnt<=((rule.min||0)+1)?100:0)+kotaCost;
       atamalar.push({d,cost});
     }
     atamalar.sort((a,b)=>a.cost-b.cost);
