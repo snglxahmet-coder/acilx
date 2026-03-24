@@ -392,10 +392,6 @@ function niStep(btn,delta){
     <div class="card-title" style="font-size:12px">Alan × Kıdem — Aylık nöbet sayısı</div>
     <div style="overflow-x:auto"><table id="dagTbl" style="width:100%;border-collapse:collapse;font-size:12px"></table></div>
   </div>
-  <div class="card">
-    <div class="card-title" style="font-size:12px">Kıdem hedef nöbet saati — algoritma bu kadar dolduracak</div>
-    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px" id="saatRow"></div>
-  </div>
 </div>
 
 <!-- TAKVİM -->
@@ -3180,6 +3176,7 @@ function renderDagilim(){
   if(!AREAS||AREAS.length===0){ dagEl.innerHTML='<tr><td style="padding:20px;color:var(--w4);text-align:center">Alan verisi yükleniyor…</td></tr>'; return; }
   if(!S.quota) S.quota={};
   if(!S.minNobet) S.minNobet={};
+  if(!S.maxHours) S.maxHours={1:216,2:192,3:168,4:144,5:120};
   let html='<thead><tr>';
   html+='<th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:600;color:var(--w3);border-bottom:1px solid var(--bord);background:var(--bg3);position:sticky;left:0;z-index:2">Alan</th>';
   [1,2,3,4,5].forEach(k=>{
@@ -3188,6 +3185,7 @@ function renderDagilim(){
     </th>`;
   });
   html+='</tr></thead><tbody>';
+  // Alan × Kıdem nöbet sayıları
   AREAS.forEach(a=>{
     if(!S.quota[a.id]) S.quota[a.id]={1:0,2:0,3:0,4:0,5:0};
     if(!S.minNobet[a.id]) S.minNobet[a.id]={1:0,2:0,3:0,4:0,5:0};
@@ -3203,7 +3201,7 @@ function renderDagilim(){
       html+=`<td style="text-align:center;border-bottom:1px solid var(--bord);padding:2px">
         <div class="ni-wrap" style="justify-content:center">
           <button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button>
-          <input class="ni" type="number" min="0" max="31" value="${v}"
+          <input class="ni dagKotaInput" data-kidem="${k}" type="number" min="0" max="31" value="${v}"
             title="${v===0?'0 = giremez':'Aylık '+v+' nöbet'}"
             style="width:34px;font-size:12px;font-weight:600;${v===0?'opacity:.35;color:var(--w4)':''}"
             onchange="
@@ -3214,36 +3212,81 @@ function renderDagilim(){
               S.minNobet['${a.id}'][${k}]=val>0?1:0;
               this.style.opacity=val===0?'.35':'1';
               this.style.color=val===0?'var(--w4)':'';
-              save();showSaved('dagSaved')">
+              save();showSaved('dagSaved');dagKontrolToplamlar()">
           <button class="ni-btn" type="button" onclick="niStep(this,1)">+</button>
         </div>
       </td>`;
     });
     html+='</tr>';
   });
+  // ── Toplam satırı ──
+  html+='<tr style="border-top:2px solid var(--bord)">';
+  html+='<td style="padding:6px 10px;background:var(--bg3);position:sticky;left:0;z-index:1;font-size:10px;font-weight:700;color:var(--w2)">Toplam</td>';
+  [1,2,3,4,5].forEach(k=>{
+    let toplam=0;
+    AREAS.forEach(a=>{ toplam+=((S.quota[a.id]||{})[k]||0); });
+    const maxNobet=Math.round(S.maxHours[k]/24);
+    const asim=toplam>maxNobet;
+    html+=`<td id="dagTop${k}" style="text-align:center;padding:4px 2px;background:var(--bg3)">
+      <span style="font-size:12px;font-weight:700;color:${asim?'var(--red)':'var(--w1)'}">${toplam}</span>
+      <span style="font-size:9px;color:${asim?'var(--red)':'var(--w4)'}">/ ${maxNobet}</span>
+      ${asim?'<div style="font-size:8px;color:var(--red);font-weight:600;margin-top:1px">Max aşıldı!</div>':''}
+    </td>`;
+  });
+  html+='</tr>';
+  // ── Max saat satırı ──
+  html+='<tr>';
+  html+='<td style="padding:6px 10px;background:var(--bg3);position:sticky;left:0;z-index:1;font-size:10px;font-weight:600;color:var(--w3)">Max (s/ay)</td>';
+  [1,2,3,4,5].forEach(k=>{
+    html+=`<td style="text-align:center;padding:4px 2px;background:var(--bg3)">
+      <div class="ni-wrap" style="justify-content:center">
+        <button class="ni-btn" type="button" onclick="niStep(this,-24)">−</button>
+        <input class="ni" type="number" min="24" max="720" step="24" value="${S.maxHours[k]}"
+          style="width:40px;font-size:11px;font-weight:600"
+          onchange="S.maxHours[${k}]=parseInt(this.value)||24;save();showSaved('dagSaved');dagKontrolToplamlar()">
+        <button class="ni-btn" type="button" onclick="niStep(this,24)">+</button>
+      </div>
+      <div style="font-size:9px;color:var(--w4);margin-top:1px">${Math.round(S.maxHours[k]/24)} nöbet</div>
+    </td>`;
+  });
+  html+='</tr>';
   html+='</tbody>';
   dagEl.innerHTML=html;
 }
 
-/* ── KOTA ── */
-function renderKota(){
-  const saatEl=document.getElementById('saatRow');
-  if(!saatEl) return;
+// Matris toplam/max doğrulama — kota veya maxHours değişince çağrılır
+function dagKontrolToplamlar(){
   if(!S.maxHours) S.maxHours={1:216,2:192,3:168,4:144,5:120};
-  let sh='';
   [1,2,3,4,5].forEach(k=>{
-    sh+=`<div style="background:var(--bg3);border-radius:var(--border-radius-md);padding:8px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-        <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px">Kıdem ${k}</span>
-        <span id="sh${k}" style="font-size:10px;color:var(--red);font-weight:700">${Math.round(S.maxHours[k]/24)} nöbet</span>
-      </div>
-      <div style="display:flex;align-items:center;gap:4px">
-        <div class="ni-wrap"><button class="ni-btn" type="button" onclick="niStep(this,-24)">−</button><input class="ni" type="number" min="24" max="720" step="24" value="${S.maxHours[k]}" style="width:40px;font-size:12px" onchange="S.maxHours[${k}]=parseInt(this.value)||24;document.getElementById('sh${k}').textContent=Math.round(S.maxHours[${k}]/24)+' nöbet';save();showSaved('kotaSaved')"><button class="ni-btn" type="button" onclick="niStep(this,24)">+</button></div>
-        <span style="font-size:11px;color:var(--w3)">s/ay</span>
-      </div>
-    </div>`;
+    let toplam=0;
+    AREAS.forEach(a=>{ toplam+=((S.quota[a.id]||{})[k]||0); });
+    const maxNobet=Math.round(S.maxHours[k]/24);
+    const asim=toplam>maxNobet;
+    const el=document.getElementById('dagTop'+k);
+    if(el){
+      el.innerHTML=
+        '<span style="font-size:12px;font-weight:700;color:'+(asim?'var(--red)':'var(--w1)')+'">'+toplam+'</span>'+
+        ' <span style="font-size:9px;color:'+(asim?'var(--red)':'var(--w4)')+'">/ '+maxNobet+'</span>'+
+        (asim?'<div style="font-size:8px;color:var(--red);font-weight:600;margin-top:1px">Max aşıldı!</div>':'');
+    }
+    // Kıdem sütunundaki hücreleri vurgula
+    document.querySelectorAll('.dagKotaInput[data-kidem="'+k+'"]').forEach(inp=>{
+      const val=parseInt(inp.value)||0;
+      if(val>0&&asim){
+        inp.style.background='rgba(232,87,42,0.12)';
+        inp.style.borderColor='rgba(232,87,42,0.4)';
+      } else {
+        inp.style.background='';
+        inp.style.borderColor='';
+      }
+    });
   });
-  saatEl.innerHTML=sh;
+}
+
+/* ── KOTA (kaldırıldı — renderDagilim içine taşındı) ── */
+function renderKota(){
+  // Max saat artık renderDagilim tablonun altında gösteriliyor
+  // Geriye dönük uyumluluk için boş bırakıldı
 }
 
 /* ── AUTO GEN v3 — algoConfig destekli ── */
