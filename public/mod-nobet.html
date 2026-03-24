@@ -1176,7 +1176,6 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
 (function(){
   try {
     const params = new URLSearchParams(window.location.search);
-    // URL parametresi sadece ilk render için; gerçek rol Firestore'dan doğrulanır
     window.ACILX_ROLE    = params.get('role')    || 'asistan';
     window.ACILX_UID     = params.get('uid')     || '';
     window.ACILX_GROUP   = params.get('groupId') || '';
@@ -1185,40 +1184,6 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
     window.ACILX_UID  = '';
   }
 })();
-
-// Sunucu tarafı rol doğrulama — Firestore'dan kullanıcının gerçek rolünü çeker
-// Her kritik yazma işleminden önce çağrılır
-let _fsVerifiedRole = null;   // Firestore'dan doğrulanmış rol
-let _fsRoleVerifiedAt = 0;    // Son doğrulama zamanı (ms)
-const _FS_ROLE_TTL = 30000;   // 30sn cache — sık Firestore okuması önlenir
-
-async function fsVerifyRole() {
-  // Cache hâlâ geçerliyse tekrar sorma
-  if (_fsVerifiedRole && (Date.now() - _fsRoleVerifiedAt < _FS_ROLE_TTL)) {
-    return _fsVerifiedRole;
-  }
-  if (!_db || !window.ACILX_UID) return 'asistan';
-  try {
-    const snap = await _db.collection('users').doc(window.ACILX_UID).get();
-    if (snap.exists) {
-      _fsVerifiedRole = snap.data().role || 'asistan';
-    } else {
-      _fsVerifiedRole = 'asistan';
-    }
-  } catch(e) {
-    console.warn('[ACİLX] Rol doğrulama hatası:', e);
-    _fsVerifiedRole = _fsVerifiedRole || 'asistan';
-  }
-  _fsRoleVerifiedAt = Date.now();
-  // Client-side ACILX_ROLE'u Firestore gerçeğiyle eşitle
-  window.ACILX_ROLE = _fsVerifiedRole;
-  return _fsVerifiedRole;
-}
-
-// Kısayol: başasistan mı kontrol et (async)
-async function fsIsBasasistan() {
-  return (await fsVerifyRole()) === 'basasistan';
-}
 
 /* ── Firestore bağlantısı (shell ile aynı config kullanılır) ──────────── */
 /* Config shell'den mesaj olarak da alınabilir; şimdilik aynı config kopyalanır. */
@@ -1271,23 +1236,11 @@ function fsSaveState() {
     return;
   }
   clearTimeout(_fsSaveTimer);
-  _fsSaveTimer = setTimeout(async function() {
-    // Sunucu tarafı rol doğrulama
-    if (!(await fsIsBasasistan())) {
-      console.warn('[ACİLX] fsSaveState engellendi — Firestore rol doğrulaması başarısız');
-      return;
-    }
-    _fsSaveNow();
-  }, 1500);
+  _fsSaveTimer = setTimeout(_fsSaveNow, 1500);
 }
 async function _fsSaveNow() {
   if (!_db) return;
   if (!window._assistantsLoaded) return;
-  // KRİTİK: Ay geçişi sırasında boş schedule Firestore'a gitmesin
-  if (!window._fsReady) {
-    console.warn('[ACİLX] _fsSaveNow engellendi — _fsReady false (ay geçişi devam ediyor)');
-    return;
-  }
   const {y, m} = S.currentDate;
   // ── SPINNER YOK — arka planda sessizce kaydet, UI'ı engelleme ──
   try {
@@ -1318,11 +1271,6 @@ async function _fsSaveNow() {
 // ── AREAS Firestore Kaydet/Yükle ──
 async function _fsSaveAreas() {
   if (!_db || window.ACILX_ROLE !== 'basasistan') return;
-  // Sunucu tarafı rol doğrulama
-  if (!(await fsIsBasasistan())) {
-    console.warn('[ACİLX] _fsSaveAreas engellendi — yetkisiz');
-    return;
-  }
   if (!window._areasLoaded && AREAS.length === 0) return; // Boş veri yazma
   const gId = window.ACILX_GROUP || 'default';
   try {
@@ -1368,13 +1316,6 @@ async function fsLoadState(y, m) {
     const snap = await fsScheduleRef(y, m).get();
     if (snap.exists) {
       const data = snap.data();
-
-      // KRİTİK: Async yükleme sırasında ay değişmiş olabilir (hızlı geçiş).
-      // Eğer S.currentDate artık bu ay değilse, yüklenen veriyi YAZMA.
-      if (S.currentDate.y !== y || S.currentDate.m !== m) {
-        console.warn('[ACİLX] fsLoadState: ay değişti, yüklenen veri atıldı (' + y + '/' + (m+1) + ')');
-        return false;
-      }
 
       // Firestore her zaman tek gerçek kaynak — tüm alanları yaz
       // localStorage sadece offline fallback olarak kullanılır
@@ -2883,17 +2824,14 @@ function saveAstEkle(){
   ASSISTANTS.push(newAst);
   window._assistantsLoaded = true; // Artık asistan verisi mevcut
 
-  // Firestore'a da kaydet (başasistan için — sunucu doğrulamalı)
+  // Firestore'a da kaydet (başasistan için)
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    fsIsBasasistan().then(ok => {
-      if(!ok){ console.warn('[ACİLX] Asistan ekleme engellendi — yetkisiz'); return; }
-      const _gId = window.ACILX_GROUP || 'default';
-      _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
-        list: ASSISTANTS,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: window.ACILX_UID
-      }).catch(e=>console.warn('Asistan kayıt hatası:', e));
-    });
+    const _gId = window.ACILX_GROUP || 'default';
+    _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
+      list: ASSISTANTS,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: window.ACILX_UID
+    }).catch(e=>console.warn('Asistan kayıt hatası:', e));
   }
 
   closeAstEkleModal();
@@ -2923,17 +2861,14 @@ function deleteAst(idx){
   // ID'leri güncelle
   ASSISTANTS.forEach((a,i)=>{ a.id=i; });
 
-  // Firestore'a kaydet (sunucu doğrulamalı)
+  // Firestore'a kaydet
   if(_db && window.ACILX_ROLE === 'basasistan'){
-    fsIsBasasistan().then(ok => {
-      if(!ok){ console.warn('[ACİLX] Asistan silme engellendi — yetkisiz'); return; }
-      const _gIdDel = window.ACILX_GROUP || 'default';
-      _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
-        list: ASSISTANTS,
-        updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy: window.ACILX_UID
-      }).catch(e=>console.warn('Asistan silme hatası:', e));
-    });
+    const _gIdDel = window.ACILX_GROUP || 'default';
+    _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
+      list: ASSISTANTS,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: window.ACILX_UID
+    }).catch(e=>console.warn('Asistan silme hatası:', e));
   }
 
   save();
@@ -2946,8 +2881,6 @@ function deleteAst(idx){
 // Pending (onay bekleyen) kullanıcıları göster
 async function loadPendingUsers(){
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())) return;
   try {
     const snap = await _db.collection('users')
       .where('status','==','pending').get();
@@ -3017,8 +2950,6 @@ function togglePendingKidem(uid, val){
 }
 
 async function approveUser(uid, email, name){
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   const action = document.getElementById('pendingAction_'+uid)?.value;
   if(!action){ alert('Lütfen bir seçim yapın.'); return; }
 
@@ -3068,8 +2999,6 @@ async function approveUser(uid, email, name){
 
 async function rejectUser(uid){
   if(!confirm('Bu kullaniciyi reddetmek istediginizden emin misiniz?')) return;
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   await _db.collection('users').doc(uid).update({status:'rejected'});
   loadPendingUsers();
 }
@@ -3098,8 +3027,6 @@ async function loadNobetSettings() {
     _applyFallbackData();
     return;
   }
-  // Sayfa açılışında Firestore'dan gerçek rolü doğrula
-  await fsVerifyRole();
   showSpinner();
   try {
     // 0. Grup bilgisini çek (kıdem yapısı)
@@ -3125,7 +3052,7 @@ async function loadNobetSettings() {
       console.log('[ACİLX] İlk kurulum — varsayılan asistan listesi yükleniyor');
       _DEFAULT_ASSISTANTS.forEach((a,i) => ASSISTANTS.push({...a, id:i}));
       window._assistantsLoaded = true;
-      // İlk kez Firestore'a kaydet (rol zaten doğrulanmış)
+      // İlk kez Firestore'a kaydet
       if(window.ACILX_ROLE === 'basasistan') {
         await _db.collection('groups').doc(gId).collection('assistants').doc('list').set({
           list: ASSISTANTS,
@@ -3214,7 +3141,6 @@ async function loadNobetSettings() {
     // Hata olursa fallback'leri uygula
     _applyFallbackData();
   } finally {
-    window._fsReady = true;
     hideSpinner();
   }
 }
@@ -3334,8 +3260,6 @@ async function nobetSil(){
 
 async function nobetYayindanKaldir(){
   if(!_db) return;
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbeti yayından kaldırmak istediğinden emin misin?')) return;
   window._nobetYayinda = false;
   showSpinner();
@@ -3351,8 +3275,6 @@ async function nobetYayindanKaldir(){
 
 async function toggleTercihDonem() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   const {y,m} = S.currentDate;
   const yeni = !window._tercihAcik;
   window._tercihAcik = yeni;
@@ -3377,8 +3299,6 @@ async function toggleTercihDonem() {
 
 async function nobetYayinla() {
   if(!_db || window.ACILX_ROLE !== 'basasistan') return;
-  // Sunucu tarafı rol doğrulama
-  if(!(await fsIsBasasistan())){ showToast('Yetkiniz yok'); return; }
   if(!confirm('Nöbet listesini yayınlamak istediğinizden emin misiniz? Asistanlar bildirim alacak.')) return;
   window._nobetYayinda = true;
   showSpinner();
@@ -4803,20 +4723,9 @@ function _renderOzetBasasistan(){
   document.getElementById('ozetContent').innerHTML = html;
 }
 
-let _changeMonthLock = false;
-async function changeMonth(dir){
-  // Hızlı ardışık tıklamayı engelle — önceki geçiş tamamlanmadan yenisi başlamasın
-  if(_changeMonthLock) {
-    console.warn('[ACİLX] changeMonth: önceki geçiş devam ediyor, atlandı');
-    return;
-  }
-  _changeMonthLock = true;
-
+function changeMonth(dir){
   // ── KRİTİK: Mevcut ayın verilerini KAYBOLMADAN kaydetmemiz lazım ──
-
-  // Önce bekleyen debounce'lu Firestore kaydını iptal et — snapshot zaten alacağız
-  clearTimeout(_fsSaveTimer);
-
+  // Önce mevcut schedule'ın snapshot'ını al, sonra geçiş yap
   const oldY = S.currentDate.y;
   const oldM = S.currentDate.m;
   const oldSchedule          = JSON.parse(JSON.stringify(S.schedule || {}));
@@ -4848,34 +4757,33 @@ async function changeMonth(dir){
     }));
   } catch(e) { console.warn('[ACİLX] localStorage ay yedek hatası:', e); }
 
-  // Mevcut ayı Firestore'a kaydet (başasistan ise) — AWAIT ile bekle!
-  // Böylece geri dönüldüğünde fsLoadState güncel veriyi yükler.
+  // Mevcut ayı Firestore'a kaydet (başasistan ise) — snapshot verileriyle
   if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded) {
-    showSpinner();
+    clearTimeout(_fsSaveTimer);
     const gId = window.ACILX_GROUP || 'default';
-    try {
-      await _db.collection('groups').doc(gId).collection('schedule').doc(oldY + '_' + oldM).set({
-        schedule:          oldSchedule,
-        egBlocks:          S.egBlocks,
-        defaultDayMin:     S.defaultDayMin,
-        minNobet:          S.minNobet,
-        quota:             S.quota,
-        maxHours:          S.maxHours,
-        dayOverride:       oldDayOverride,
-        monthOverride:     oldMonthOverride,
-        kapaliGunler:      oldKapaliGunler,
-        prevMonthLastDay:  oldPrevMonthLastDay,
-        nextMonthFirstDay: oldNextMonthFirstDay,
-        listName:          S.listName,
-        astProfiles:       oldAstProfiles,
-        algoConfig:        S.algoConfig,
-        updatedAt:         firebase.firestore.FieldValue.serverTimestamp(),
-        updatedBy:         window.ACILX_UID
-      }, {merge: true});
+    // Doğrudan Firestore'a yaz — S objesine bağımlı olmadan, snapshot ile
+    _db.collection('groups').doc(gId).collection('schedule').doc(oldY + '_' + oldM).set({
+      schedule:          oldSchedule,
+      egBlocks:          S.egBlocks,
+      defaultDayMin:     S.defaultDayMin,
+      minNobet:          S.minNobet,
+      quota:             S.quota,
+      maxHours:          S.maxHours,
+      dayOverride:       oldDayOverride,
+      monthOverride:     oldMonthOverride,
+      kapaliGunler:      oldKapaliGunler,
+      prevMonthLastDay:  oldPrevMonthLastDay,
+      nextMonthFirstDay: oldNextMonthFirstDay,
+      listName:          S.listName,
+      astProfiles:       oldAstProfiles,
+      algoConfig:        S.algoConfig,
+      updatedAt:         firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy:         window.ACILX_UID
+    }, {merge: true}).then(() => {
       console.log('[ACİLX] changeMonth: eski ay kaydedildi (' + oldY + '/' + (oldM+1) + '), schedule:', Object.keys(oldSchedule).length);
-    } catch(err) {
+    }).catch(err => {
       console.error('[ACİLX] changeMonth: eski ay kayıt hatası:', err);
-    }
+    });
   }
 
   // Ay değiştir
@@ -4898,7 +4806,7 @@ async function changeMonth(dir){
   window._nobetYayinda = false;
   window._tercihAy     = null;
 
-  // Yeni ayın koordinatları
+  // Başlık güncelle
   const {y,m} = S.currentDate;
   const lbl = document.getElementById('monthLbl');
   if(lbl) lbl.textContent = MONTHS[m] + ' ' + y;
@@ -4928,19 +4836,10 @@ async function changeMonth(dir){
   // Firestore'dan yeni ayı yükle
   if(_db) {
     if(!lsCacheLoaded) showSpinner();
-    try {
-      const [loaded, settSnap] = await Promise.all([
-        fsLoadState(y, m),
-        (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(()=>null) : Promise.resolve(null); })()
-      ]);
-
-      // Ay hâlâ aynı mı kontrol et (hızlı geçiş koruması)
-      if(S.currentDate.y !== y || S.currentDate.m !== m) {
-        console.warn('[ACİLX] changeMonth: ay geçiş sırasında değişti, sonuçlar atıldı');
-        _changeMonthLock = false;
-        return;
-      }
-
+    Promise.all([
+      fsLoadState(y, m),
+      (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(()=>null) : Promise.resolve(null); })()
+    ]).then(([loaded, settSnap]) => {
       if(lbl) lbl.textContent = MONTHS[S.currentDate.m] + ' ' + S.currentDate.y;
       if(settSnap && settSnap.exists) {
         const data = settSnap.data();
@@ -4965,21 +4864,19 @@ async function changeMonth(dir){
       try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
       try { renderNewCal(); } catch(e) {}
       updateTercihUI();
-    } catch(err) {
+    }).catch(() => {
       window._fsReady = true; // Hata olsa bile kilidi aç
       try { renderNewCal(); } catch(e) {}
       updateTercihUI();
-    } finally {
+    }).finally(() => {
       hideSpinner();
-      _changeMonthLock = false;
-    }
+    });
   } else {
     // Firestore yok — localStorage cache zaten yüklendi, yoksa boş kalır
     window._fsReady = true;
     try { renderNewCal(); } catch(e) {}
     updateTercihUI();
   }
-  _changeMonthLock = false;
 }
 // YZ FONKSIYONLARI
 function saveApiKey(val){
@@ -7641,37 +7538,54 @@ function initApp(){
 // Başlangıç: önce Firestore'dan yükle
 initApp();
 
-// KRİTİK: Duplicate fsLoadState kaldırıldı — loadNobetSettings zaten Firestore'dan yükleme yapıyor.
-// İkinci bir fsLoadState çağrısı race condition yaratıp veri kaybına neden oluyordu.
-// initApp → loadNobetSettings zinciri tüm yüklemeyi tek seferde halleder.
-// Sadece overlay sinyali ve _fsReady yönetimi burada yapılır.
+// Erken sinyal: initApp() tamamlanınca (render öncesi değil sonrası)
+// finally bloğundaki postMessage yeterli — burada sadece max bekleme süresi belirle
+
 (async function(){
-  // initApp()'in loadNobetSettings promise'ini bekle — zaten initApp() içinde çağrıldı
-  // loadNobetSettings tamamlanınca _fsReady ayarlanır
-  // Burada sadece max bekleme süresi ve overlay sinyali yönetilir
-  const maxWait = setTimeout(() => {
+  showSpinner();
+  try {
+    if(_db) {
+      const {y,m} = S.currentDate;
+      // Firestore'dan yükle — her zaman önceliklidir
+      const loaded = await fsLoadState(y, m);
+      if(loaded){
+        // KRİTİK: ASSISTANTS/AREAS yüklendiyse render yap, yoksa loadNobetSettings zaten halleder
+        if(ASSISTANTS.length > 0) {
+          try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try { renderNewCal(); } catch(e){}
+        }
+        updateListNameHeader();
+        updateTercihUI();
+      } else {
+        // Firestore'a bağlanamazsa localStorage'daki veriyle devam et
+        console.warn('[ACİLX] Startup: Firestore yüklenemedi, localStorage kullanılıyor');
+        if(ASSISTANTS.length > 0) {
+          try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+          try { renderNewCal(); } catch(e){}
+        }
+        updateListNameHeader();
+        updateTercihUI();
+      }
+    } else {
+      // DB yok — fallback + localStorage ile devam
+      _applyFallbackData();
+      try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e){}
+      try { renderNewCal(); } catch(e){}
+    }
+  } catch(e) {
+    console.warn('[ACİLX] Firestore atland:', e.message);
+    _applyFallbackData();
+    try { renderNewCal(); } catch(er){}
+  } finally {
     window._fsReady = true;
     hideSpinner();
+    // İçerik hazır — overlay kaldır
     try { window.parent.postMessage('acilx_nobet_ready', '*'); } catch(_){}
-  }, 12000);
-
-  // loadNobetSettings'in bitmesini bekle (initApp içindeki promise)
-  function waitForReady() {
-    return new Promise(resolve => {
-      const check = () => {
-        if(window._fsReady) { resolve(); return; }
-        setTimeout(check, 100);
-      };
-      check();
-    });
+    // Güvenlik: 500ms sonra tekrar gönder (bazı tarayıcılarda ilk mesaj kaybolur)
+    setTimeout(()=>{
+      try { window.parent.postMessage('acilx_nobet_ready', '*'); } catch(_){}
+    }, 500);
   }
-  await waitForReady();
-  clearTimeout(maxWait);
-  hideSpinner();
-  try { window.parent.postMessage('acilx_nobet_ready', '*'); } catch(_){}
-  setTimeout(()=>{
-    try { window.parent.postMessage('acilx_nobet_ready', '*'); } catch(_){}
-  }, 500);
 })();
 
 // ══════════════════════════════════════════════════════
@@ -7685,28 +7599,8 @@ window.addEventListener('beforeunload', function(e){
     e.returnValue = 'Nöbet listesi kaydediliyor, çıkmak istediğinize emin misiniz?';
     return e.returnValue;
   }
-  // Bekleyen debounce timer varsa iptal edip hemen kaydet
-  if(_fsSaveTimer && window._fsReady && window._assistantsLoaded) {
-    clearTimeout(_fsSaveTimer);
-    _fsSaveTimer = null;
-    // navigator.sendBeacon kullanarak senkron olmadan Firestore'a gönder
-    // (sendBeacon Firestore SDK ile çalışmaz, localStorage'a güveniyoruz)
-  }
   // Çıkmadan önce localStorage'ı güncel tut (her ihtimale karşı)
-  // Ay-bazlı cache'i de güncelle
-  try {
-    localStorage.setItem(LS_KEY, JSON.stringify(S));
-    const {y,m} = S.currentDate;
-    localStorage.setItem(LS_KEY + '_' + y + '_' + m, JSON.stringify({
-      schedule: S.schedule, dayOverride: S.dayOverride,
-      monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
-      prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
-      astProfiles: S.astProfiles, egBlocks: S.egBlocks,
-      defaultDayMin: S.defaultDayMin, minNobet: S.minNobet,
-      quota: S.quota, maxHours: S.maxHours,
-      listName: S.listName, algoConfig: S.algoConfig
-    }));
-  } catch(_){}
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
 });
 
 // ══════════════════════════════════════════════════════
