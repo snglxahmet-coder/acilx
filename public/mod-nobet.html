@@ -1241,6 +1241,7 @@ function fsSaveState() {
 async function _fsSaveNow() {
   if (!_db) return;
   if (!window._assistantsLoaded) return;
+  if (!window._fsReady) return; // Ay geçişi sırasında boş veri yazma
   const {y, m} = S.currentDate;
   // ── SPINNER YOK — arka planda sessizce kaydet, UI'ı engelleme ──
   try {
@@ -1317,14 +1318,17 @@ async function fsLoadState(y, m) {
     if (snap.exists) {
       const data = snap.data();
 
-      // Firestore her zaman tek gerçek kaynak — tüm alanları yaz
-      // localStorage sadece offline fallback olarak kullanılır
+      // Race condition koruması: async yükleme sırasında ay değişmiş olabilir
+      if (S.currentDate.y !== y || S.currentDate.m !== m) {
+        console.warn('[ACİLX] fsLoadState: ay değişti, veri atıldı (' + y + '/' + (m+1) + ')');
+        return false;
+      }
+
       const allKeys = ['schedule','egBlocks','defaultDayMin','minNobet','quota','maxHours',
                        'dayOverride','monthOverride','kapaliGunler','prevMonthLastDay',
                        'nextMonthFirstDay','listName','astProfiles','algoConfig'];
       allKeys.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
 
-      // Firestore'dan yüklenen state'i localStorage'a da yaz (offline için)
       try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_) {}
 
       console.log('[ACİLX] fsLoadState: Firestore yüklendi (' + y + '/' + (m+1) + '), schedule:', Object.keys(S.schedule||{}).length, 'kayıt');
@@ -4723,135 +4727,129 @@ function _renderOzetBasasistan(){
   document.getElementById('ozetContent').innerHTML = html;
 }
 
+// Arka planda bekleyen ay kayıtlarını takip et (race condition koruması)
+var _pendingMonthSaves = {};
+var _changeMonthBusy = false;
+
 function changeMonth(dir){
-  // ── KRİTİK: Mevcut ayın verilerini KAYBOLMADAN kaydetmemiz lazım ──
-  // Önce mevcut schedule'ın snapshot'ını al, sonra geçiş yap
-  const oldY = S.currentDate.y;
-  const oldM = S.currentDate.m;
-  const oldSchedule          = JSON.parse(JSON.stringify(S.schedule || {}));
-  const oldDayOverride       = JSON.parse(JSON.stringify(S.dayOverride || {}));
-  const oldMonthOverride     = JSON.parse(JSON.stringify(S.monthOverride || {}));
-  const oldKapaliGunler      = JSON.parse(JSON.stringify(S.kapaliGunler || {}));
-  const oldPrevMonthLastDay  = JSON.parse(JSON.stringify(S.prevMonthLastDay || {}));
-  const oldNextMonthFirstDay = JSON.parse(JSON.stringify(S.nextMonthFirstDay || {}));
-  const oldAstProfiles       = JSON.parse(JSON.stringify(S.astProfiles || {}));
+  // Hızlı ardışık tıklamayı engelle
+  if(_changeMonthBusy) return;
+  _changeMonthBusy = true;
 
-  // ── localStorage'a ay-bazlı yedekle (offline + hız için) ──
-  try {
-    const lsMonthKey = LS_KEY + '_' + oldY + '_' + oldM;
-    localStorage.setItem(lsMonthKey, JSON.stringify({
-      schedule: oldSchedule,
-      dayOverride: oldDayOverride,
-      monthOverride: oldMonthOverride,
-      kapaliGunler: oldKapaliGunler,
-      prevMonthLastDay: oldPrevMonthLastDay,
-      nextMonthFirstDay: oldNextMonthFirstDay,
-      astProfiles: oldAstProfiles,
-      egBlocks: S.egBlocks,
-      defaultDayMin: S.defaultDayMin,
-      minNobet: S.minNobet,
-      quota: S.quota,
-      maxHours: S.maxHours,
-      listName: S.listName,
-      algoConfig: S.algoConfig
-    }));
-  } catch(e) { console.warn('[ACİLX] localStorage ay yedek hatası:', e); }
+  // Bekleyen debounce'u iptal et — snapshot alacağız
+  clearTimeout(_fsSaveTimer);
 
-  // Mevcut ayı Firestore'a kaydet (başasistan ise) — snapshot verileriyle
+  // ── 1. Eski ayın snapshot'ını al (senkron) ──
+  var oldY = S.currentDate.y;
+  var oldM = S.currentDate.m;
+  var oldKey = oldY + '_' + oldM;
+  var snapshot = JSON.parse(JSON.stringify({
+    schedule: S.schedule || {},
+    dayOverride: S.dayOverride || {},
+    monthOverride: S.monthOverride || {},
+    kapaliGunler: S.kapaliGunler || {},
+    prevMonthLastDay: S.prevMonthLastDay || {},
+    nextMonthFirstDay: S.nextMonthFirstDay || {},
+    astProfiles: S.astProfiles || {},
+    egBlocks: S.egBlocks,
+    defaultDayMin: S.defaultDayMin,
+    minNobet: S.minNobet,
+    quota: S.quota,
+    maxHours: S.maxHours,
+    listName: S.listName,
+    algoConfig: S.algoConfig
+  }));
+
+  // ── 2. localStorage'a anında yedekle (senkron, <1ms) ──
+  try { localStorage.setItem(LS_KEY + '_' + oldKey, JSON.stringify(snapshot)); } catch(e) {}
+
+  // ── 3. Firestore'a arka planda kaydet (await yok, kullanıcı beklemez) ──
   if(window.ACILX_ROLE === 'basasistan' && _db && window._assistantsLoaded) {
-    clearTimeout(_fsSaveTimer);
-    const gId = window.ACILX_GROUP || 'default';
-    // Doğrudan Firestore'a yaz — S objesine bağımlı olmadan, snapshot ile
-    _db.collection('groups').doc(gId).collection('schedule').doc(oldY + '_' + oldM).set({
-      schedule:          oldSchedule,
-      egBlocks:          S.egBlocks,
-      defaultDayMin:     S.defaultDayMin,
-      minNobet:          S.minNobet,
-      quota:             S.quota,
-      maxHours:          S.maxHours,
-      dayOverride:       oldDayOverride,
-      monthOverride:     oldMonthOverride,
-      kapaliGunler:      oldKapaliGunler,
-      prevMonthLastDay:  oldPrevMonthLastDay,
-      nextMonthFirstDay: oldNextMonthFirstDay,
-      listName:          S.listName,
-      astProfiles:       oldAstProfiles,
-      algoConfig:        S.algoConfig,
-      updatedAt:         firebase.firestore.FieldValue.serverTimestamp(),
-      updatedBy:         window.ACILX_UID
-    }, {merge: true}).then(() => {
-      console.log('[ACİLX] changeMonth: eski ay kaydedildi (' + oldY + '/' + (oldM+1) + '), schedule:', Object.keys(oldSchedule).length);
-    }).catch(err => {
-      console.error('[ACİLX] changeMonth: eski ay kayıt hatası:', err);
+    var gId = window.ACILX_GROUP || 'default';
+    var saveP = _db.collection('groups').doc(gId).collection('schedule').doc(oldKey).set({
+      schedule: snapshot.schedule, egBlocks: snapshot.egBlocks,
+      defaultDayMin: snapshot.defaultDayMin, minNobet: snapshot.minNobet,
+      quota: snapshot.quota, maxHours: snapshot.maxHours,
+      dayOverride: snapshot.dayOverride, monthOverride: snapshot.monthOverride,
+      kapaliGunler: snapshot.kapaliGunler, prevMonthLastDay: snapshot.prevMonthLastDay,
+      nextMonthFirstDay: snapshot.nextMonthFirstDay, listName: snapshot.listName,
+      astProfiles: snapshot.astProfiles, algoConfig: snapshot.algoConfig,
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedBy: window.ACILX_UID
+    }, {merge: true}).then(function(){
+      delete _pendingMonthSaves[oldKey];
+    }).catch(function(err){
+      console.error('[ACİLX] changeMonth kayıt hatası:', err);
+      delete _pendingMonthSaves[oldKey];
     });
+    _pendingMonthSaves[oldKey] = saveP;
   }
 
-  // Ay değiştir
+  // ── 4. Ay HEMEN değişir ──
   S.currentDate.m += dir;
   if(S.currentDate.m > 11){ S.currentDate.m = 0; S.currentDate.y++; }
   if(S.currentDate.m < 0){ S.currentDate.m = 11; S.currentDate.y--; }
 
-  // Firestore yazımını geçici dondur — boş schedule Firestore'a gitmesin
   window._fsReady = false;
-
-  // Yeni ay için schedule/override sıfırla (aylar bağımsız)
-  S.schedule          = {};
-  S.dayOverride       = {};
-  S.monthOverride     = {};
-  S.prevMonthLastDay  = {};
+  S.schedule = {};
+  S.dayOverride = {};
+  S.monthOverride = {};
+  S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
-
-  // Tercih/yayin durumunu sıfırla — yeni ayın kendi ayarları yüklenecek
-  window._tercihAcik   = false;
+  window._tercihAcik = false;
   window._nobetYayinda = false;
-  window._tercihAy     = null;
+  window._tercihAy = null;
 
-  // Başlık güncelle
-  const {y,m} = S.currentDate;
-  const lbl = document.getElementById('monthLbl');
+  var y = S.currentDate.y, m = S.currentDate.m;
+  var newKey = y + '_' + m;
+  var lbl = document.getElementById('monthLbl');
   if(lbl) lbl.textContent = MONTHS[m] + ' ' + y;
 
-  // ── Önce localStorage'dan ay-bazlı cache'i dene (anlık görünüm) ──
-  let lsCacheLoaded = false;
+  // ── 5. localStorage cache'den anında göster ──
+  var lsCacheLoaded = false;
   try {
-    const lsMonthKey = LS_KEY + '_' + y + '_' + m;
-    const cached = localStorage.getItem(lsMonthKey);
+    var cached = localStorage.getItem(LS_KEY + '_' + newKey);
     if(cached){
-      const data = JSON.parse(cached);
+      var data = JSON.parse(cached);
       ['schedule','dayOverride','monthOverride','kapaliGunler',
        'prevMonthLastDay','nextMonthFirstDay','astProfiles',
        'egBlocks','defaultDayMin','minNobet','quota','maxHours',
-       'listName','algoConfig'].forEach(k => {
+       'listName','algoConfig'].forEach(function(k){
         if(data[k] !== undefined) S[k] = data[k];
       });
       lsCacheLoaded = Object.keys(S.schedule||{}).length > 0;
-      if(lsCacheLoaded){
-        try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
-        try { renderNewCal(); } catch(e) {}
-        updateTercihUI();
-      }
     }
   } catch(e) {}
 
-  // Firestore'dan yeni ayı yükle
+  // Anında render — localStorage verisiyle
+  try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+  try { renderNewCal(); } catch(e) {}
+  updateTercihUI();
+  _changeMonthBusy = false; // Kullanıcı tekrar tıklayabilir
+
+  // ── 6. Firestore'dan arka planda güncelle ──
   if(_db) {
-    if(!lsCacheLoaded) showSpinner();
-    Promise.all([
-      fsLoadState(y, m),
-      (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(()=>null) : Promise.resolve(null); })()
-    ]).then(([loaded, settSnap]) => {
-      if(lbl) lbl.textContent = MONTHS[S.currentDate.m] + ' ' + S.currentDate.y;
-      if(settSnap && settSnap.exists) {
-        const data = settSnap.data();
-        window._tercihAcik   = data.tercihAcik  || false;
-        window._nobetYayinda = data.nobetYayinda || false;
-        window._tercihAy     = data.tercihAy     || null;
+    // Bu ay için bekleyen kayıt varsa önce onu bekle
+    var pending = _pendingMonthSaves[newKey] || Promise.resolve();
+    pending.then(function(){
+      return Promise.all([
+        fsLoadState(y, m),
+        (function(){ var ref=fsSettingsRef(y,m); return ref ? ref.get().catch(function(){return null}) : Promise.resolve(null); })()
+      ]);
+    }).then(function(results){
+      var loaded = results[0], settSnap = results[1];
+      // Ay hâlâ aynı mı? (hızlı geçiş koruması)
+      if(S.currentDate.y !== y || S.currentDate.m !== m) return;
+      if(settSnap && settSnap.exists){
+        var sd = settSnap.data();
+        window._tercihAcik   = sd.tercihAcik  || false;
+        window._nobetYayinda = sd.nobetYayinda || false;
+        window._tercihAy     = sd.tercihAy     || null;
       }
-      window._fsReady = true; // Firestore yüklendi — artık kayıt güvenli
-      // localStorage ay cache'ini Firestore verisiyle güncelle
+      window._fsReady = true;
+      // localStorage cache'i Firestore verisiyle güncelle
       try {
-        const lsMonthKey = LS_KEY + '_' + y + '_' + m;
-        localStorage.setItem(lsMonthKey, JSON.stringify({
+        localStorage.setItem(LS_KEY + '_' + newKey, JSON.stringify({
           schedule: S.schedule, dayOverride: S.dayOverride,
           monthOverride: S.monthOverride, kapaliGunler: S.kapaliGunler,
           prevMonthLastDay: S.prevMonthLastDay, nextMonthFirstDay: S.nextMonthFirstDay,
@@ -4861,21 +4859,17 @@ function changeMonth(dir){
           listName: S.listName, algoConfig: S.algoConfig
         }));
       } catch(e) {}
-      try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
-      try { renderNewCal(); } catch(e) {}
-      updateTercihUI();
-    }).catch(() => {
-      window._fsReady = true; // Hata olsa bile kilidi aç
-      try { renderNewCal(); } catch(e) {}
-      updateTercihUI();
-    }).finally(() => {
-      hideSpinner();
+      // Firestore'dan yeni veri geldiyse re-render
+      if(loaded){
+        try { renderEgitim(); renderMinConf(); renderDagilim(); renderKota(); } catch(e) {}
+        try { renderNewCal(); } catch(e) {}
+        updateTercihUI();
+      }
+    }).catch(function(){
+      if(S.currentDate.y === y && S.currentDate.m === m) window._fsReady = true;
     });
   } else {
-    // Firestore yok — localStorage cache zaten yüklendi, yoksa boş kalır
     window._fsReady = true;
-    try { renderNewCal(); } catch(e) {}
-    updateTercihUI();
   }
 }
 // YZ FONKSIYONLARI
