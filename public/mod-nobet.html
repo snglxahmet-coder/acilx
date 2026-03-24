@@ -2177,9 +2177,24 @@ function gunIhlalleri(d){
     if(r2&&r2.kidemBagimliligi&&cnt>0){
       const atananKidemler=atananlar.map(ast=>ast.kidem);
       r2.kidemBagimliligi.forEach(b=>{
-        const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-        if(bagimliVar&&!(b.refans||[]).some(k=>atananKidemler.includes(k))){
-          ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+(b.bagimli||[]).filter(k=>atananKidemler.includes(k)).join('/')+' yalnız — yanında K'+(b.refans||[]).join('/')+' olmalı'});
+        const bagimli=b.bagimli||[];
+        const refans=b.refans||[];
+        const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+        const farkliRefans=refans.filter(k=>!bagimli.includes(k));
+        // Ortak kıdem: tek kişiyse ihlal
+        ortakKidemler.forEach(k=>{
+          const sayi=atananKidemler.filter(ak=>ak===k).length;
+          if(sayi===1){
+            ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'});
+          }
+        });
+        // Farklı kıdem: bağımlı varsa yanında refans olmalı
+        if(farkliRefans.length>0){
+          const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+          const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
+          if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))){
+            ihlaller.push({tip:'kidem',alan:a,msg:a.name+': K'+bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)).join('/')+' yalnız — yanında K'+farkliRefans.join('/')+' olmalı'});
+          }
         }
       });
     }
@@ -2511,15 +2526,42 @@ function kidemBagimlilikIhlali(d, aId){
   const atananKidemler=ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===aId).map(ast=>ast.kidem);
   if(!atananKidemler.length) return [];
   r.kidemBagimliligi.forEach(b=>{
-    const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-    if(!bagimliVar) return;
-    const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
-    if(!refansVar){
-      ihlaller.push({
-        bagimli:b.bagimli.filter(k=>atananKidemler.includes(k)),
-        refans:b.refans,
-        kural:b
-      });
+    const bagimli=b.bagimli||[];
+    const refans=b.refans||[];
+    // Ortak kıdemler: aynı kıdem hem bağımlı hem yanında → "en az 2 kişi olmalı"
+    const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+    // Farklı refanslar: klasik mantık (yanında farklı kıdemden biri olmalı)
+    const farkliRefans=refans.filter(k=>!bagimli.includes(k));
+
+    // 1) Ortak kıdem kontrolü: tek kişiyse ihlal
+    ortakKidemler.forEach(k=>{
+      const sayi=atananKidemler.filter(ak=>ak===k).length;
+      if(sayi===1){
+        ihlaller.push({
+          bagimli:[k], refans:[k], kural:b,
+          ortakKidem:true,
+          msg:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı'
+        });
+      }
+    });
+
+    // 2) Farklı kıdem kontrolü: bağımlı varsa yanında refans olmalı
+    if(farkliRefans.length>0){
+      const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+      const bagimliVarMi=sadeceBagimli.length>0
+        ? sadeceBagimli.some(k=>atananKidemler.includes(k))
+        : bagimli.some(k=>atananKidemler.includes(k));
+      if(bagimliVarMi){
+        const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
+        if(!refansVarMi){
+          ihlaller.push({
+            bagimli:bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)),
+            refans:farkliRefans,
+            kural:b,
+            ortakKidem:false
+          });
+        }
+      }
     }
   });
   return ihlaller;
@@ -4007,7 +4049,7 @@ function autoGen(){
   });
 
   // ═══ ADIM 5b: KIDEM BAĞIMLILIK KURALI ═══
-  // Bağımlı kıdem yalnızsa refans kıdeminden birini eklemeye çalış
+  // Bağımlı kıdem yalnızsa uygun kıdemden birini eklemeye çalış
   BASE_AREA_ORDER.forEach(area=>{
     const aId=area.id, r=S.defaultDayMin[aId];
     if(!r||!r.kidemBagimliligi||!r.kidemBagimliligi.length) return;
@@ -4016,20 +4058,41 @@ function autoGen(){
       const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId).map(a2=>a2.kidem);
       if(!atananKidemler.length) continue;
       r.kidemBagimliligi.forEach(b=>{
-        const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-        if(!bagimliVar) return;
-        const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
-        if(refansVar) return;
-        // İhlal var — refans kıdeminden birini eklemeye çalış
+        const bagimli=b.bagimli||[];
+        const refans=b.refans||[];
+        const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+        const farkliRefans=refans.filter(k=>!bagimli.includes(k));
         const maxD=getDayRule(d,aId).max||99;
-        if(dCnt(d,aId)>=maxD) return; // Alan max'ı doluysa ekleyemeyiz
-        const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
-          if(S.schedule[gk(j,d)]) return false;
-          if(!(b.refans||[]).includes(ASSISTANTS[j].kidem)) return false;
-          if(kalan(j)<=0) return false;
-          return canAssign(j,d,aId,false);
-        }).sort((a2,b2)=>kalan(b2)-kalan(a2));
-        if(adaylar.length>0) put(adaylar[0],d,aId);
+
+        // 1) Ortak kıdem: tek kişiyse aynı kıdemden ekle
+        ortakKidemler.forEach(k=>{
+          if(atananKidemler.filter(ak=>ak===k).length!==1) return;
+          if(dCnt(d,aId)>=maxD) return;
+          const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
+            if(S.schedule[gk(j,d)]) return false;
+            if(ASSISTANTS[j].kidem!==k) return false;
+            if(kalan(j)<=0) return false;
+            return canAssign(j,d,aId,false);
+          }).sort((a2,b2)=>kalan(b2)-kalan(a2));
+          if(adaylar.length>0) put(adaylar[0],d,aId);
+        });
+
+        // 2) Farklı kıdem: bağımlı varsa refans kıdeminden ekle
+        if(farkliRefans.length>0){
+          const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+          const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
+          if(!bagimliVarMi) return;
+          const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
+          if(refansVarMi) return;
+          if(dCnt(d,aId)>=maxD) return;
+          const adaylar=ASSISTANTS.map((_,j)=>j).filter(j=>{
+            if(S.schedule[gk(j,d)]) return false;
+            if(!farkliRefans.includes(ASSISTANTS[j].kidem)) return false;
+            if(kalan(j)<=0) return false;
+            return canAssign(j,d,aId,false);
+          }).sort((a2,b2)=>kalan(b2)-kalan(a2));
+          if(adaylar.length>0) put(adaylar[0],d,aId);
+        }
       });
     }
   });
@@ -6454,9 +6517,11 @@ function renderSorunlar(){
       if(cnt>0){
         const bagIhlaller=kidemBagimlilikIhlali(d,a.id);
         bagIhlaller.forEach(ih=>{
-          const bagLbl='K'+ih.bagimli.join('/K');
-          const refLbl='K'+ih.refans.join('/K');
-          // Refans kıdeminden müsait asistan var mı?
+          const isOrtak=ih.ortakKidem;
+          const msgText=isOrtak
+            ? `${a.name}: K${ih.bagimli[0]} yalnız — aynı kıdemden en az 2 kişi olmalı`
+            : `${a.name}: K${ih.bagimli.join('/K')} yalnız — yanında K${ih.refans.join('/K')} olmalı`;
+          // Uygun asistan var mı?
           const refBoslar=ASSISTANTS.filter((ast,i)=>
             !S.schedule[gk(i,d)]&&ih.refans.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0
           );
@@ -6464,13 +6529,18 @@ function renderSorunlar(){
             const realIdx=ASSISTANTS.indexOf(ast);
             return canAssign(realIdx,d,a.id,true);
           });
+          const oneriText=isOrtak
+            ? (uygunRef
+              ? `<b>Öneri:</b> Aynı kıdemden (K${ih.bagimli[0]}) müsait asistan ata`
+              : `<b>Otomatik çözülemez:</b> K${ih.bagimli[0]} kıdeminden müsait asistan yok. Manuel atama yapın`)
+            : (uygunRef
+              ? `<b>Öneri:</b> K${ih.refans.join('/K')} kıdeminden müsait asistan ata`
+              : `<b>Otomatik çözülemez:</b> K${ih.refans.join('/K')} kıdeminden müsait asistan yok. Manuel takas veya atama yapın`);
           sorunlar.push({
             tip:'kidem', alan:a, gun:d,
-            msg:`${a.name}: ${bagLbl} yalnız — yanında ${refLbl} olmalı`,
+            msg:msgText,
             kural:'Kıdem bağımlılık kuralı ihlali',
-            oneri: uygunRef
-              ? `<b>Öneri:</b> ${refLbl} kıdeminden müsait asistan ata`
-              : `<b>Otomatik çözülemez:</b> ${refLbl} kıdeminden müsait asistan yok. Manuel takas veya atama yapın`,
+            oneri:oneriText,
             otoYapilabilir: uygunRef,
             cozumData: {d, aId:a.id, kidemler:ih.refans, bagimlilik:true}
           });
@@ -7272,8 +7342,20 @@ function akillicoz(){
         if(r2&&r2.kidemBagimliligi&&cnt>0){
           const atananKidemler=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&ASSISTANTS[j]).map(ast=>ast.kidem);
           r2.kidemBagimliligi.forEach(b=>{
-            const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-            if(bagimliVar&&!(b.refans||[]).some(k=>atananKidemler.includes(k))) toplam++;
+            const bagimli=b.bagimli||[];
+            const refans=b.refans||[];
+            const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+            const farkliRefans=refans.filter(k=>!bagimli.includes(k));
+            // Ortak kıdem: tek kişiyse ihlal
+            ortakKidemler.forEach(k=>{
+              if(atananKidemler.filter(ak=>ak===k).length===1) toplam++;
+            });
+            // Farklı kıdem: bağımlı varsa yanında refans olmalı
+            if(farkliRefans.length>0){
+              const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+              const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
+              if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))) toplam++;
+            }
           });
         }
       });
@@ -7483,18 +7565,38 @@ function akillicoz(){
         const cnt=alanCnt(d,a.id); if(cnt<=0) return;
         const atananKidemler=ASSISTANTS.filter((_,j)=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
         r3.kidemBagimliligi.forEach(b=>{
-          const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-          if(!bagimliVar) return;
-          const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
-          if(refansVar) return;
-          // Refans kıdeminden birini eklemeye çalış
+          const bagimli=b.bagimli||[];
+          const refans=b.refans||[];
+          const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+          const farkliRefans=refans.filter(k=>!bagimli.includes(k));
           const maxD=getDayRule(d,a.id).max||99;
-          if(alanCnt(d,a.id)>=maxD) return;
-          const adaylar=ASSISTANTS.map((_,j)=>j)
-            .filter(j=>ASSISTANTS[j]&&(b.refans||[]).includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
-            .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
-          for(const j of adaylar){
-            if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
+
+          // 1) Ortak kıdem: tek kişiyse aynı kıdemden bir tane daha ekle
+          ortakKidemler.forEach(k=>{
+            if(atananKidemler.filter(ak=>ak===k).length!==1) return;
+            if(alanCnt(d,a.id)>=maxD) return;
+            const adaylar=ASSISTANTS.map((_,j)=>j)
+              .filter(j=>ASSISTANTS[j]&&ASSISTANTS[j].kidem===k&&temelUygun(j,d)&&((S.quota[a.id]||{})[k]||0)>0)
+              .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
+            for(const j of adaylar){
+              if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
+            }
+          });
+
+          // 2) Farklı kıdem: bağımlı varsa refans kıdeminden ekle
+          if(farkliRefans.length>0){
+            const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+            const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
+            if(!bagimliVarMi) return;
+            const refansVarMi=farkliRefans.some(k=>atananKidemler.includes(k));
+            if(refansVarMi) return;
+            if(alanCnt(d,a.id)>=maxD) return;
+            const adaylar=ASSISTANTS.map((_,j)=>j)
+              .filter(j=>ASSISTANTS[j]&&farkliRefans.includes(ASSISTANTS[j].kidem)&&temelUygun(j,d)&&((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)>0)
+              .sort((x,z)=>(hedef(z)-nobetSay(z))-(hedef(x)-nobetSay(x)));
+            for(const j of adaylar){
+              if(guvenliEkle(j,d,a.id)){ cozulen++; break; }
+            }
           }
         });
       });
@@ -7542,13 +7644,26 @@ function akillicoz(){
       if(r2&&r2.kidemBagimliligi&&cnt>0){
         const atananKidemler=ASSISTANTS.filter((_,j)=>ASSISTANTS[j]&&S.schedule[gk(j,d)]===a.id).map(ast=>ast.kidem);
         r2.kidemBagimliligi.forEach(b=>{
-          const bagimliVar=(b.bagimli||[]).some(k=>atananKidemler.includes(k));
-          if(!bagimliVar) return;
-          const refansVar=(b.refans||[]).some(k=>atananKidemler.includes(k));
-          if(refansVar) return;
-          const bagLbl='K'+(b.bagimli||[]).filter(k=>atananKidemler.includes(k)).join('/K');
-          const refLbl='K'+(b.refans||[]).join('/K');
-          manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:bagLbl+' yalnız — yanında '+refLbl+' olmalı ama müsait refans asistanı yok'});
+          const bagimli=b.bagimli||[];
+          const refans=b.refans||[];
+          const ortakKidemler=bagimli.filter(k=>refans.includes(k));
+          const farkliRefans=refans.filter(k=>!bagimli.includes(k));
+          // Ortak kıdem: tek kişiyse ihlal
+          ortakKidemler.forEach(k=>{
+            if(atananKidemler.filter(ak=>ak===k).length===1){
+              manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:'K'+k+' yalnız — aynı kıdemden en az 2 kişi olmalı ama müsait K'+k+' asistanı yok'});
+            }
+          });
+          // Farklı kıdem
+          if(farkliRefans.length>0){
+            const sadeceBagimli=bagimli.filter(k=>!refans.includes(k));
+            const bagimliVarMi=sadeceBagimli.length>0?sadeceBagimli.some(k=>atananKidemler.includes(k)):bagimli.some(k=>atananKidemler.includes(k));
+            if(bagimliVarMi&&!farkliRefans.some(k=>atananKidemler.includes(k))){
+              const bagLbl='K'+bagimli.filter(k=>atananKidemler.includes(k)&&!refans.includes(k)).join('/K');
+              const refLbl='K'+farkliRefans.join('/K');
+              manuelLog.push({tip:'kidem',d,alan:a.name,eksik:1,neden:bagLbl+' yalnız — yanında '+refLbl+' olmalı ama müsait refans asistanı yok'});
+            }
+          }
         });
       }
     });
