@@ -365,7 +365,7 @@ function niStep(btn,delta){
   <div class="tab" id="tab-btn-ozet" onclick="switchTab(this,'ozet')">📊 Özet</div>
   <div class="tab" onclick="switchTab(this,'minconf')">Alanlar</div>
   <div class="tab" onclick="switchTab(this,'nobet_dagilim')">Nöbet Dağılımı</div>
-  <div class="tab" id="tab-btn-sorunlar" onclick="switchTab(this,'sorunlar')">Sorunlar</div>
+  <div class="tab" id="tab-btn-tercihler" onclick="switchTab(this,'tercihler')">Tercihler</div>
   <div class="tab" id="tab-btn-ayarlar" onclick="switchTab(this,'ayarlar')">⚙ Ayarlar</div>
 </div>
 </div>
@@ -622,7 +622,7 @@ function niStep(btn,delta){
   </div>
 </div>
 
-<!-- SORUNLAR -->
+<!-- Sorunlar içeriği — tab'dan kaldırıldı, gün detayından erişilir -->
 <div id="tab-sorunlar" style="display:none">
   <div class="ph" style="margin-bottom:10px">
     <div style="display:flex;align-items:center;gap:10px">
@@ -631,6 +631,16 @@ function niStep(btn,delta){
     </div>
   </div>
   <div id="sorunlarContent"></div>
+</div>
+
+<!-- TERCİHLER -->
+<div id="tab-tercihler" style="display:none">
+  <div class="ph">
+    <div><div class="ptitle" id="tercihlerTitle">Tercihler</div><div class="psub" id="tercihlerSub">Tercih, kaçınma ve izin günlerini belirle</div></div>
+  </div>
+  <div id="tercihlerAstSec" style="margin-bottom:12px"></div>
+  <div id="tercihlerDurum" style="margin-bottom:12px"></div>
+  <div id="tercihlerContent"></div>
 </div>
 
 <!-- AYARLAR -->
@@ -6301,7 +6311,7 @@ function clearAstH(i){
 function switchTab(el,name){
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   if(el) el.classList.add('active');
-  ['minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','sorunlar','ayarlar'].forEach(n=>{
+  ['minconf','nobet_dagilim','takvim','astprofile','asistanlar','ozet','sorunlar','tercihler','ayarlar'].forEach(n=>{
     const tabEl=document.getElementById('tab-'+n);
     if(tabEl) tabEl.style.display=n===name?'block':'none';
   });
@@ -6310,6 +6320,7 @@ function switchTab(el,name){
   if(name==='minconf') try { renderMinConf(); } catch(e){ console.warn('renderMinConf:', e); }
   if(name==='ozet'){ _ozetDate={y:S.currentDate.y,m:S.currentDate.m}; _ozetSchedule=null; renderOzet(); }
   if(name==='sorunlar') renderSorunlar();
+  if(name==='tercihler') renderTercihler();
   if(name==='asistanlar') renderAsistanlar();
   if(name==='astprofile'){
     _apMonth = _apMonth || S.currentDate;
@@ -6989,6 +7000,194 @@ function openUyarilarGun(d){
       : 'Tüm Sorunlar — '+MONTHS[S.currentDate.m]+' '+S.currentDate.y;
   }
   switchTab(document.getElementById('tab-btn-sorunlar'),'sorunlar');
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TERCİHLER SEKMESİ
+═══════════════════════════════════════════════════════════════ */
+var _tercihlerAstIdx = null; // Başasistan için seçili asistan
+var _tercihlerMonth = null;  // Tercihler sekmesinde gösterilen ay
+
+function renderTercihler(){
+  const isBasasistan = window.ACILX_ROLE === 'basasistan';
+  const secEl = document.getElementById('tercihlerAstSec');
+  const durEl = document.getElementById('tercihlerDurum');
+  const conEl = document.getElementById('tercihlerContent');
+  if(!conEl) return;
+
+  if(!_tercihlerMonth) _tercihlerMonth = {y:S.currentDate.y, m:S.currentDate.m};
+  const {y,m} = _tercihlerMonth;
+  const moKey = y+'_'+m;
+  const days = daysInMonth(y,m);
+
+  // Tercih dönemi durumu
+  const tercihAcik = !!window._tercihAcik;
+  const tercihAyMatch = window._tercihAy && window._tercihAy.y===y && window._tercihAy.m===m;
+  const canEdit = isBasasistan || (tercihAcik && tercihAyMatch);
+
+  // Durum banneri
+  if(isBasasistan){
+    durEl.innerHTML = tercihAcik
+      ? '<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#4ade80;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📋</span> Tercih dönemi açık — asistanlar tercihlerini girebilir.</div>'
+      : '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--w3);display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔒</span> Tercih dönemi kapalı. Asistanlar düzenleyemez.</div>';
+  } else {
+    durEl.innerHTML = canEdit
+      ? '<div style="background:rgba(74,222,128,0.08);border:1px solid rgba(74,222,128,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:#4ade80;display:flex;align-items:center;gap:8px"><span style="font-size:16px">📋</span> Tercih dönemi açık — günlere tıklayarak tercihini belirle.</div>'
+      : '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--w3);display:flex;align-items:center;gap:8px"><span style="font-size:16px">🔒</span> Tercih dönemi kapalı — sadece görüntüleyebilirsin.</div>';
+  }
+
+  // Asistan seçici (başasistan için)
+  if(isBasasistan){
+    let selHtml = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    selHtml += '<span style="font-size:12px;font-weight:600;color:var(--w2)">Asistan:</span>';
+    selHtml += '<select id="tercihlerAstSelect" onchange="_tercihlerAstIdx=parseInt(this.value);renderTercihler()" style="padding:6px 10px;border:1px solid var(--bord);border-radius:6px;background:var(--bg3);color:var(--w1);font-size:12px;font-family:var(--font-sans)">';
+    ASSISTANTS.forEach((ast,i) => {
+      const sel = _tercihlerAstIdx===i ? 'selected' : '';
+      selHtml += '<option value="'+i+'" '+sel+'>'+ast.name+' (K'+ast.kidem+')</option>';
+    });
+    selHtml += '</select></div>';
+    secEl.innerHTML = selHtml;
+    if(_tercihlerAstIdx===null && ASSISTANTS.length>0) _tercihlerAstIdx=0;
+  } else {
+    secEl.innerHTML = '';
+    // Asistan: kendi idx'ini bul
+    _tercihlerAstIdx = window._myAstIdx !== undefined ? window._myAstIdx : null;
+    if(_tercihlerAstIdx===null){
+      conEl.innerHTML = '<div style="text-align:center;color:var(--w4);padding:40px 0;font-size:13px">Asistan profili bulunamadı.</div>';
+      return;
+    }
+  }
+
+  const astIdx = _tercihlerAstIdx;
+  if(astIdx===null || !ASSISTANTS[astIdx]){
+    conEl.innerHTML = '<div style="text-align:center;color:var(--w4);padding:40px 0;font-size:13px">Asistan seçin.</div>';
+    return;
+  }
+
+  if(!S.astProfiles) S.astProfiles={};
+  if(!S.astProfiles[astIdx]) S.astProfiles[astIdx]={};
+  const prof = S.astProfiles[astIdx];
+  if(!prof.tercihAylik) prof.tercihAylik={};
+  if(!prof.kacAylik) prof.kacAylik={};
+  if(!prof.izinliAylik) prof.izinliAylik={};
+  if(!prof.tercihAylik[moKey]) prof.tercihAylik[moKey]=[];
+  if(!prof.kacAylik[moKey]) prof.kacAylik[moKey]=[];
+  if(!prof.izinliAylik[moKey]) prof.izinliAylik[moKey]=[];
+
+  const tArr = prof.tercihAylik[moKey];
+  const kArr = prof.kacAylik[moKey];
+  const iArr = prof.izinliAylik[moKey];
+
+  // Ay gezgini + takvim
+  const firstDow = new Date(y,m,1).getDay();
+  const offset = firstDow===0?6:firstDow-1;
+
+  let html = '';
+  // Ay navigasyonu
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:6px 0">';
+  html += '<button onclick="_tercihlerAyGec(-1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">◀</button>';
+  html += '<span style="font-size:14px;font-weight:700;color:var(--w1);font-family:\'DM Mono\',monospace">'+MONTHS[m]+' '+y+'</span>';
+  html += '<button onclick="_tercihlerAyGec(1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">▶</button>';
+  html += '</div>';
+
+  // Legend
+  html += '<div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">';
+  html += '<span style="color:#80B840">● Tercih</span>';
+  html += '<span style="color:#E87070">● Kaçın</span>';
+  html += '<span style="color:#B090E0">● İzin</span>';
+  if(!isBasasistan) html += '<span style="color:var(--w4)">(Günlere tıkla: boş→tercih→kaçın→temizle)</span>';
+  else html += '<span style="color:var(--w4)">(Günlere tıkla: boş→tercih→kaçın→izin→temizle)</span>';
+  html += '</div>';
+
+  // Takvim grid
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:16px">';
+  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(g=>{
+    html += '<div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">'+g+'</div>';
+  });
+  for(let i=0;i<offset;i++) html += '<div></div>';
+  for(let d=1;d<=days;d++){
+    const isTercih = tArr.includes(d);
+    const isKac = kArr.includes(d);
+    const isIzin = iArr.includes(d);
+    let bg='var(--bg3)', brd='var(--bord)', clr='var(--w2)', icon='';
+    if(isTercih){ bg='rgba(128,184,64,0.12)'; brd='rgba(128,184,64,0.4)'; clr='#80B840'; icon='✓'; }
+    else if(isKac){ bg='rgba(232,112,112,0.12)'; brd='rgba(232,112,112,0.4)'; clr='#E87070'; icon='✕'; }
+    else if(isIzin){ bg='rgba(176,144,224,0.12)'; brd='rgba(176,144,224,0.4)'; clr='#B090E0'; icon='⊘'; }
+    const dow = new Date(y,m,d).getDay();
+    const isWE = dow===0||dow===6;
+    const click = canEdit ? 'onclick="_tercihlerToggle('+astIdx+','+d+')"' : '';
+    html += '<div '+click+' style="text-align:center;padding:6px 2px;border-radius:6px;background:'+bg+';border:1px solid '+brd+';'+(canEdit?'cursor:pointer;':'opacity:.7;')+(isWE&&!isTercih&&!isKac&&!isIzin?'color:var(--w4);':'')+'">';
+    html += '<div style="font-size:12px;font-weight:600;color:'+clr+'">'+d+'</div>';
+    if(icon) html += '<div style="font-size:10px;color:'+clr+'">'+icon+'</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // Özet
+  html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px">';
+  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">'+ASSISTANTS[astIdx].name+' — '+MONTHS[m]+' '+y+' Özet</div>';
+  html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
+  html += '<div><span style="color:#80B840;font-weight:600">Tercih:</span> <span style="color:var(--w2)">'+(tArr.length>0?tArr.sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
+  html += '<div><span style="color:#E87070;font-weight:600">Kaçın:</span> <span style="color:var(--w2)">'+(kArr.length>0?kArr.sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
+  html += '<div><span style="color:#B090E0;font-weight:600">İzin:</span> <span style="color:var(--w2)">'+(iArr.length>0?iArr.sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
+  html += '</div></div>';
+
+  conEl.innerHTML = html;
+}
+
+function _tercihlerAyGec(delta){
+  if(!_tercihlerMonth) _tercihlerMonth={y:S.currentDate.y,m:S.currentDate.m};
+  _tercihlerMonth.m += delta;
+  if(_tercihlerMonth.m>11){ _tercihlerMonth.m=0; _tercihlerMonth.y++; }
+  if(_tercihlerMonth.m<0){ _tercihlerMonth.m=11; _tercihlerMonth.y--; }
+  renderTercihler();
+}
+
+function _tercihlerToggle(astIdx,d){
+  const isBasasistan = window.ACILX_ROLE === 'basasistan';
+  if(!isBasasistan && !window._tercihAcik) return;
+
+  if(!S.astProfiles) S.astProfiles={};
+  if(!S.astProfiles[astIdx]) S.astProfiles[astIdx]={};
+  const p = S.astProfiles[astIdx];
+  if(!_tercihlerMonth) _tercihlerMonth={y:S.currentDate.y,m:S.currentDate.m};
+  const moKey = _tercihlerMonth.y+'_'+_tercihlerMonth.m;
+  if(!p.tercihAylik) p.tercihAylik={};
+  if(!p.tercihAylik[moKey]) p.tercihAylik[moKey]=[];
+  if(!p.kacAylik) p.kacAylik={};
+  if(!p.kacAylik[moKey]) p.kacAylik[moKey]=[];
+  if(!p.izinliAylik) p.izinliAylik={};
+  if(!p.izinliAylik[moKey]) p.izinliAylik[moKey]=[];
+
+  const tArr=p.tercihAylik[moKey], kArr=p.kacAylik[moKey], iArr=p.izinliAylik[moKey];
+  const LIMIT = isBasasistan ? 999 : 3;
+  const tIdx=tArr.indexOf(d), kIdx=kArr.indexOf(d), iIdx=iArr.indexOf(d);
+
+  if(isBasasistan){
+    if(tIdx>=0){ tArr.splice(tIdx,1); kArr.push(d); }
+    else if(kIdx>=0){ kArr.splice(kIdx,1); iArr.push(d); }
+    else if(iIdx>=0){ iArr.splice(iIdx,1); }
+    else { tArr.push(d); }
+  } else {
+    if(tIdx>=0){ tArr.splice(tIdx,1); if(kArr.length<LIMIT) kArr.push(d); }
+    else if(kIdx>=0){ kArr.splice(kIdx,1); }
+    else if(iIdx>=0){ iArr.splice(iIdx,1); }
+    else { if(tArr.length>=LIMIT) return; tArr.push(d); }
+  }
+
+  save();
+  // Firestore kaydet
+  if(_db && window.ACILX_UID){
+    const uid = isBasasistan ? (ASSISTANTS[astIdx]&&ASSISTANTS[astIdx].uid)||window.ACILX_UID : window.ACILX_UID;
+    fsPreferenceRef(uid,_tercihlerMonth.y,_tercihlerMonth.m).set({
+      uid: uid,
+      tercihGunlerAylik: tArr,
+      kacGunlerAylik: kArr,
+      izinliGunlerAylik: isBasasistan ? iArr : [],
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }).catch(e=>console.warn('Tercih kayıt:',e));
+  }
+  renderTercihler();
 }
 
 function renderUyarilar(){ renderSorunlar(); }
