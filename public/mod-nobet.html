@@ -1900,8 +1900,8 @@ function saveAlan(){
   AREA_LBL[id] = name.substring(0,3).toUpperCase();
   // State'e ekle
   S.defaultDayMin[id] = {
-    min: parseInt(document.getElementById('alanMin').value)||1,
-    max: parseInt(document.getElementById('alanMax').value)||3,
+    min: parseInt(document.getElementById('alanMin').value)||0,
+    max: parseInt(document.getElementById('alanMax').value)||0,
     kidemMin:{1:0,2:0,3:0,4:0,5:0},
     kidemKurallari:{},
     siftler:['24h']
@@ -3066,11 +3066,12 @@ function _showGenAnaliz(){
   const fazlalar=[]; // {alan, aId, kidem, hedef, gercek, fazla}
   AREAS.forEach(a=>{
     [1,2,3,4,5].forEach(k=>{
-      const hedef=(S.quota[a.id]||{})[k]||0;
-      if(hedef===0) return;
+      const maxHedef=(S.quota[a.id]||{})[k]||0;
+      const minHedef=(S.minNobet[a.id]||{})[k]||0;
+      if(maxHedef===0&&minHedef===0) return;
       const gercek=gercekMatris[a.id][k]||0;
-      if(gercek<hedef) eksikler.push({alan:a,aId:a.id,kidem:k,hedef,gercek,eksik:hedef-gercek});
-      if(gercek>hedef) fazlalar.push({alan:a,aId:a.id,kidem:k,hedef,gercek,fazla:gercek-hedef});
+      if(gercek<minHedef) eksikler.push({alan:a,aId:a.id,kidem:k,hedef:minHedef,gercek,eksik:minHedef-gercek});
+      if(gercek>maxHedef&&maxHedef>0) fazlalar.push({alan:a,aId:a.id,kidem:k,hedef:maxHedef,gercek,fazla:gercek-maxHedef});
     });
   });
 
@@ -3571,8 +3572,9 @@ function renderDagilim(){
   let html='<thead><tr>';
   html+='<th style="text-align:left;padding:6px 10px;font-size:10px;font-weight:600;color:var(--w3);border-bottom:1px solid var(--bord);background:var(--bg3);position:sticky;left:0;z-index:2">Alan</th>';
   [1,2,3,4,5].forEach(k=>{
-    html+=`<th style="padding:6px 4px;font-size:10px;font-weight:600;text-align:center;border-bottom:1px solid var(--bord);background:var(--bg3);min-width:54px">
+    html+=`<th style="padding:6px 4px;font-size:10px;font-weight:600;text-align:center;border-bottom:1px solid var(--bord);background:var(--bg3);min-width:90px">
       <span class="kt ${KIDEM_CLS[k]}" style="font-size:10px;padding:1px 5px">K${k}</span>
+      <div style="font-size:8px;color:var(--w4);margin-top:2px">min / max</div>
     </th>`;
   });
   html+='</tr></thead><tbody>';
@@ -3588,23 +3590,35 @@ function renderDagilim(){
         </div>
       </td>`;
     [1,2,3,4,5].forEach(k=>{
-      const v=(S.quota[a.id]||{})[k]||0;
+      const mx=(S.quota[a.id]||{})[k]||0;
+      const mn=(S.minNobet[a.id]||{})[k]||0;
+      const deaktif=mx===0&&mn===0;
       html+=`<td style="text-align:center;border-bottom:1px solid var(--bord);padding:2px">
-        <div class="ni-wrap" style="justify-content:center">
-          <button class="ni-btn" type="button" onclick="niStep(this,-1)">−</button>
-          <input class="ni dagKotaInput" data-kidem="${k}" type="number" min="0" max="31" value="${v}"
-            title="${v===0?'0 = giremez':'Aylık '+v+' nöbet'}"
-            style="width:34px;font-size:12px;font-weight:600;${v===0?'opacity:.35;color:var(--w4)':''}"
+        <div style="display:flex;align-items:center;justify-content:center;gap:2px;${deaktif?'opacity:.4':''}">
+          <input class="ni" type="number" min="0" max="31" value="${mn}"
+            title="Min: ${mn}"
+            style="width:28px;font-size:11px;font-weight:600;text-align:center;color:${mn===0?'var(--w4)':'#4ade80'}"
+            onchange="
+              let val=Math.max(0,parseInt(this.value)||0);
+              const maxVal=(S.quota['${a.id}']||{})[${k}]||0;
+              if(val>maxVal){val=maxVal;this.value=val;}
+              if(!S.minNobet['${a.id}'])S.minNobet['${a.id}']={};
+              S.minNobet['${a.id}'][${k}]=val;
+              this.style.color=val===0?'var(--w4)':'#4ade80';
+              save();showSaved('dagSaved');dagKontrolToplamlar()">
+          <span style="font-size:10px;color:var(--w4)">/</span>
+          <input class="ni dagKotaInput" data-kidem="${k}" type="number" min="0" max="31" value="${mx}"
+            title="Max: ${mx}${mx===0?' (giremez)':''}"
+            style="width:28px;font-size:11px;font-weight:600;text-align:center;color:${mx===0?'var(--w4)':''}"
             onchange="
               const val=Math.max(0,parseInt(this.value)||0);
               if(!S.quota['${a.id}'])S.quota['${a.id}']={};
               S.quota['${a.id}'][${k}]=val;
               if(!S.minNobet['${a.id}'])S.minNobet['${a.id}']={};
-              S.minNobet['${a.id}'][${k}]=val>0?1:0;
-              this.style.opacity=val===0?'.35':'1';
+              if(S.minNobet['${a.id}'][${k}]>val){S.minNobet['${a.id}'][${k}]=val;}
               this.style.color=val===0?'var(--w4)':'';
-              save();showSaved('dagSaved');dagKontrolToplamlar()">
-          <button class="ni-btn" type="button" onclick="niStep(this,1)">+</button>
+              this.parentElement.style.opacity=(val===0&&(S.minNobet['${a.id}'][${k}]||0)===0)?'.4':'1';
+              save();showSaved('dagSaved');dagKontrolToplamlar();renderDagilim()">
         </div>
       </td>`;
     });
@@ -3614,12 +3628,12 @@ function renderDagilim(){
   html+='<tr style="border-top:2px solid var(--bord)">';
   html+='<td style="padding:6px 10px;background:var(--bg3);position:sticky;left:0;z-index:1;font-size:10px;font-weight:700;color:var(--w2)">Toplam</td>';
   [1,2,3,4,5].forEach(k=>{
-    let toplam=0;
-    AREAS.forEach(a=>{ toplam+=((S.quota[a.id]||{})[k]||0); });
+    let toplamMin=0, toplamMax=0;
+    AREAS.forEach(a=>{ toplamMin+=((S.minNobet[a.id]||{})[k]||0); toplamMax+=((S.quota[a.id]||{})[k]||0); });
     const maxNobet=Math.round(S.maxHours[k]/24);
-    const asim=toplam>maxNobet;
+    const asim=toplamMax>maxNobet;
     html+=`<td id="dagTop${k}" style="text-align:center;padding:4px 2px;background:var(--bg3)">
-      <span style="font-size:12px;font-weight:700;color:${asim?'var(--red)':'var(--w1)'}">${toplam}</span>
+      <span style="font-size:11px;font-weight:700;color:${asim?'var(--red)':'var(--w1)'}">${toplamMin}/${toplamMax}</span>
       <span style="font-size:9px;color:${asim?'var(--red)':'var(--w4)'}">/ ${maxNobet}</span>
       ${asim?'<div style="font-size:8px;color:var(--red);font-weight:600;margin-top:1px">Max aşıldı!</div>':''}
     </td>`;
@@ -3649,14 +3663,14 @@ function renderDagilim(){
 function dagKontrolToplamlar(){
   if(!S.maxHours) S.maxHours={1:216,2:192,3:168,4:144,5:120};
   [1,2,3,4,5].forEach(k=>{
-    let toplam=0;
-    AREAS.forEach(a=>{ toplam+=((S.quota[a.id]||{})[k]||0); });
+    let toplamMin=0, toplamMax=0;
+    AREAS.forEach(a=>{ toplamMin+=((S.minNobet[a.id]||{})[k]||0); toplamMax+=((S.quota[a.id]||{})[k]||0); });
     const maxNobet=Math.round(S.maxHours[k]/24);
-    const asim=toplam>maxNobet;
+    const asim=toplamMax>maxNobet;
     const el=document.getElementById('dagTop'+k);
     if(el){
       el.innerHTML=
-        '<span style="font-size:12px;font-weight:700;color:'+(asim?'var(--red)':'var(--w1)')+'">'+toplam+'</span>'+
+        '<span style="font-size:11px;font-weight:700;color:'+(asim?'var(--red)':'var(--w1)')+'">'+toplamMin+'/'+toplamMax+'</span>'+
         ' <span style="font-size:9px;color:'+(asim?'var(--red)':'var(--w4)')+'">/ '+maxNobet+'</span>'+
         (asim?'<div style="font-size:8px;color:var(--red);font-weight:600;margin-top:1px">Max aşıldı!</div>':'');
     }
@@ -4011,15 +4025,16 @@ function autoGen(){
   function dayScore(i,d,aId){
     let sc=0;
     const kidem=ASSISTANTS[i].kidem;
-    // ── Kota hedef bonusu — alan×kıdem kotasına yakınlık ──
-    const kotaLimit=(S.quota[aId]||{})[kidem]||0;
+    // ── Kota hedef bonusu — alan×kıdem min/max kotasına yakınlık ──
+    const kotaMax=(S.quota[aId]||{})[kidem]||0;
+    const kotaMin=(S.minNobet[aId]||{})[kidem]||0;
     const mevcutAlan=load[i].byArea[aId]||0;
-    if(kotaLimit>0){
-      const kotaKalan=kotaLimit-mevcutAlan;
-      if(kotaKalan>0) sc+=300+kotaKalan*40; // Kota dolmamış → güçlü bonus
-      else sc-=2000; // Kota dolu → yerleştirme
+    if(kotaMax>0){
+      if(mevcutAlan<kotaMin) sc+=500+(kotaMin-mevcutAlan)*60; // Min altında → güçlü bonus
+      else if(mevcutAlan<kotaMax) sc+=200+(kotaMax-mevcutAlan)*20; // Min-max arası → orta bonus
+      else sc-=2000; // Max dolu → yerleştirme
     } else {
-      sc-=5000; // Kota 0 → bu alana giremez
+      sc-=5000; // Max 0 → bu alana giremez
     }
     // Min eksik gün bonusu — min karşılanmamış günlere öncelik
     const rule=getDayRule(d,aId);
@@ -4359,10 +4374,10 @@ function autoGen(){
         if(!aId) continue;
         const rule=getDayRule(d,aId);
         const cnt=dCnt(d,aId);
-        // Maliyet: min bozulursa yüksek, kota dolmamışsa düşük (kota eksik olan alandan kaldırmayı tercih etme)
-        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        // Maliyet: min bozulursa yüksek, kota min altındaysa kaldırmayı tercih etme
+        const kotaMin=(S.minNobet[aId]||{})[ASSISTANTS[i].kidem]||0;
         const mevcutAlan=load[i].byArea[aId]||0;
-        const kotaCost=kotaLimit>0&&mevcutAlan<=kotaLimit?500:0;
+        const kotaCost=kotaMin>0&&mevcutAlan<=kotaMin?500:0;
         const cost=(cnt<=(rule.min||0)?1000:0)+kotaCost;
         myShifts.push({d,aId,cost});
       }
@@ -4376,15 +4391,18 @@ function autoGen(){
       }
     }
 
-    // Strateji 5: Kota hedefi eksik — alan×kıdem kotasına ulaşılamamış asistanlara nöbet ekle
+    // Strateji 5: Kota hedefi eksik — alan×kıdem min kotasına ulaşılamamış asistanlara nöbet ekle
     for(let i=0;i<N&&repairIter<REPAIR_LIMIT;i++){
       if(hedefler[i]<=0) continue;
       for(const aId of areaIds){
         repairIter++;
-        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
-        if(kotaLimit<=0) continue;
+        const kotaMax=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        const kotaMin=(S.minNobet[aId]||{})[ASSISTANTS[i].kidem]||0;
+        if(kotaMax<=0) continue;
         const mevcut=load[i].byArea[aId]||0;
-        const eksik=kotaLimit-mevcut;
+        if(mevcut>=kotaMin&&kotaMin>0) continue; // Min karşılandı
+        if(kotaMin===0) continue; // Min 0 → zorunlu değil
+        const eksik=kotaMin-mevcut;
         if(eksik<=0) continue;
         // Bu asistanı bu alana yerleştirebileceğimiz en iyi günleri bul
         let placed=0;
@@ -4504,13 +4522,14 @@ function autoGen(){
         const dev=Math.sqrt(gaps.reduce((s,g)=>s+(g-avg)*(g-avg),0)/gaps.length);
         score-=dev*20;
       }
-      // Alan×kıdem kota sapması — kotaya yakınlık ödüllendirmesi
+      // Alan×kıdem kota sapması — min/max aralığına yakınlık ödüllendirmesi
       for(const aId of areaIds){
-        const kotaLimit=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
-        if(kotaLimit<=0) continue;
+        const kotaMax=(S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
+        const kotaMin=(S.minNobet[aId]||{})[ASSISTANTS[i].kidem]||0;
+        if(kotaMax<=0&&kotaMin<=0) continue;
         const mevcut=load[i].byArea[aId]||0;
-        const sapma=Math.abs(mevcut-kotaLimit);
-        score-=sapma*80; // Her 1 sapma = -80 puan
+        if(mevcut<kotaMin) score-=(kotaMin-mevcut)*120; // Min altında → güçlü ceza
+        if(mevcut>kotaMax&&kotaMax>0) score-=(mevcut-kotaMax)*80; // Max üstünde → ceza
       }
     }
     // Kıdem karışımı
@@ -5203,7 +5222,7 @@ function openCellModal(i,d){
       const cnt=countArea(i,a.id);
       const mn=(S.minNobet[a.id]||{})[ast.kidem]||0;
       const dis=q===0?'disabled':'';
-      const hint=q===0?'(giremez)':cnt>=q?'(kota doldu)':`${cnt}/${q}${mn>0?' min'+mn:''}`;
+      const hint=q===0?'(giremez)':cnt>=q?'(kota doldu)':`${cnt}/${mn}-${q}`;
       html+=`<option value="${a.id}" ${cur===a.id?'selected':''} ${dis}>${a.name} ${hint}</option>`;
     });
     html+=`</select></div>`;
@@ -5796,7 +5815,8 @@ function fixNobetSayisi(aId, astIdx, newVal){
   const kidem=ASSISTANTS[astIdx].kidem;
   S.quota[aId][kidem]=Math.max(0,newVal);
   if(!S.minNobet[aId]) S.minNobet[aId]={};
-  S.minNobet[aId][kidem]=Math.max(0,newVal);
+  // Min'i max'ı aşamaz
+  if((S.minNobet[aId][kidem]||0)>newVal) S.minNobet[aId][kidem]=Math.max(0,newVal);
   save();
   goToTab('nobet_dagilim','');
   setTimeout(()=>{
