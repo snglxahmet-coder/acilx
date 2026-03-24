@@ -1618,6 +1618,14 @@ function getDayRule(day,aId,_y,_m){
   const kapaliKey=moKey+'_'+aId;
   if(S.kapaliGunler&&S.kapaliGunler[kapaliKey]&&S.kapaliGunler[kapaliKey].includes(day))
     return {min:0,max:0,aktif:false};
+  // İstisna günler kontrolü — haftalık kuraldan önce kontrol edilir
+  const istisnalar=base.istisnalar||[];
+  const istKey=y+'_'+m+'_'+day;
+  const istisna=istisnalar.find(ist=>ist.tarih===istKey);
+  if(istisna){
+    if(istisna.durum==='aktif') return {...base,aktif:true};
+    if(istisna.durum==='kapali') return {min:0,max:0,aktif:false};
+  }
   // Haftanın günü aktiflik kontrolü
   const dw=new Date(y,m,day).getDay();
   const aktif=base.aktifGunler===undefined||base.aktifGunler.includes(dw);
@@ -1837,12 +1845,32 @@ function renderMinConf(){
                 <span style="font-size:11px;color:var(--w3)">${gn}</span>
               </label>`;
             }).join('')}</div>
-            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-              <button onclick="openAkModal('${a.id}')" style="font-size:12px;padding:5px 12px;border-radius:6px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;display:flex;align-items:center;gap:5px;touch-action:manipulation">
-                📅 Belirli tarihleri kapat
-              </button>
-              <span id="akCount_${a.id}" style="font-size:11px;color:var(--w3)"></span>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:4px;flex-wrap:wrap">
+              <button onclick="openAkModal('${a.id}')" style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid var(--bord);background:var(--bg3);color:var(--w3);cursor:pointer;touch-action:manipulation">Belirli tarihleri kapat</button>
+              <button onclick="openIstisnaEkle('${a.id}')" style="font-size:11px;padding:4px 10px;border-radius:5px;border:1px solid rgba(80,180,80,0.3);background:rgba(80,180,80,0.08);color:#7DC44A;cursor:pointer;touch-action:manipulation">+ İstisna ekle</button>
+              <span id="akCount_${a.id}" style="font-size:10px;color:var(--w3)"></span>
             </div>
+            ${(()=>{
+              const ist=r.istisnalar||[];
+              if(!ist.length) return '';
+              const gunAdlari=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'];
+              return '<div style="margin-top:6px;display:flex;flex-direction:column;gap:3px">'+
+                '<span style="font-size:10px;color:var(--w3);font-weight:600">İstisnalar:</span>'+
+                ist.map((it,ii)=>{
+                  const p=it.tarih.split('_');
+                  const ty=parseInt(p[0]),tm=parseInt(p[1]),td=parseInt(p[2]);
+                  const dw2=new Date(ty,tm,td).getDay();
+                  const gunAdi=gunAdlari[dw2];
+                  const aktifMi=it.durum==='aktif';
+                  return '<div style="display:flex;align-items:center;gap:6px;padding:3px 8px;background:var(--bg3);border-radius:4px;font-size:11px">'+
+                    '<span style="color:var(--w2)">'+td+' '+(MONTHS[tm]||'')+' '+ty+'</span>'+
+                    '<span style="color:var(--w4)">'+gunAdi+'</span>'+
+                    '<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:'+(aktifMi?'rgba(80,180,80,0.12)':'rgba(232,87,42,0.12)')+';color:'+(aktifMi?'#7DC44A':'var(--red)')+';font-weight:600">'+(aktifMi?'Aktif':'Kapalı')+'</span>'+
+                    '<button onclick="silIstisna(\''+a.id+'\','+ii+')" style="margin-left:auto;background:none;border:none;color:var(--w4);cursor:pointer;font-size:12px;padding:2px 4px">&#10005;</button>'+
+                  '</div>';
+                }).join('')+
+              '</div>';
+            })()}
           </div>
         </div>
       </div>
@@ -3560,6 +3588,71 @@ function toggleAktifGun(aId,gun,aktif){
   else{r.aktifGunler=r.aktifGunler.filter(g=>g!==gun);}
   save();showSaved('minSaved');
 }
+// ── İstisna günler yönetimi ──
+function openIstisnaEkle(aId){
+  const {y,m}=S.currentDate;
+  // Basit date input modalı
+  const eski=document.getElementById('istisnaModal');
+  if(eski) eski.remove();
+  const alan=AREAS.find(a=>a.id===aId);
+  const alanAdi=alan?alan.name:'Alan';
+  const mhtml='<div id="istisnaModal" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);backdrop-filter:blur(3px)">'+
+    '<div style="background:var(--bg1);border:1px solid var(--bord);border-radius:12px;padding:20px;width:min(320px,90vw)">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--w1);margin-bottom:12px">'+alanAdi+' — İstisna Gün Ekle</div>'+
+      '<div style="margin-bottom:10px">'+
+        '<label style="font-size:11px;color:var(--w3);display:block;margin-bottom:4px">Tarih</label>'+
+        '<input type="date" id="istTarih" style="width:100%;padding:8px;border-radius:6px;border:1px solid var(--bord);background:var(--bg2);color:var(--w1);font-size:13px;font-family:var(--font-sans)" value="'+y+'-'+String(m+1).padStart(2,'0')+'-01">'+
+      '</div>'+
+      '<div style="margin-bottom:14px">'+
+        '<label style="font-size:11px;color:var(--w3);display:block;margin-bottom:4px">Durum</label>'+
+        '<div style="display:flex;gap:8px">'+
+          '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:6px;border:1px solid rgba(80,180,80,0.3);background:rgba(80,180,80,0.08)">'+
+            '<input type="radio" name="istDurum" value="aktif" checked style="accent-color:#7DC44A">'+
+            '<span style="font-size:12px;color:#7DC44A;font-weight:600">Aktif</span>'+
+          '</label>'+
+          '<label style="display:flex;align-items:center;gap:5px;cursor:pointer;padding:6px 12px;border-radius:6px;border:1px solid rgba(232,87,42,0.3);background:rgba(232,87,42,0.08)">'+
+            '<input type="radio" name="istDurum" value="kapali" style="accent-color:var(--red)">'+
+            '<span style="font-size:12px;color:var(--red);font-weight:600">Kapalı</span>'+
+          '</label>'+
+        '</div>'+
+      '</div>'+
+      '<div style="display:flex;gap:8px;justify-content:flex-end">'+
+        '<button onclick="document.getElementById(\'istisnaModal\').remove()" style="padding:6px 14px;border-radius:6px;background:var(--bg3);border:1px solid var(--bord);color:var(--w2);font-size:12px;cursor:pointer;font-family:var(--font-sans)">İptal</button>'+
+        '<button onclick="istisnaKaydet(\''+aId+'\')" style="padding:6px 14px;border-radius:6px;background:var(--red);border:none;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font-sans)">Ekle</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+  document.body.insertAdjacentHTML('beforeend',mhtml);
+}
+
+function istisnaKaydet(aId){
+  const tarihEl=document.getElementById('istTarih');
+  if(!tarihEl||!tarihEl.value) return;
+  const parts=tarihEl.value.split('-');
+  const ty=parseInt(parts[0]),tm=parseInt(parts[1])-1,td=parseInt(parts[2]);
+  if(isNaN(ty)||isNaN(tm)||isNaN(td)) return;
+  const durumEl=document.querySelector('input[name="istDurum"]:checked');
+  const durum=durumEl?durumEl.value:'aktif';
+  const r=S.defaultDayMin[aId];
+  if(!r) return;
+  if(!r.istisnalar) r.istisnalar=[];
+  const istKey=ty+'_'+tm+'_'+td;
+  // Aynı tarih varsa güncelle
+  const idx=r.istisnalar.findIndex(ist=>ist.tarih===istKey);
+  if(idx>=0) r.istisnalar[idx].durum=durum;
+  else r.istisnalar.push({tarih:istKey,durum:durum});
+  save();showSaved('minSaved');renderMinConf();
+  const m=document.getElementById('istisnaModal');
+  if(m) m.remove();
+}
+
+function silIstisna(aId,idx){
+  const r=S.defaultDayMin[aId];
+  if(!r||!r.istisnalar) return;
+  r.istisnalar.splice(idx,1);
+  save();showSaved('minSaved');renderMinConf();
+}
+
 function toggleAlanSift(aId,sift){
   const r=S.defaultDayMin[aId];
   if(!r.siftler) r.siftler=['24h'];
