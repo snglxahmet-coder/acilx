@@ -4178,6 +4178,7 @@ function autoGen(){
     const _dur=astDurum(i);
     if(_dur==='izinli'||_dur==='rot_hayir') return false;
     if(astIzinliAylik(i).includes(d)) return false;
+    if(!mesafeUygun(i,d)) return false; // ART ARDA 24S HARD BLOCK
     // Alan kotası kontrolü — 0=giremez, N=üst limit
     const kotaLimit = (S.quota[aId]||{})[ASSISTANTS[i].kidem]||0;
     if(kotaLimit <= 0) return false;
@@ -4406,8 +4407,13 @@ function autoGen(){
   // İkinci geçiş: kalan hedefleri doldur
 
   // Schedule'a atama yap (load güncellemeyle)
+  // ART ARDA 24S HARD BLOCK — mesafe kontrolü assign seviyesinde zorunlu
   function assign(i,d,aId){
     if(S.schedule[gk(i,d)]) return false;
+    if(!mesafeUygun(i,d)) return false;
+    const dur=astDurum(i);
+    if(dur==='izinli'||dur==='rot_hayir') return false;
+    if(astIzinliAylik(i).includes(d)) return false;
     S.schedule[gk(i,d)]=aId;
     load[i].total++;
     load[i].byArea[aId]=(load[i].byArea[aId]||0)+1;
@@ -4450,15 +4456,13 @@ function autoGen(){
       for(const _gk of (_g.kidemler||[])) _gCnt+=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===aId&&ASSISTANTS[j].kidem===_gk).length;
       if(_gCnt>=_gMax) return false;
     }
-    // Art arda mesafe
-    if(!ignoreMesafe){
-      for(let delta=1;delta<=ART_ARDA_MESAFE;delta++){
-        if(d-delta>=1&&S.schedule[gk(i,d-delta)]) return false;
-        if(d+delta<=days&&S.schedule[gk(i,d+delta)]) return false;
-      }
-      if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[i]) return false;
-      if(d===days&&S.nextMonthFirstDay&&S.nextMonthFirstDay[i]) return false;
+    // Art arda mesafe — ASLA bypass edilemez (ignoreMesafe parametresi yok sayılır)
+    for(let delta=1;delta<=ART_ARDA_MESAFE;delta++){
+      if(d-delta>=1&&S.schedule[gk(i,d-delta)]) return false;
+      if(d+delta<=days&&S.schedule[gk(i,d+delta)]) return false;
     }
+    if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[i]) return false;
+    if(d===days&&S.nextMonthFirstDay&&S.nextMonthFirstDay[i]) return false;
     // Kaçınma
     if(!ignoreKacinma){
       if(KACINMA_GUCU==='sert'&&astKacAylik(i).includes(d)) return false;
@@ -4540,7 +4544,7 @@ function autoGen(){
   // Geçiş 1: Her gün için min gereksinimleri karşıla
   for(let pass=0;pass<3;pass++){
     // Her geçişte daha gevşek kurallarla dene
-    const ignoreMesafe=pass>=2;
+    const ignoreMesafe=false; // Art arda 24s ASLA bypass edilemez
     const ignoreKacinma=pass>=1;
 
     // Slot ihtiyaçlarını hesapla
@@ -4587,7 +4591,7 @@ function autoGen(){
 
   // Geçiş 1b: kidemMin doldurma — her (gün,alan) için kıdem seviyesi minimum karşılansın
   for(let pass=0;pass<3;pass++){
-    const ignoreMesafe=pass>=2;
+    const ignoreMesafe=false; // Art arda 24s ASLA bypass edilemez
     const ignoreKacinma=pass>=1;
     for(const sl of slotList){
       const {d,aId}=sl;
@@ -4637,7 +4641,7 @@ function autoGen(){
     });
 
   for(let pass=0;pass<3;pass++){
-    const ignoreMesafe=pass>=2;
+    const ignoreMesafe=false; // Art arda 24s ASLA bypass edilemez
     const ignoreKacinma=pass>=1;
     const ignoreHedef=pass>=2;
 
@@ -4749,13 +4753,9 @@ function autoGen(){
         if(alanKota<=0) continue;
         if((load[i].byArea[aId]||0)>=alanKota) continue;
         if(dCnt(d,aId)>=(getDayRule(d,aId).max||99)) continue;
-        // Mesafe kontrolü (esnek)
-        let mesafeOk=true;
-        for(let delta=1;delta<=ART_ARDA_MESAFE;delta++){
-          if(d-delta>=1&&S.schedule[gk(i,d-delta)]){mesafeOk=false;break;}
-          if(d+delta<=days&&S.schedule[gk(i,d+delta)]){mesafeOk=false;break;}
-        }
-        const sc=dayScore(i,d,aId)+(mesafeOk?0:-500);
+        // Mesafe kontrolü — HARD BLOCK, esnek değil
+        if(!mesafeUygun(i,d)) continue;
+        const sc=dayScore(i,d,aId);
         if(sc>bestSc){bestSc=sc;bestD=d;bestA=aId;}
       }
       if(bestD!==null){
@@ -4781,14 +4781,9 @@ function autoGen(){
           const kidem=ASSISTANTS[i].kidem;
           const alanKota=(S.quota[aId]||{})[kidem]||0;
           if(alanKota>0 && (load[i].byArea[aId]||0)>=alanKota) continue;
-          // Mesafe gevşek kontrol
-          let ok=true;
-          if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[i]) ok=false;
-          if(d===days&&S.nextMonthFirstDay&&S.nextMonthFirstDay[i]) ok=false;
-          if(ok){
-            assign(i,d,aId);
-            improved=true;
-          }
+          // Mesafe HARD BLOCK — art arda 24s kesinlikle yasak
+          if(!mesafeUygun(i,d)) continue;
+          if(assign(i,d,aId)) improved=true;
         }
       }
     }
@@ -4815,14 +4810,13 @@ function autoGen(){
           if(dCnt(d,aId)>=maxD) continue;
           for(let i=0;i<N;i++){
             if(S.schedule[gk(i,d)]) continue;
+            if(!mesafeUygun(i,d)) continue; // ART ARDA HARD BLOCK
             if(!gerekli.includes(ASSISTANTS[i].kidem)) continue;
             if(!astDayAreas[i][d]||!astDayAreas[i][d].includes(aId)) continue;
             const kidem=ASSISTANTS[i].kidem;
             const alanKota=(S.quota[aId]||{})[kidem]||0;
             if(alanKota>0 && (load[i].byArea[aId]||0)>=alanKota) continue;
-            assign(i,d,aId);
-            improved=true;
-            break;
+            if(assign(i,d,aId)){ improved=true; break; }
           }
         }
       }
@@ -5126,6 +5120,20 @@ function autoGen(){
   // ── LOG ──
   const uyarilar=[];
   AREAS.forEach(a=>{const aId=a.id,defMin=S.defaultDayMin[aId];if(!defMin||(defMin.min||0)===0)return;const minVal=defMin.min||0;let aktifGun=0;for(let d=1;d<=days;d++){if(!isAlanAktif(d,aId))continue;if(ASSISTANTS.every(ast=>isEgtFull(y,mo,d,ast.kidem)))continue;aktifGun++;}const gereken=aktifGun*minVal;const toplamKota=ASSISTANTS.reduce((s,ast)=>s+((S.quota[aId]||{})[ast.kidem]||0),0);if(toplamKota<gereken)uyarilar.push({tip:'kota_yetersiz',alan:a.name,toplamKota,gereken,eksik:gereken-toplamKota,aktifGun,minVal});});
+  // Doldurulamamış slot tespiti — müsait asistan bulunamayan günler
+  for(let d=1;d<=days;d++){
+    for(const area of AREAS){
+      const aId=area.id;
+      if(!isAlanAktif(d,aId)) continue;
+      const rule=getDayRule(d,aId);
+      if(!rule.aktif) continue;
+      const cnt=dCnt(d,aId);
+      const eksik=(rule.min||0)-cnt;
+      if(eksik>0){
+        uyarilar.push({tip:'slot_bos',alan:area.name,gun:d,eksik,mesaj:'Doldurulamamadı — müsait asistan yok (art arda/izin kısıtı)'});
+      }
+    }
+  }
   const hedefEksikler=[],hedefFazlalar=[];
   ASSISTANTS.forEach((_,i)=>{const h=hedef(i);if(load[i].total<h)hedefEksikler.push({ast:ASSISTANTS[i].name,eksik:h-load[i].total});if(load[i].total>h)hedefFazlalar.push({ast:ASSISTANTS[i].name,fazla:load[i].total-h});});
   window._lastGenLog={uyarilar,hedefEksikler,hedefFazlalar};
