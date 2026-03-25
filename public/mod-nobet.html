@@ -2387,32 +2387,78 @@ function openDayDetail(d){
       </div>
       ${isBasasistan ? `
       <div style="margin-top:7px;border-top:1px solid var(--bord);padding-top:6px">
-        <select onchange="quickAssign(this.value,${d},'${a.id}');this.value=''" style="width:100%;padding:5px 8px;border:1px solid var(--bord);border-radius:5px;font-size:11px;background:var(--bg2);color:var(--w1);font-family:var(--font-sans)">
+        <select onchange="quickAssignWarn(this,${d},'${a.id}')" style="width:100%;padding:5px 8px;border:1px solid var(--bord);border-radius:5px;font-size:11px;background:var(--bg2);color:var(--w1);font-family:var(--font-sans)">
           <option value="">+ Nöbetçi ekle...</option>
           ${(()=>{
             const {y:qy,m:qm}=S.currentDate;
             const qDays=daysInMonth(qy,qm);
-            const opts=[];
+            const qRule=getDayRule(d,a.id);
+            const alanCnt=ASSISTANTS.filter((_,xi)=>S.schedule[gk(xi,d)]===a.id).length;
+            const alanMaxDolu=qRule.max>0&&alanCnt>=qRule.max;
+            const uygunlar=[];
+            const uyarililar=[];
             ASSISTANTS.forEach((ast,ai)=>{
-              if(S.schedule[gk(ai,d)]) return; // zaten atanmış
-              if(isEgtFull(qy,qm,d,ast.kidem)) return; // eğitim bloke
-              const q=(S.quota[a.id]||{})[ast.kidem]||0;
-              if(q===0) return; // kıdem kotası yok
-              if(d>1&&S.schedule[gk(ai,d-1)]) return; // art arda önceki
-              if(d<qDays&&S.schedule[gk(ai,d+1)]) return; // art arda sonraki
-              // İzinli / rotasyon- hariç tut
+              if(S.schedule[gk(ai,d)]) return; // zaten atanmış — gösterme
+              const warns=[];
+              // Durum kontrol
               const _qDur=(S.astProfiles&&S.astProfiles[ai]&&S.astProfiles[ai].durum)||'aktif';
-              if(_qDur==='izinli'||_qDur==='rot_hayir') return;
+              if(_qDur==='izinli'||_qDur==='rot_hayir'){ warns.push('\\u26D4 İzinli'); }
               const _qMoKey=qy+'_'+qm;
               const _qIzin=((S.astProfiles&&S.astProfiles[ai]&&S.astProfiles[ai].izinliAylik)||{})[_qMoKey]||[];
-              if(_qIzin.includes(d)) return;
-              // Kota aşımı
-              let alanKullanim=0;
-              for(let dd=1;dd<=qDays;dd++) if(S.schedule[gk(ai,dd)]===a.id) alanKullanim++;
-              if(alanKullanim>=q) return; // kota dolu
-              opts.push('<option value="'+ai+'">'+ast.name+' (K'+ast.kidem+')</option>');
+              if(_qIzin.includes(d)){ if(!warns.length) warns.push('\\u26D4 İzinli'); }
+              // Art arda
+              if(d>1&&S.schedule[gk(ai,d-1)]) warns.push('\\u26D4 Art arda');
+              if(d<qDays&&S.schedule[gk(ai,d+1)]) warns.push('\\u26D4 Art arda');
+              if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[ai]) warns.push('\\u26D4 Art arda');
+              if(d===qDays&&S.nextMonthFirstDay&&S.nextMonthFirstDay[ai]) warns.push('\\u26D4 Art arda');
+              // Eğitim
+              if(isEgtFull(qy,qm,d,ast.kidem)) warns.push('\\u26D4 Eğitim');
+              // Kota
+              const q=(S.quota[a.id]||{})[ast.kidem]||0;
+              if(q===0){ warns.push('\\u26D4 Kota yok'); }
+              else{
+                let alanKul=0;
+                for(let dd=1;dd<=qDays;dd++) if(S.schedule[gk(ai,dd)]===a.id) alanKul++;
+                if(alanKul>=q) warns.push('\\u26A0\\uFE0F Kota dolu');
+              }
+              // Alan günlük max
+              if(alanMaxDolu) warns.push('\\u26A0\\uFE0F Alan dolu');
+              // Kıdem ihlali simülasyonu
+              if(!warns.some(w=>w.includes('\\u26D4'))){
+                const mevcutKidemler=ASSISTANTS.filter((_,xi)=>S.schedule[gk(xi,d)]===a.id).map(x=>x.kidem);
+                const simKidemler=[...mevcutKidemler, ast.kidem];
+                const rr=S.defaultDayMin[a.id];
+                if(rr&&rr.kidemKurallari){
+                  const k=ast.kidem;
+                  const kural=rr.kidemKurallari[k];
+                  if(kural&&kural.yalnizTutamaz){
+                    const yanK=kural.yanindaKidemler||(kural.yaninda&&kural.yaninda.length?kural.yaninda:[]);
+                    const eAK=kural.enAzKac||1;
+                    if(yanK.length){
+                      let bul=0;
+                      for(const yk of yanK){
+                        if(yk===k){if(simKidemler.filter(x=>x===k).length>=2)bul++;}
+                        else{if(simKidemler.includes(yk))bul++;}
+                      }
+                      if(bul<eAK) warns.push('\\u26A0\\uFE0F Kıdem ihlali');
+                    } else {
+                      if(simKidemler.filter(x=>x===k).length<2) warns.push('\\u26A0\\uFE0F Kıdem ihlali');
+                    }
+                  }
+                }
+              }
+              const label=ast.name+' (K'+ast.kidem+')';
+              const warnTxt=warns.length?' — '+warns.join(', '):'';
+              const entry={ai, label:label+warnTxt, hasWarn:warns.length>0, hasHard:warns.some(w=>w.includes('\\u26D4'))};
+              if(warns.length) uyarililar.push(entry); else uygunlar.push(entry);
             });
-            return opts.join('');
+            const all=[...uygunlar,...uyarililar];
+            let sep=false;
+            return all.map(e=>{
+              let pre='';
+              if(!sep&&e.hasWarn){sep=true;pre='<option disabled>──── Uyarılı ────</option>';}
+              return pre+'<option value="'+e.ai+'"'+(e.hasHard?' style="color:#888"':e.hasWarn?' style="color:#b08020"':'')+'>'+e.label+'</option>';
+            }).join('');
           })()}
         </select>
       </div>` : ''}
@@ -2445,6 +2491,25 @@ function quickAssign(astIdxStr, d, aId){
   save();
   renderSchedule(); renderTakStats(); renderUyarilar();
   openDayDetail(d);
+}
+
+function quickAssignWarn(sel, d, aId){
+  const val=sel.value;
+  if(!val){return;}
+  sel.value='';
+  const ai=parseInt(val);
+  const ast=ASSISTANTS[ai];
+  if(!ast) return;
+  // Uyarı kontrolü: seçilen option metninde uyarı var mı?
+  const optEl=sel.options[sel.selectedIndex];
+  const optText=optEl?optEl.textContent:'';
+  const hasWarn=optText.includes('\u26A0\uFE0F')||optText.includes('\u26D4');
+  if(hasWarn){
+    if(!confirm(ast.name+' için uyarılar var:\\n'+optText.split(' — ').slice(1).join('\\n')+'\\n\\nYine de atamak istiyor musunuz?')){
+      return;
+    }
+  }
+  quickAssign(String(ai), d, aId);
 }
 
 // İsim kısalt: "Ahmet Şengül" → "Ahmet Ş.", "Taha Yaşar Kiraz" → "Taha Y.K."
