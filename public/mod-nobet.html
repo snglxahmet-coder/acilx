@@ -1430,7 +1430,8 @@ async function fsLoadState(y, m) {
           console.log('[ACİLX] fsLoadState: kullanıcı düzenleme yaptı, schedule Firestore ile ezilmedi');
           return;
         }
-        S[k] = data[k];
+        if (k === 'schedule') { _loadScheduleData(data[k]); }
+        else { S[k] = data[k]; }
       });
       // Firestore yükledikten sonra düzenleme bayrağını temizle
       if(!_localEdited) window._scheduleUserEdited = false;
@@ -1702,6 +1703,82 @@ function loadState(){
 
 const S = loadState();
 
+// ═══════════════════════════════════════════════════════════════
+// ART ARDA 24S + İZİN PROXY — S.schedule'a her yazma bu geçitten geçer
+// Hiçbir fonksiyon, hiçbir koşulda bu kontrolü atlayamaz.
+// ═══════════════════════════════════════════════════════════════
+(function(){
+  if(!S.schedule) S.schedule={};
+  const _raw = S.schedule;
+  // schedule'ı sıfırlamak için Proxy'yi koruyarak clear fonksiyonu
+  window._clearSchedule = function(){ Object.keys(_raw).forEach(function(k){ delete _raw[k]; }); };
+  // schedule'ı toptan yüklemek için Proxy üzerinden merge
+  window._loadScheduleData = function(data){ window._clearSchedule(); if(data) Object.keys(data).forEach(function(k){ S.schedule[k]=data[k]; }); };
+  S.schedule = new Proxy(_raw, {
+    set: function(target, key, value){
+      // gk formatı: "astIdx_d" — sadece bu formattaki anahtarları kontrol et
+      const parts = String(key).split('_');
+      if(parts.length===2 && !isNaN(parts[0]) && !isNaN(parts[1]) && value){
+        const astIdx=parseInt(parts[0]), d=parseInt(parts[1]);
+        if(ASSISTANTS[astIdx]){
+          const _y=S.currentDate.y, _m=S.currentDate.m;
+          const _days=daysInMonth(_y,_m);
+          const _moKey=_y+'_'+_m;
+          const prof=(S.astProfiles&&S.astProfiles[astIdx])||{};
+          const dur=prof.durum||'aktif';
+          const izinArr=((prof.izinliAylik)||{})[_moKey]||[];
+          // İzin kontrolü
+          if(dur==='izinli'||dur==='rot_hayir'){
+            console.error('[HARD-BLOCK] İzinli asistana nöbet yazma ENGELLENDİ: ast='+astIdx+' gün='+d+' caller='+(new Error().stack||'').split('\n')[2]);
+            return true; // Sessizce engelle — Proxy set true dönmeli
+          }
+          if(izinArr.includes(d)){
+            console.error('[HARD-BLOCK] İzinli güne nöbet yazma ENGELLENDİ: ast='+astIdx+' gün='+d+' caller='+(new Error().stack||'').split('\n')[2]);
+            return true;
+          }
+          // Art arda 24s kontrolü
+          if(d>1 && target[astIdx+'_'+(d-1)]){
+            console.error('[HARD-BLOCK] Art arda 24s nöbet ENGELLENDİ: ast='+astIdx+' gün='+d+' (önceki gün nöbetli) caller='+(new Error().stack||'').split('\n')[2]);
+            return true;
+          }
+          if(d<_days && target[astIdx+'_'+(d+1)]){
+            console.error('[HARD-BLOCK] Art arda 24s nöbet ENGELLENDİ: ast='+astIdx+' gün='+d+' (sonraki gün nöbetli) caller='+(new Error().stack||'').split('\n')[2]);
+            return true;
+          }
+          if(d===1 && S.prevMonthLastDay && S.prevMonthLastDay[astIdx]){
+            console.error('[HARD-BLOCK] Art arda 24s nöbet ENGELLENDİ: ast='+astIdx+' gün=1 (önceki ay son gün) caller='+(new Error().stack||'').split('\n')[2]);
+            return true;
+          }
+          if(d===_days && S.nextMonthFirstDay && S.nextMonthFirstDay[astIdx]){
+            console.error('[HARD-BLOCK] Art arda 24s nöbet ENGELLENDİ: ast='+astIdx+' gün='+d+' (sonraki ay ilk gün) caller='+(new Error().stack||'').split('\n')[2]);
+            return true;
+          }
+        }
+      }
+      target[key] = value;
+      return true;
+    },
+    deleteProperty: function(target, key){
+      delete target[key];
+      return true;
+    },
+    get: function(target, key){
+      return target[key];
+    },
+    has: function(target, key){
+      return key in target;
+    },
+    ownKeys: function(target){
+      return Object.keys(target);
+    },
+    getOwnPropertyDescriptor: function(target, key){
+      const val = target[key];
+      if(val !== undefined) return {value:val, writable:true, enumerable:true, configurable:true};
+      return Object.getOwnPropertyDescriptor(target, key);
+    }
+  });
+})();
+
 function save(){
   // Kullanıcı schedule'da değişiklik yaptıysa işaretle — fsLoadState Firestore ile ezmesin
   if(Object.keys(S.schedule||{}).length > 0) window._scheduleUserEdited = true;
@@ -1761,7 +1838,7 @@ function resetState(){
   // Firestore'daki assistants/list ve areas/list dokümanları ZATen ayrı koleksiyonda,
   // localStorage'dan silinse bile Firestore'dan tekrar yüklenir.
   // Ama güvenlik için Firestore'a "sıfırlandı" bilgisi gönderme — sadece schedule sıfırla.
-  S.schedule = {};
+  _clearSchedule();
   S.dayOverride = {};
   S.monthOverride = {};
   S.kapaliGunler = {};
@@ -3760,7 +3837,7 @@ function _genAnalizTumUygula(){
 
 async function nobetSil(){
   if(!confirm('Bu ayın nöbet listesini silmek istediğinden emin misin?')) return;
-  S.schedule = {};
+  _clearSchedule();
   S.dayOverride = {};
   S.prevMonthLastDay = {};
   S.nextMonthFirstDay = {};
@@ -4051,7 +4128,7 @@ function autoGen(){
   const _t0=Date.now();
   const y=S.currentDate.y, mo=S.currentDate.m;
   const days=daysInMonth(y,mo);
-  S.schedule={};
+  _clearSchedule();
 
   // ── ALGORİTMA KONFİGÜRASYONU ──
   const CFG = S.algoConfig || {};
@@ -6035,7 +6112,7 @@ function changeMonth(dir){
   window._fsReady = false;
   window._scheduleUserEdited = false; // Yeni ay → düzenleme bayrağını sıfırla
   // Ay-bazlı verileri sıfırla (global ayarlar korunur)
-  S.schedule = {};
+  _clearSchedule();
   S.dayOverride = {};
   S.monthOverride = {};
   S.kapaliGunler = {};
@@ -6062,7 +6139,9 @@ function changeMonth(dir){
       var data = JSON.parse(cached);
       // Sadece ay-bazlı anahtarları yükle — global ayarları ezme
       MONTHLY_KEYS.forEach(function(k){
-        if(data[k] !== undefined) S[k] = data[k];
+        if(data[k] === undefined) return;
+        if(k === 'schedule'){ _loadScheduleData(data[k]); }
+        else { S[k] = data[k]; }
       });
       lsCacheLoaded = Object.keys(S.schedule||{}).length > 0;
       console.log('[ACİLX] cache→S (' + newKey + ')',
@@ -6195,7 +6274,7 @@ function scheduleToJson(){
 function applyScheduleFromJson(json){
   const days=daysInMonth(S.currentDate.y,S.currentDate.m);
   const moKey=S.currentDate.y+'_'+S.currentDate.m;
-  S.schedule={};
+  _clearSchedule();
   let atladilar=0;
   ASSISTANTS.forEach((ast,i)=>{
     const astData=json[ast.name];
