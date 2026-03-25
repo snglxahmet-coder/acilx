@@ -1422,7 +1422,18 @@ async function fsLoadState(y, m) {
       }
 
       // Sadece ay-bazlı verileri yükle — global ayarları ezme
-      MONTHLY_KEYS.forEach(k => { if (data[k] !== undefined) S[k] = data[k]; });
+      // KRİTİK: Kullanıcı düzenleme yaptıysa Firestore ile ezme
+      const _localEdited = !!window._scheduleUserEdited;
+      MONTHLY_KEYS.forEach(k => {
+        if (data[k] === undefined) return;
+        if (k === 'schedule' && _localEdited) {
+          console.log('[ACİLX] fsLoadState: kullanıcı düzenleme yaptı, schedule Firestore ile ezilmedi');
+          return;
+        }
+        S[k] = data[k];
+      });
+      // Firestore yükledikten sonra düzenleme bayrağını temizle
+      if(!_localEdited) window._scheduleUserEdited = false;
 
       // Global ayarları sadece ilk yüklemede al (initApp), changeMonth'ta değil
       if (window._fsInitialLoad) {
@@ -1692,31 +1703,8 @@ function loadState(){
 const S = loadState();
 
 function save(){
-  // SON SAVUNMA HATTI: art arda + izinli nöbet varsa otomatik temizle
-  try{
-    const _svY=S.currentDate.y, _svM=S.currentDate.m;
-    const _svDays=daysInMonth(_svY,_svM);
-    const _svMoKey=_svY+'_'+_svM;
-    let _svFixed=0;
-    for(let i=0;i<ASSISTANTS.length;i++){
-      if(!ASSISTANTS[i]) continue;
-      const _svProf=(S.astProfiles&&S.astProfiles[i])||{};
-      const _svDur=_svProf.durum||'aktif';
-      const _svIzin=((_svProf.izinliAylik)||{})[_svMoKey]||[];
-      for(let d=1;d<=_svDays;d++){
-        if(!S.schedule[gk(i,d)]) continue;
-        // İzinli gün temizle
-        if(_svDur==='izinli'||_svDur==='rot_hayir'||_svIzin.includes(d)){
-          delete S.schedule[gk(i,d)]; _svFixed++; continue;
-        }
-        // Art arda temizle (sonraki günü sil)
-        if(d<_svDays&&S.schedule[gk(i,d+1)]){
-          delete S.schedule[gk(i,d+1)]; _svFixed++;
-        }
-      }
-    }
-    if(_svFixed>0) console.warn('[ACİLX] save() art arda/izin ihlali otomatik temizlendi:',_svFixed);
-  }catch(e){}
+  // Kullanıcı schedule'da değişiklik yaptıysa işaretle — fsLoadState Firestore ile ezmesin
+  if(Object.keys(S.schedule||{}).length > 0) window._scheduleUserEdited = true;
   try{
     localStorage.setItem(LS_KEY, JSON.stringify(S));
     // Ay-bazlı cache de güncelle — changeMonth geri geldiğinde hızlı yükleme için
@@ -6045,6 +6033,7 @@ function changeMonth(dir){
   if(S.currentDate.m < 0){ S.currentDate.m = 11; S.currentDate.y--; }
 
   window._fsReady = false;
+  window._scheduleUserEdited = false; // Yeni ay → düzenleme bayrağını sıfırla
   // Ay-bazlı verileri sıfırla (global ayarlar korunur)
   S.schedule = {};
   S.dayOverride = {};
