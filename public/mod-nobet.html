@@ -7337,19 +7337,22 @@ function _renderTercihlerEkran(conEl, astIdx, y, m, moKey, days, canEdit){
   const kArr = prof.kacAylik[moKey];
   const iArr = prof.izinliAylik[moKey];
 
-  // Nöbet verileri hesapla
-  const hedef = _hesaplaHedef(astIdx);
+  // Nöbet verileri hesapla — sadece S.currentDate ayıyla eşleşiyorsa
+  const isCurrentMonth = (y===S.currentDate.y && m===S.currentDate.m);
+  const hedef = isCurrentMonth ? _hesaplaHedef(astIdx) : 0;
   let mevcut=0;
   const nobetMap={}; // gün → {aId, alan, color}
   const alanSayim={};
-  for(let d=1;d<=days;d++){
-    const aId=S.schedule[gk(astIdx,d)];
-    if(aId){
-      mevcut++;
-      const ar=AREAS.find(a=>a.id===aId);
-      nobetMap[d]={aId, alan:ar?ar.name:aId, color:ar?ar.color:'var(--w3)', label:getAreaLabel(aId)};
-      if(!alanSayim[aId]) alanSayim[aId]=0;
-      alanSayim[aId]++;
+  if(isCurrentMonth){
+    for(let d=1;d<=days;d++){
+      const aId=S.schedule[gk(astIdx,d)];
+      if(aId){
+        mevcut++;
+        const ar=AREAS.find(a=>a.id===aId);
+        nobetMap[d]={aId, alan:ar?ar.name:aId, color:ar?ar.color:'var(--w3)', label:getAreaLabel(aId)};
+        if(!alanSayim[aId]) alanSayim[aId]=0;
+        alanSayim[aId]++;
+      }
     }
   }
   const fark = mevcut - hedef;
