@@ -2564,7 +2564,7 @@ function renderAsstList(){
     html += `<div style="background:var(--bg2);border:1px solid var(--bord);border-radius:8px;padding:10px 12px;margin-bottom:8px">
       <div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">
         <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:10px">K${ast.kidem}</span>
-        <span style="font-size:12px;font-weight:700;color:var(--w1)">${ast.name}</span>
+        <span style="font-size:12px;font-weight:700;color:var(--w1)">${_esc(ast.name)}</span>
         <span style="font-size:10px;color:var(--w3);margin-left:auto">${nobetler.length} nöbet</span>
       </div>
       <div style="display:flex;flex-wrap:wrap;gap:4px">
@@ -5143,7 +5143,7 @@ function renderSchedule(log){
     const isRot=_ov!==undefined&&_ov!==null;
     html+=`<tr>
       <td class="cn" style="cursor:pointer" onclick="openAstProfile(${i})" title="Tıkla: asistan profili aç">
-        <span style="font-size:12px;color:var(--w1)">${ast.name}</span>
+        <span style="font-size:12px;color:var(--w1)">${_esc(ast.name)}</span>
         ${isRot?`<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:#1A2E10;color:#7DC44A;margin-left:4px;font-weight:600">${mh}n</span>`:''}
         <span class="sub">
           <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 4px">K${ast.kidem}</span>
@@ -5670,7 +5670,7 @@ function renderOzetAsistan(y, m, days){
   html += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
     <div style="width:36px;height:36px;border-radius:50%;background:rgba(232,87,42,0.12);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:var(--red)">${ast.name.split(' ').map(p=>p[0]).join('').slice(0,2)}</div>
     <div>
-      <div style="font-size:13px;font-weight:700;color:var(--w1)">${ast.name}</div>
+      <div style="font-size:13px;font-weight:700;color:var(--w1)">${_esc(ast.name)}</div>
       <div style="font-size:10px;color:var(--w3)">${MONTHS[m]} ${y} nöbet özeti</div>
     </div>
   </div>`;
@@ -5792,7 +5792,7 @@ function _renderOzetBasasistan(){
       }).join('');
       html += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--bord)">
         <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 5px;flex-shrink:0">K${ast.kidem}</span>
-        <span style="font-size:11px;font-weight:600;color:${nameColor};min-width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${ast.name}">${shortName(ast.name)}</span>
+        <span style="font-size:11px;font-weight:600;color:${nameColor};min-width:110px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${_esc(ast.name)}">${shortName(ast.name)}</span>
         <div style="flex:1;height:10px;background:var(--bg4);border-radius:5px;overflow:hidden;display:flex;min-width:0">${segments}</div>
         <span style="font-size:13px;font-weight:800;color:var(--w1);font-family:'DM Mono',monospace;min-width:22px;text-align:right">${total}</span>
         <span style="font-size:9px;color:var(--w4);min-width:28px;text-align:right">/${hedef}</span>
@@ -6271,7 +6271,7 @@ function renderAsistanlar(){
       <div class="eg-head" onclick="toggleAstAccordion(${i})" style="cursor:pointer;user-select:none">
         <div style="display:flex;align-items:center;gap:7px;flex:1;min-width:0">
           <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:10px;padding:1px 5px;flex-shrink:0">K${ast.kidem}</span>
-          <span style="font-size:12px;font-weight:700;color:var(--w1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${ast.name}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--w1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${_esc(ast.name)}</span>
           <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${DURUM_COLORS[durum]}22;color:${DURUM_COLORS[durum]};flex-shrink:0">${DURUM_LABELS[durum]}</span>
         </div>
         <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
@@ -7329,7 +7329,7 @@ function renderTercihler(){
 
   // Özet
   html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px">';
-  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">'+ASSISTANTS[astIdx].name+' — '+MONTHS[m]+' '+y+' Özet</div>';
+  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">'+_esc(ASSISTANTS[astIdx].name)+' — '+MONTHS[m]+' '+y+' Özet</div>';
   html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
   html += '<div><span style="color:#80B840;font-weight:600">Tercih:</span> <span style="color:var(--w2)">'+(tArr.length>0?tArr.sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
   html += '<div><span style="color:#E87070;font-weight:600">Kaçın:</span> <span style="color:var(--w2)">'+(kArr.length>0?kArr.sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
@@ -8952,7 +8952,7 @@ function uyariOneriHTML(sorun){
         html+=oneriSatir('ekle',[i,d,alan.id,0,''],acik,'+ Ekle',
           `${btnS};background:rgba(240,160,64,0.1);border:1px solid rgba(240,160,64,0.3);color:var(--orange)`,
           _oneriCozumu(sorun,'ekle',i,d,alan.id,0,''),true,
-          `${ast.name} kendi ${alan2?.name} kotasını aştı. Başasistan olarak onaylıyor musun?`);
+          `${_esc(ast.name)} kendi ${alan2?.name} kotasını aştı. Başasistan olarak onaylıyor musun?`);
       });
     }
 
@@ -9130,7 +9130,7 @@ function renderAyarlar(){
     const kc=(p.kacGunler||[]).map(function(g){return['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'][g];}).join(',');
     return '<div style="display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--bord);flex-wrap:wrap">'+
       '<span class="kt '+KIDEM_CLS[ast.kidem]+'" style="font-size:9px;padding:1px 4px">K'+ast.kidem+'</span>'+
-      '<span style="font-size:12px;color:var(--w1);min-width:150px">'+ast.name+'</span>'+
+      '<span style="font-size:12px;color:var(--w1);min-width:150px">'+_esc(ast.name)+'</span>'+
       '<span style="font-size:10px;padding:1px 6px;border-radius:3px;background:'+DCOL[d]+'22;color:'+DCOL[d]+'">'+DLBL[d]+'</span>'+
       '<span style="font-size:10px;color:var(--w3)">'+sStr+'</span>'+
       (tc?'<span style="font-size:10px;color:#7DC44A">✓'+tc+'</span>':'')+
@@ -9469,7 +9469,7 @@ function _showHedefEksikModal(secenekler){
     body += `<div style="margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
         <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 4px">K${ast.kidem}</span>
-        <span style="font-size:11px;font-weight:700;color:var(--w1)">${ast.name}</span>
+        <span style="font-size:11px;font-weight:700;color:var(--w1)">${_esc(ast.name)}</span>
         <span style="font-size:10px;color:var(--orange);font-family:'DM Mono',monospace;margin-left:auto">${mevcut}/${hedef} <span style="font-weight:700">▼${eksik}</span></span>
       </div>
       <div style="display:flex;flex-direction:column;gap:3px">`;
