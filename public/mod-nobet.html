@@ -1692,6 +1692,31 @@ function loadState(){
 const S = loadState();
 
 function save(){
+  // SON SAVUNMA HATTI: art arda + izinli nöbet varsa otomatik temizle
+  try{
+    const _svY=S.currentDate.y, _svM=S.currentDate.m;
+    const _svDays=daysInMonth(_svY,_svM);
+    const _svMoKey=_svY+'_'+_svM;
+    let _svFixed=0;
+    for(let i=0;i<ASSISTANTS.length;i++){
+      if(!ASSISTANTS[i]) continue;
+      const _svProf=(S.astProfiles&&S.astProfiles[i])||{};
+      const _svDur=_svProf.durum||'aktif';
+      const _svIzin=((_svProf.izinliAylik)||{})[_svMoKey]||[];
+      for(let d=1;d<=_svDays;d++){
+        if(!S.schedule[gk(i,d)]) continue;
+        // İzinli gün temizle
+        if(_svDur==='izinli'||_svDur==='rot_hayir'||_svIzin.includes(d)){
+          delete S.schedule[gk(i,d)]; _svFixed++; continue;
+        }
+        // Art arda temizle (sonraki günü sil)
+        if(d<_svDays&&S.schedule[gk(i,d+1)]){
+          delete S.schedule[gk(i,d+1)]; _svFixed++;
+        }
+      }
+    }
+    if(_svFixed>0) console.warn('[ACİLX] save() art arda/izin ihlali otomatik temizlendi:',_svFixed);
+  }catch(e){}
   try{
     localStorage.setItem(LS_KEY, JSON.stringify(S));
     // Ay-bazlı cache de güncelle — changeMonth geri geldiğinde hızlı yükleme için
@@ -5614,10 +5639,10 @@ function _renderDayModal(day){
 function manuelAta(i,day,aId){
   const days2=daysInMonth(S.currentDate.y,S.currentDate.m);
   const mevcutVar=!!S.schedule[gk(i,day)];
-  // Art arda yasak: sadece yeni ekleme (geçiş değil)
+  // Merkezi izin + art arda kontrolü (yeni atama ise)
   if(!mevcutVar){
-    if(day>1&&S.schedule[gk(i,day-1)]){alert('Art arda nöbet yasak: dün nöbet var.');return;}
-    if(day<days2&&S.schedule[gk(i,day+1)]){alert('Art arda nöbet yasak: yarın nöbet var.');return;}
+    const _maEngel=_nobetYazilamaz(i,day);
+    if(_maEngel){ alert(_maEngel); return; }
   }
   // Günlük max: geçişte eski alan çıkıyor, yeni alan giriyor → cnt değişmez (aynı kişi)
   if(!mevcutVar&&getAreaCount(day,aId)>=(getDayRule(day,aId).max||99)){
@@ -5630,12 +5655,12 @@ function manuelAtaUyarili(i,day,aId){
   const ast=ASSISTANTS[i]; if(!ast) return;
   const days2=daysInMonth(S.currentDate.y,S.currentDate.m);
   const mevcutVar=!!S.schedule[gk(i,day)];
-  const uyarilar=[];
-  // Art arda
+  // HARD BLOCK: izin + art arda — yeni atama ise asla geçilemez
   if(!mevcutVar){
-    if(day>1&&S.schedule[gk(i,day-1)]) uyarilar.push('Art arda nöbet yasak (dün nöbet var)');
-    if(day<days2&&S.schedule[gk(i,day+1)]) uyarilar.push('Art arda nöbet yasak (yarın nöbet var)');
+    const _mauEngel=_nobetYazilamaz(i,day);
+    if(_mauEngel){ showToast(_mauEngel); return; }
   }
+  const uyarilar=[];
   // Alan dolu
   if(!mevcutVar&&getAreaCount(day,aId)>=(getDayRule(day,aId).max||99))
     uyarilar.push('Alan günlük max dolulukta');
@@ -6180,15 +6205,30 @@ function scheduleToJson(){
 
 function applyScheduleFromJson(json){
   const days=daysInMonth(S.currentDate.y,S.currentDate.m);
+  const moKey=S.currentDate.y+'_'+S.currentDate.m;
   S.schedule={};
+  let atladilar=0;
   ASSISTANTS.forEach((ast,i)=>{
     const astData=json[ast.name];
     if(!astData) return;
+    const prof=(S.astProfiles&&S.astProfiles[i])||{};
+    const dur=prof.durum||'aktif';
+    const izinArr=((prof.izinliAylik)||{})[moKey]||[];
     AREAS.forEach(a=>{
       const gunler=astData[a.name]||[];
-      gunler.forEach(d=>{if(d>=1&&d<=days) S.schedule[gk(i,d)]=a.id;});
+      gunler.forEach(d=>{
+        if(d<1||d>days) return;
+        // İzin kontrolü
+        if(dur==='izinli'||dur==='rot_hayir'){ atladilar++; return; }
+        if(izinArr.includes(d)){ atladilar++; return; }
+        // Art arda kontrolü
+        if(S.schedule[gk(i,d-1)]){ atladilar++; return; }
+        if(S.schedule[gk(i,d+1)]){ atladilar++; return; }
+        S.schedule[gk(i,d)]=a.id;
+      });
     });
   });
+  if(atladilar>0) showToast(atladilar+' atama izin/art arda kuralı nedeniyle atlandı');
   save();
   renderSchedule(window._lastGenLog||[]);
 }
@@ -8591,11 +8631,8 @@ function tumSapmalariDengele(){
       for(const {d} of gunSkor){
         if(eklendi>=eksik||_maxNobetAsildimi(astIdx)) break;
         if(S.schedule[gk(astIdx,d)]) continue;
-        const dur=(S.astProfiles&&S.astProfiles[astIdx]&&S.astProfiles[astIdx].durum)||'aktif';
-        if(dur==='izinli'||dur==='rot_hayir') break;
+        if(_nobetYazilamaz(astIdx,d)) continue;
         if(isEgtFull(y,m,d,ast.kidem)) continue;
-        if(d>1&&S.schedule[gk(astIdx,d-1)]) continue;
-        if(d<days&&S.schedule[gk(astIdx,d+1)]) continue;
         for(const a of AREAS){
           if(!isAlanAktif(d,a.id)) continue;
           if(((S.quota[a.id]||{})[ast.kidem]||0)===0) continue;
@@ -8785,6 +8822,7 @@ function akillicoz(){
   // Hamleyi uygula, ihlal artıyorsa veya max nöbet aşılıyorsa geri al
   function guvenliEkle(i,d,aId){
     if(S.schedule[gk(i,d)]) return false;
+    if(_nobetYazilamaz(i,d)) return false;
     // Max nöbet sayısı kontrolü — hedefi geçme
     if(nobetSay(i)>=hedef(i)) return false;
     const onceki=ihlalSay();
@@ -9860,6 +9898,8 @@ function _hedefEksikAta(sIdx, gIdx){
   const {i, gunler} = cache[sIdx];
   const g = gunler[gIdx];
   if(!g) return;
+  const _heEngel=_nobetYazilamaz(i,g.d);
+  if(_heEngel){ showToast(_heEngel); return; }
 
   S.schedule[gk(i, g.d)] = g.aId;
   save();
