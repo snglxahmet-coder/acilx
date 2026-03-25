@@ -1444,22 +1444,22 @@ const AREA_LBL={s1:'S1',s2:'S2',r1:'R1',r2:'R2',mt:'MT',yp:'YP'};
 const KIDEM_CLS={1:'k1',2:'k2',3:'k3',4:'k4',5:'k5',6:'k5'};
 
 // Alan etiketi otomatik üret: "Kırmızı 2" → "K2", "Sarı 1" → "S1", "Min. Travma" → "MT"
+function alanKisalt(name){
+  if(!name) return '??';
+  const words = name.trim().split(/\s+/);
+  const lastWord = words[words.length-1];
+  const isNum = /^\d+$/.test(lastWord);
+  if(isNum && words.length>=2){
+    return words.slice(0,-1).map(w=>w[0].toUpperCase()).join('') + lastWord;
+  }
+  // "Pol" suffix: "Sarı Pol" → "SP"
+  return words.map(w=>w[0].toUpperCase()).join('').slice(0,3);
+}
 function getAreaLabel(aId){
   if(AREA_LBL[aId]) return AREA_LBL[aId];
   const alan = AREAS.find(a=>a.id===aId);
   if(!alan) return aId.toUpperCase().slice(0,2);
-  const n = alan.name;
-  // "Kelime1 Kelime2 ... Sayı" → "İlkHarfler + Sayı"
-  const words = n.trim().split(/\s+/);
-  const lastWord = words[words.length-1];
-  const isNum = /^\d+$/.test(lastWord);
-  if(isNum && words.length>=2){
-    // ilk kelimelerin baş harfleri + sayı
-    const initials = words.slice(0,-1).map(w=>w[0].toUpperCase()).join('');
-    return initials + lastWord;
-  }
-  // Kısaltma: her büyük harf ya da her kelimenin baş harfi
-  return words.map(w=>w[0].toUpperCase()).join('').slice(0,3);
+  return alanKisalt(alan.name);
 }
 
 function getKidemLabel(k) {
@@ -7237,7 +7237,7 @@ function renderSorunlar(){
   // ═══════════════════════════════════════════════
   // BÖLÜM 1: Hedef altında / üstünde asistanlar
   // ═══════════════════════════════════════════════
-  const sapmalar = _hesaplaSapma();
+  const sapmalar = _hesaplaSapmaDetayli();
   const altinda = sapmalar.filter(s=>s.fark<0).sort((a,b)=>a.fark-b.fark);
   const ustunde = sapmalar.filter(s=>s.fark>0).sort((a,b)=>b.fark-a.fark);
 
@@ -7249,16 +7249,8 @@ function renderSorunlar(){
     if(altinda.length>0){
       html += '<div style="padding:6px 12px 2px"><span style="font-size:10px;font-weight:700;color:var(--orange)">Hedef altında</span></div>';
       altinda.forEach(s=>{
-        // Alan bazında eksik dökümü
-        const alanEksik=[];
-        AREAS.forEach(a=>{
-          const kotaMax=(S.quota[a.id]||{})[s.ast.kidem]||0;
-          if(kotaMax<=0) return;
-          const topKota=Object.values(S.quota[a.id]||{}).reduce((t,v)=>t+v,0)||1;
-          const alanHedef=Math.round(s.hedef*kotaMax/topKota);
-          const alanMevcut=_sayAlan(s.i,a.id,days);
-          if(alanMevcut<alanHedef) alanEksik.push({alan:a, eksik:alanHedef-alanMevcut, mevcut:alanMevcut, hedef:alanHedef});
-        });
+        // Alan bazında eksik: fark > 0 olanlar (hedef - mevcut)
+        const alanEksik=s.alanDetay.filter(ad=>ad.fark>0);
         const dokumHtml=alanEksik.map(ae=>
           `<span style="font-size:9px;padding:1px 5px;border-radius:3px;background:${ae.alan.color}18;color:${ae.alan.color};border:1px solid ${ae.alan.color}33">${getAreaLabel(ae.alan.id)} ${ae.mevcut}/${ae.hedef}</span>`
         ).join(' ');
@@ -7421,7 +7413,11 @@ function sorunManuelSec(mIdx){
     if(S.schedule[gk(astIdx,d)]) continue;
     AREAS.forEach(a=>{
       if(canAssign(astIdx,d,a.id,true)){
-        secimler.push({d,a});
+        const rule=getDayRule(d,a.id);
+        const doluluk=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id).length;
+        const kidemSayi=ASSISTANTS.filter((_,j)=>S.schedule[gk(j,d)]===a.id&&ASSISTANTS[j].kidem===ast.kidem).length;
+        const minOk=doluluk>=rule.min;
+        secimler.push({d,a,doluluk,max:rule.max||0,min:rule.min||0,kidemSayi,minOk});
       }
     });
   }
@@ -7433,11 +7429,17 @@ function sorunManuelSec(mIdx){
   let body='<div style="max-height:350px;overflow:auto">';
   secimler.slice(0,30).forEach(s=>{
     const dow=['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][new Date(y,m,s.d).getDay()];
-    body+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--bord)">
+    const dolulukLbl=s.max>0?s.doluluk+'/'+s.max:s.doluluk+'/?';
+    const minIcon=s.minOk?'<span style="color:#4ade80">&#10003;</span>':'<span style="color:var(--red)">&#10007;</span>';
+    body+=`<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid var(--bord)">
       <span style="font-size:11px;font-weight:700;color:var(--w1);min-width:48px">${s.d} ${AY[m]}</span>
-      <span style="font-size:9px;color:var(--w4)">${dow}</span>
+      <span style="font-size:9px;color:var(--w4);min-width:20px">${dow}</span>
       <span style="width:8px;height:8px;border-radius:2px;background:${s.a.color};flex-shrink:0"></span>
-      <span style="font-size:11px;color:${s.a.color};flex:1">${s.a.name}</span>
+      <span style="font-size:10px;color:${s.a.color};min-width:30px">${getAreaLabel(s.a.id)}</span>
+      <span style="font-size:9px;color:var(--w3)" title="Doluluk">${dolulukLbl}</span>
+      <span style="font-size:9px;color:var(--w4)" title="Kıdem ${ast.kidem} sayısı">K${ast.kidem}:${s.kidemSayi}</span>
+      <span style="font-size:9px" title="Min ${s.minOk?'tamam':'eksik'}">${minIcon}</span>
+      <span style="flex:1"></span>
       <button onclick="sapmaOneriEkle(${astIdx},${s.d},'${s.a.id}')" class="sr-btn sr-btn-g">Yaz</button>
     </div>`;
   });
@@ -7952,16 +7954,33 @@ function tumSapmalariDengele(){
 }
 
 // Yardımcı: tüm asistanların sapmasını hesapla
-function _hesaplaSapma(){
+// ── Merkezi hedef-sapma hesaplama — tüm uygulama bunu kullansın ──
+function _hesaplaSapmaDetayli(){
   const {y,m}=S.currentDate;
   const days=daysInMonth(y,m);
   return ASSISTANTS.map((ast,i)=>{
     const hedef=_hesaplaHedef(i);
     let mevcut=0;
-    for(let d=1;d<=days;d++) if(S.schedule[gk(i,d)]) mevcut++;
-    return {ast,i,hedef,mevcut,fark:mevcut-hedef};
+    const alanSayim={};
+    AREAS.forEach(a=>{alanSayim[a.id]=0;});
+    for(let d=1;d<=days;d++){
+      const aId=S.schedule[gk(i,d)];
+      if(aId){ mevcut++; if(alanSayim[aId]!==undefined) alanSayim[aId]++; }
+    }
+    // Alan bazlı hedef: quota[aId][kidem] = o asistanın o alandaki hedefi
+    const alanDetay=[];
+    AREAS.forEach(a=>{
+      const alanH=(S.quota[a.id]||{})[ast.kidem]||0;
+      if(alanH<=0) return;
+      const alanM=alanSayim[a.id]||0;
+      const fark=alanH-alanM;
+      alanDetay.push({alan:a, hedef:alanH, mevcut:alanM, fark});
+    });
+    return {ast,i,hedef,mevcut,fark:mevcut-hedef,alanSayim,alanDetay};
   }).filter(s=>s.hedef>0);
 }
+// Basit versiyon — geriye uyumluluk
+function _hesaplaSapma(){ return _hesaplaSapmaDetayli(); }
 
 // Yardımcı: bir asistanın belirli alandaki nöbet sayısı
 function _sayAlan(astIdx, aId, days){
@@ -7990,24 +8009,18 @@ function sapmaOneriCikar(astIdx, d){
 
 // Modal içeriğini güncel durumla yenile — hedef karşılandıysa kapat
 function _sapmaModalYenile(astIdx){
-  const {y,m}=S.currentDate; const days=daysInMonth(y,m);
-  const moKey=y+'_'+m;
   const ast=ASSISTANTS[astIdx]; if(!ast){ closeDayModal(); return; }
   const hedef=_hesaplaHedef(astIdx);
+  const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   let mevcut=0; for(let d=1;d<=days;d++) if(S.schedule[gk(astIdx,d)]) mevcut++;
   const yeniFark = mevcut - hedef;
   if(yeniFark===0){ closeDayModal(); return; }
-  // Hâlâ sapma var — modal içeriğini yenile
-  // Alan sayımını güncelle
+  // Merkezi hesaplama kullan
   const alanSayim={}, alanHedef={};
   AREAS.forEach(a=>{
-    alanSayim[a.id]=0;
-    const kotaMax=(S.quota[a.id]||{})[ast.kidem]||0;
-    alanHedef[a.id]=kotaMax>0?Math.round(hedef*kotaMax/Math.max(1,Object.values(S.quota[a.id]||{}).reduce((s,v)=>s+v,0))):0;
+    alanSayim[a.id]=_sayAlan(astIdx,a.id,days);
+    alanHedef[a.id]=(S.quota[a.id]||{})[ast.kidem]||0;
   });
-  for(let d=1;d<=days;d++){
-    const aId=S.schedule[gk(astIdx,d)]; if(aId) alanSayim[aId]=(alanSayim[aId]||0)+1;
-  }
   openSapmaOneriModal(astIdx, yeniFark, alanSayim, alanHedef);
 }
 
