@@ -320,6 +320,11 @@ select:focus,input[type=number]:focus{outline:none;border-color:var(--bord-r)}
   0%,100%{ transform:scale(1);box-shadow:0 0 10px rgba(232,87,42,0.7); }
   50%{ transform:scale(1.08);box-shadow:0 0 18px rgba(232,87,42,0.9); }
 }
+/* ── Mobil dokunma hedefi — WCAG 2.5.5 ── */
+@media(pointer:coarse){
+  button,select,.sr-btn{ min-height:44px; min-width:44px; }
+  select{ padding:10px 12px !important; }
+}
 </style>
 
 <div id="acilxSpinner">
@@ -333,6 +338,9 @@ select:focus,input[type=number]:focus{outline:none;border-color:var(--bord-r)}
 </div>
 
 <script>
+// ── XSS koruması — kullanıcı girdileri için ──
+function _esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
 let _spinCount=0, _spinTimer=null;
 function showSpinner(){
   _spinCount++;
@@ -946,8 +954,9 @@ function niStep(btn,delta){
 let _swapAst = null; // {i, d, alanId}
 
 function openSwapModal(astIdx, d, alanId){
-  _swapAst = {i:astIdx, d, alanId};
   const ast = ASSISTANTS[astIdx];
+  if(!ast) return;
+  _swapAst = {i:astIdx, d, alanId};
   const alan = AREAS.find(a=>a.id===alanId);
 
   document.getElementById('swapTitle').textContent =
@@ -1103,6 +1112,15 @@ function applySwap(iA, dA, alanA, iB, dB, alanB){
   } catch(e) {
     window.ACILX_ROLE = 'asistan';
     window.ACILX_UID  = '';
+  }
+})();
+
+/* ── Production log kontrolü ── */
+// URL'de ?debug=1 yoksa console.log'ları sustur
+(function(){
+  if(!(new URLSearchParams(window.location.search)).has('debug')){
+    var _noop=function(){};
+    console.log=_noop;
   }
 })();
 
@@ -1951,6 +1969,7 @@ function openAlanModal(){
 function closeAlanModal(){ document.getElementById('alanModal').classList.remove('open'); }
 
 function saveAlan(){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const name = document.getElementById('alanName').value.trim();
   if(!name){ alert('Alan adı girin.'); return; }
   const id = 'custom_'+Date.now();
@@ -1979,6 +1998,7 @@ function saveAlan(){
 }
 
 function deleteAlan(aId){
+  if(window.ACILX_ROLE!=='basasistan') return;
   if(!confirm('Bu alanı silmek istediğinizden emin misiniz?')) return;
   const idx = AREAS.findIndex(a=>a.id===aId);
   if(idx>-1) AREAS.splice(idx,1);
@@ -2486,6 +2506,7 @@ function removeAssign(astIdx, d, aId){
 function quickAssign(astIdxStr, d, aId){
   if(!astIdxStr) return;
   const astIdx = parseInt(astIdxStr);
+  if(!ASSISTANTS[astIdx]) return;
   if(_maxNobetAsildimi(astIdx)){
     showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
     return;
@@ -2517,8 +2538,9 @@ function quickAssignWarn(sel, d, aId){
 
 // İsim kısalt: "Ahmet Şengül" → "Ahmet Ş.", "Taha Yaşar Kiraz" → "Taha Y.K."
 function shortName(name){
-  const parts = name.trim().split(/\s+/);
-  if(parts.length<=1) return name;
+  if(!name) return '';
+  const parts = _esc(name).trim().split(/\s+/);
+  if(parts.length<=1) return parts[0]||'';
   const first = parts[0];
   const rest = parts.slice(1).map(p=>p[0].toUpperCase()+'.').join('');
   return first+' '+rest;
@@ -2805,6 +2827,7 @@ function closeAstEkleModal(){
 }
 
 function saveAstEkle(){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const name  = document.getElementById('astEkleName').value.trim();
   const kidem = parseInt(document.getElementById('astEkleKidem').value);
   const email = document.getElementById('astEkleEmail').value.trim().toLowerCase();
@@ -2818,16 +2841,16 @@ function saveAstEkle(){
   window._assistantsLoaded = true; // Artık asistan verisi mevcut
 
   // Firestore'a kaydet (rol doğrulamalı)
-  if(_db && window.ACILX_ROLE === 'basasistan'){
+  if(_db){
     isVerifiedBasasistan().then(function(ok){
       if(!ok) return;
       var _gId = window.ACILX_GROUP || 'default';
-      _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
+      return _db.collection('groups').doc(_gId).collection('assistants').doc('list').set({
         list: ASSISTANTS,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: window.ACILX_UID
-      }).catch(function(e){ console.warn('Asistan kayıt hatası:', e); });
-    });
+      });
+    }).catch(function(e){ console.warn('Asistan kayıt hatası:', e); showToast('Kayıt hatası — tekrar deneyin'); });
   }
 
   closeAstEkleModal();
@@ -2846,6 +2869,7 @@ function confirmDeleteAst(idx){
 }
 
 function deleteAst(idx){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const {y,m} = S.currentDate;
   const days = daysInMonth(y,m);
   // Nöbet atamalarını temizle
@@ -2858,16 +2882,16 @@ function deleteAst(idx){
   ASSISTANTS.forEach((a,i)=>{ a.id=i; });
 
   // Firestore'a kaydet (rol doğrulamalı)
-  if(_db && window.ACILX_ROLE === 'basasistan'){
+  if(_db){
     isVerifiedBasasistan().then(function(ok){
       if(!ok) return;
       var _gIdDel = window.ACILX_GROUP || 'default';
-      _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
+      return _db.collection('groups').doc(_gIdDel).collection('assistants').doc('list').set({
         list: ASSISTANTS,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedBy: window.ACILX_UID
-      }).catch(function(e){ console.warn('Asistan silme hatası:', e); });
-    });
+      });
+    }).catch(function(e){ console.warn('Asistan silme hatası:', e); showToast('Silme hatası — tekrar deneyin'); });
   }
 
   save();
@@ -3220,7 +3244,9 @@ function updateTercihUI() {
 
 /* ── NÖBET OLUŞTUR / SİL / YAYINLA ── */
 async function nobetOlustur(){
-  autoGen();
+  if(window.ACILX_ROLE!=='basasistan') return;
+  showSpinner();
+  try{ autoGen(); }catch(e){ hideSpinner(); showToast('Oluşturma hatası: '+e.message); return; }
   // ── KRİTİK: listeyi HEMEN kaydet ──────────────────────────────
   try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(_){}
   if(_db && window.ACILX_ROLE === 'basasistan' && window._assistantsLoaded) {
@@ -3230,6 +3256,7 @@ async function nobetOlustur(){
   }
   updateTercihUI();
   _checkHedefEksikleri();
+  hideSpinner();
   showToast('Nöbet oluşturuldu ve kaydedildi');
 
   // ── Analiz modalı: render tamamlandıktan sonra göster ──
@@ -5096,7 +5123,7 @@ function renderSchedule(log){
             : `<span class="atd-empty">—</span>`
         }
         ${!isKapali&&short?`<div class="atd-min-warn">min${rule2.min}</div>`:''}
-        ${!isKapali&&kidemShort?`<div class="atd-kidem-warn">K${kidemViolsCell[0].split(':')[0].replace('K','')}</div>`:''}
+        ${!isKapali&&kidemShort&&kidemViolsCell[0]?`<div class="atd-kidem-warn">K${(kidemViolsCell[0].split(':')[0]||'').replace('K','')}</div>`:''}
       </td>`;
     }
     areaHtml+='</tr>';
@@ -7019,6 +7046,7 @@ function takasListesiBul(iA){
 }
 
 function applyTakas(iA, dA, alanA, iB, dB, alanB){
+  if(window.ACILX_ROLE!=='basasistan') return;
   // A → B'nin gün+alanına, B → A'nın gün+alanına
   delete S.schedule[gk(iA,dA)];
   delete S.schedule[gk(iB,dB)];
@@ -8055,6 +8083,7 @@ function _openSapmaOneriModal_disabled(astIdx, fark, alanSayim, alanHedef){
 }
 
 function tümSapmalariEkle(astIdx){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const ast=ASSISTANTS[astIdx]; if(!ast) return;
   const hedef=_hesaplaHedef(astIdx);
@@ -8106,6 +8135,7 @@ function tümSapmalariEkle(astIdx){
 }
 
 function tümSapmalariCikar(astIdx){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const ast=ASSISTANTS[astIdx]; if(!ast) return;
   const hedef=_hesaplaHedef(astIdx);
@@ -8304,6 +8334,8 @@ function _sayAlan(astIdx, aId, days){
 }
 
 function sapmaOneriEkle(astIdx, d, aId){
+  if(window.ACILX_ROLE!=='basasistan') return;
+  if(!ASSISTANTS[astIdx]) return;
   if(_maxNobetAsildimi(astIdx)){
     showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
     return;
@@ -8315,6 +8347,7 @@ function sapmaOneriEkle(astIdx, d, aId){
 }
 
 function sapmaOneriCikar(astIdx, d){
+  if(window.ACILX_ROLE!=='basasistan') return;
   delete S.schedule[gk(astIdx,d)];
   save(); renderSchedule(); renderTakStats(); renderUyarilar();
   _sapmaModalYenile(astIdx);
@@ -8392,6 +8425,7 @@ function _sorunlariTopla(){
 }
 
 function akillicoz(){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
   const moKey=y+'_'+m;
   let cozulen=0;
@@ -8820,9 +8854,11 @@ function uyariOneriHTML(sorun){
   let html = '';
 
   if(tip==='min'||tip==='kidem'){
-    const kidemler = tip==='kidem'
-      ? (sorun.msg.match(/K(\d+(?:\/\d+)*)/)||['',''])[1].split('/').map(Number).filter(Boolean)
-      : [];
+    let kidemler = [];
+    if(tip==='kidem'){
+      const kMatch = sorun.msg.match(/K(\d+(?:\/\d+)*)/);
+      if(kMatch && kMatch[1]) kidemler = kMatch[1].split('/').map(Number).filter(Boolean);
+    }
 
     // ── Direkt Ekle ──────────────────────────────────────────
     const direkt = _cozumEkle(d, alan.id, kidemler);
@@ -9128,6 +9164,7 @@ function loadAlgoConfigUI(){
 }
 
 function saveAlgoConfig(){
+  if(window.ACILX_ROLE!=='basasistan') return;
   if(!S.algoConfig) S.algoConfig = {};
   const el = function(id){ return document.getElementById(id); };
   S.algoConfig.artArdaMesafe  = parseInt(el('acArtArda')?.value)||1;
@@ -9198,6 +9235,7 @@ function grupKoduKopyala(){
 }
 
 function saveListName(){
+  if(window.ACILX_ROLE!=='basasistan') return;
   const val = (document.getElementById('listNameInput').value||'').trim();
   if(!val) return;
   S.listName = val;

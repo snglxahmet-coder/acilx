@@ -934,6 +934,14 @@ const FIREBASE_CONFIG = {
 
 let app, auth, db;
 
+// ── Production log kontrolü ──
+(function(){
+  if(!(new URLSearchParams(window.location.search)).has('debug')){
+    var _noop=function(){};
+    console.log=_noop;
+  }
+})();
+
 // ── PWA algılama ──
 const _isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 const _isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
