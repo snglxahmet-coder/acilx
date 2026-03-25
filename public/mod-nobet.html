@@ -2521,6 +2521,8 @@ function quickAssign(astIdxStr, d, aId){
   if(!astIdxStr) return;
   const astIdx = parseInt(astIdxStr);
   if(!ASSISTANTS[astIdx]) return;
+  const _qEngel=_nobetYazilamaz(astIdx,d);
+  if(_qEngel){ showToast(_qEngel); return; }
   if(_maxNobetAsildimi(astIdx)){
     showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
     return;
@@ -5021,7 +5023,26 @@ function canAssign(i, d, aId, ignoreHedef) {
   return true;
 }
 
-/* ── SCHEDULE ── */
+/* ── Merkezi nöbet yazma engeli: izin + art arda 24s kontrolü ──
+   Tüm yazma fonksiyonları bu fonksiyonu çağırmalı.
+   Döndürdüğü string hata mesajıdır; null = yazılabilir. */
+function _nobetYazilamaz(astIdx, d){
+  const {y,m}=S.currentDate;
+  const days=daysInMonth(y,m);
+  const moKey=y+'_'+m;
+  const prof=(S.astProfiles&&S.astProfiles[astIdx])||{};
+  const dur=prof.durum||'aktif';
+  // İzinli kontrolü
+  if(dur==='izinli'||dur==='rot_hayir') return 'Bu asistan izinli — nöbet yazılamaz';
+  const izinArr=((prof.izinliAylik)||{})[moKey]||[];
+  if(izinArr.includes(d)) return d+'. gün izinli — nöbet yazılamaz';
+  // Art arda 24s kontrolü
+  if(d>1&&S.schedule[gk(astIdx,d-1)]) return 'Art arda 24s nöbet yazılamaz (önceki gün nöbetli)';
+  if(d<days&&S.schedule[gk(astIdx,d+1)]) return 'Art arda 24s nöbet yazılamaz (sonraki gün nöbetli)';
+  if(d===1&&S.prevMonthLastDay&&S.prevMonthLastDay[astIdx]) return 'Art arda 24s nöbet yazılamaz (önceki ayın son günü nöbetli)';
+  if(d===days&&S.nextMonthFirstDay&&S.nextMonthFirstDay[astIdx]) return 'Art arda 24s nöbet yazılamaz (sonraki ayın ilk günü nöbetli)';
+  return null;
+}
 let _currentView='both';
 function setView(v){
   _currentView=v;
@@ -7081,6 +7102,13 @@ function takasListesiBul(iA){
 
 function applyTakas(iA, dA, alanA, iB, dB, alanB){
   if(window.ACILX_ROLE!=='basasistan') return;
+  // Takas öncesi izin + art arda kontrolü (mevcut atamaları geçici silerek kontrol et)
+  const _tmpA=S.schedule[gk(iA,dA)]; const _tmpB=S.schedule[gk(iB,dB)];
+  delete S.schedule[gk(iA,dA)]; delete S.schedule[gk(iB,dB)];
+  const engelA=_nobetYazilamaz(iA,dB); const engelB=_nobetYazilamaz(iB,dA);
+  S.schedule[gk(iA,dA)]=_tmpA; S.schedule[gk(iB,dB)]=_tmpB; // geri al
+  if(engelA){ showToast(engelA); return; }
+  if(engelB){ showToast(engelB); return; }
   // A → B'nin gün+alanına, B → A'nın gün+alanına
   delete S.schedule[gk(iA,dA)];
   delete S.schedule[gk(iB,dB)];
@@ -7098,17 +7126,9 @@ function apAddShift(){
   const d = parseInt(document.getElementById('apAddDay').value);
   const alanId = document.getElementById('apAddArea').value;
   if(!d||!alanId){ alert('Gün ve alan seçin.'); return; }
-  // İzinli gün/asistan kontrolü — hard block
-  const {y,m} = S.currentDate;
-  const _moKey = y+'_'+m;
-  const _dur = (S.astProfiles&&S.astProfiles[_apIdx]&&S.astProfiles[_apIdx].durum)||'aktif';
-  const _izinliList = ((S.astProfiles&&S.astProfiles[_apIdx]&&S.astProfiles[_apIdx].izinliAylik)||{})[_moKey]||[];
-  if(_dur==='izinli'||_dur==='rot_hayir'){
-    showToast('Bu asistan izinli — nöbet eklenemez'); return;
-  }
-  if(_izinliList.includes(d)){
-    showToast(d+'. gün izinli — nöbet eklenemez'); return;
-  }
+  // Merkezi izin + art arda kontrolü
+  const _apEngel=_nobetYazilamaz(_apIdx,d);
+  if(_apEngel){ showToast(_apEngel); return; }
   if(_maxNobetAsildimi(_apIdx)){
     showToast(ASSISTANTS[_apIdx].name+' max nöbet sayısına ulaştı — eklenemez');
     return;
@@ -7958,7 +7978,11 @@ function sorunManuelSec(mIdx){
 }
 
 function manuelSecYaz(astIdx, d, aId, si){
+  // Merkezi engel kontrolü — cache'den kaçmış olabilir
+  const _mEngel=_nobetYazilamaz(astIdx,d);
+  if(_mEngel){ showToast(_mEngel); return; }
   const s=window._manuelSecCache&&window._manuelSecCache[si];
+  if(s&&s.yazilamaz){ showToast('Bu gün/alan kombinasyonu yazılamaz'); return; }
   if(s&&s.warns&&s.warns.length>0&&!s.yazilamaz){
     const uyariTxt=s.warns.map(w=>'• '+w).join('\n');
     if(!confirm('Bu atama şu kuralları ihlal edecek:\n'+uyariTxt+'\n\nYine de yazmak istiyor musunuz?')) return;
@@ -8124,6 +8148,7 @@ function uyariCoz(params, cozum){
     for(const i of adaylar){
       if(eklenen>=(eksik||1)) break;
       if(_maxNobetAsildimi(i)) continue;
+      if(_nobetYazilamaz(i,d)) continue;
       S.schedule[gk(i,d)] = aId;
       eklenen++;
     }
@@ -8146,10 +8171,10 @@ function uyariCoz(params, cozum){
       return kidemler.includes(ASSISTANTS[i].kidem) && ((S.quota[aId]||{})[ASSISTANTS[i].kidem]||0)>0 && canAssign(i,d,aId,true);
     });
     adaylar.sort((a,b)=>_nobetSayisi(a)-_nobetSayisi(b));
-    if(adaylar.length>0){
-      const i = adaylar[0];
-      S.schedule[gk(i,d)] = aId;
-      save(); renderSchedule(); renderTakStats(); renderUyarilar(); showToast(ASSISTANTS[i].name+' eklendi');
+    const _uygunAday = adaylar.find(i=>!_nobetYazilamaz(i,d));
+    if(_uygunAday!==undefined){
+      S.schedule[gk(_uygunAday,d)] = aId;
+      save(); renderSchedule(); renderTakStats(); renderUyarilar(); showToast(ASSISTANTS[_uygunAday].name+' eklendi');
     } else showToast('Uygun kıdem bulunamadı');
   }
 }
@@ -8514,6 +8539,8 @@ function _sayAlan(astIdx, aId, days){
 function sapmaOneriEkle(astIdx, d, aId){
   if(window.ACILX_ROLE!=='basasistan') return;
   if(!ASSISTANTS[astIdx]) return;
+  const _seEngel=_nobetYazilamaz(astIdx,d);
+  if(_seEngel){ showToast(_seEngel); return; }
   if(_maxNobetAsildimi(astIdx)){
     showToast(ASSISTANTS[astIdx].name+' max nöbet sayısına ulaştı — eklenemez');
     return;
@@ -9190,12 +9217,17 @@ function uyariOneriToggle(panelId, sorunJSON){
 // ─── Öneri uygula ────────────────────────────────────────────
 function uyariOneriUygula(tip, iA, d, aId, dB, alanB, iB){
   if(tip==='ekle'){
+    const _ueEngel=_nobetYazilamaz(iA,d);
+    if(_ueEngel){ showToast(_ueEngel); return; }
     S.schedule[gk(iA,d)]=aId;
     save(); renderSchedule(); renderTakStats();
     showToast(ASSISTANTS[iA].name+' eklendi ✓');
 
   }else if(tip==='transfer'){
+    // Transfer: iA dB'den d'ye taşınıyor — d gününü kontrol et (dB silinecek)
     delete S.schedule[gk(iA,dB)];
+    const _utEngel=_nobetYazilamaz(iA,d);
+    if(_utEngel){ S.schedule[gk(iA,dB)]=alanB||aId; showToast(_utEngel); return; }
     S.schedule[gk(iA,d)]=aId;
     save(); renderSchedule(); renderTakStats();
     showToast(shortName(ASSISTANTS[iA].name)+' '+dB+'→'+d+'. güne taşındı ✓');
@@ -9204,6 +9236,8 @@ function uyariOneriUygula(tip, iA, d, aId, dB, alanB, iB){
     const tmpA=aId; const tmpB=alanB;
     delete S.schedule[gk(iA,d)];
     delete S.schedule[gk(iB,dB)];
+    const _tk1=_nobetYazilamaz(iA,dB); const _tk2=_nobetYazilamaz(iB,d);
+    if(_tk1||_tk2){ S.schedule[gk(iA,d)]=tmpA; S.schedule[gk(iB,dB)]=tmpB; showToast(_tk1||_tk2); return; }
     S.schedule[gk(iA,dB)]=tmpB;
     S.schedule[gk(iB,d)]=tmpA;
     save(); renderSchedule(); renderTakStats();
