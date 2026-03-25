@@ -1584,6 +1584,8 @@ function refreshUI(){
         if(_newView===2 && typeof renderAreaList==='function') renderAreaList();
       }
     }
+    // Sorunlar sekmesi ve badge'i her save sonrası güncelle
+    if(typeof renderSorunlar==='function') renderSorunlar();
     const ozTab = document.getElementById('tab-ozet');
     if(ozTab && ozTab.style.display !== 'none' && typeof renderOzet==='function') renderOzet();
     const apTab = document.getElementById('tab-astprofile');
@@ -2232,7 +2234,8 @@ function gunIhlalleri(d){
     if(cnt>0){
       const kIhlaller=kidemKuralIhlali(d,a.id);
       kIhlaller.forEach(ih=>{
-        ihlaller.push({tip:'kidem',alan:a,msg:a.name+': '+ih.msg});
+        ihlaller.push({tip:'kidem',alan:a,msg:a.name+': '+ih.msg,
+          kidem:ih.kidem, yanindaKidemler:ih.yanindaKidemler||ih.yaninda||[]});
       });
     }
     // kidemMin ihlali
@@ -2293,9 +2296,9 @@ function renderTakStats(){
     if(toplamAtanan===0){ bosGun++; continue; }
     const hepsiBloke=ASSISTANTS.every(ast=>isEgtFull(y,m,d,ast.kidem));
     if(hepsiBloke) continue;
-    const viols=checkDayMin(d);
-    const kidemViols=checkKidemGrup(d);
-    if(viols.length===0&&kidemViols.length===0) kusursuz++;
+    // gunIhlalleri ile tutarlı hesaplama — tüm ihlal tipleri tek merkezden
+    const gunViols=gunIhlalleri(d);
+    if(gunViols.length===0) kusursuz++;
   }
 
   const el=document.getElementById('takStats');
@@ -7373,8 +7376,8 @@ function renderSorunlar(){
   const {y,m} = S.currentDate;
   const days = daysInMonth(y,m);
   const isBasas = window.ACILX_ROLE==='basasistan';
-  const RENK = {min:'var(--red)', max:'var(--orange)', kidem:'#9B7AE0'};
-  const TIP_LBL = {min:'Min eksik', max:'Max aşım', kidem:'Kıdem'};
+  const RENK = {min:'var(--red)', max:'var(--orange)', kidem:'#9B7AE0', kidemMin:'#9B7AE0', kidemMax:'#9B7AE0'};
+  const TIP_LBL = {min:'Min eksik', max:'Max aşım', kidem:'Kıdem', kidemMin:'Kıdem Min', kidemMax:'Kıdem Max'};
   let html = '';
   let toplamSorun = 0;
 
@@ -7439,112 +7442,122 @@ function renderSorunlar(){
   for(const d of gunler){
     const dow = new Date(y,m,d).getDay();
     const gunAdi = ['Paz','Pzt','Sal','Çar','Per','Cum','Cmt'][dow];
-    const sorunlar = [];
 
-    AREAS.forEach(a=>{
+    // ── TEK MERKEZ: gunIhlalleri() ile tutarlı hesaplama ──
+    const rawIhlaller = gunIhlalleri(d);
+    if(rawIhlaller.length === 0) continue;
+
+    // Her ihlal için buton mantığı ekle
+    const sorunlar = rawIhlaller.map(ih => {
+      const a = ih.alan;
       const rule = getDayRule(d, a.id);
-      if(!rule.aktif) return;
       const cnt = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id).length;
       const alanDolu = rule.max>0 && cnt>=rule.max;
+      let uygunVar = false;
+      let cozumData = {d, aId:a.id};
 
-      if(cnt < rule.min){
+      if(ih.tip==='min'){
         const eksik = rule.min - cnt;
-        // Müsait asistan kontrolü: izinli değil, max dolmamış, art arda yok, kota var
+        cozumData.eksik = eksik;
         const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
-          if(!ASSISTANTS[j]) return false;
-          if(S.schedule[gk(j,d)]) return false; // zaten atanmış
-          if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false; // kota yok
+          if(!ASSISTANTS[j]||S.schedule[gk(j,d)]) return false;
+          if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false;
           return canAssign(j,d,a.id,true);
         });
-        const uygunVar = adaylar.length>0;
-        console.log(`[Sorunlar] ${d}. gün ${a.name} MIN eksik: ${eksik}, müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok (tümü izinli/max/art arda)'}`);
-        sorunlar.push({tip:'min', alan:a, gun:d, eksik, msg:`${cnt}/${rule.min} — ${eksik} eksik`,
-          uygunVar, alanDolu,
-          cozumData:{d, aId:a.id, eksik}});
-      }
-      if(rule.max > 0 && cnt > rule.max){
+        uygunVar = adaylar.length>0;
+        console.log(`[Sorunlar] ${d}. gün ${a.name} MIN eksik: ${eksik}, müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok'}`);
+      } else if(ih.tip==='max'){
+        cozumData.fazla = cnt - rule.max;
         console.log(`[Sorunlar] ${d}. gün ${a.name} MAX aşım: ${cnt}/${rule.max}`);
-        sorunlar.push({tip:'max', alan:a, gun:d, msg:`${cnt}/${rule.max} — ${cnt-rule.max} fazla`,
-          alanDolu:true,
-          cozumData:{d, aId:a.id, fazla:cnt-rule.max}});
-      }
-      if(cnt>0){
-        kidemKuralIhlali(d,a.id).forEach(ih=>{
-          const gerekli=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
-          // Müsait asistan: gerekli kıdemden, boş, canAssign geçen
-          const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
-            if(!ASSISTANTS[j]) return false;
-            if(S.schedule[gk(j,d)]) return false;
-            if(!gerekli.includes(ASSISTANTS[j].kidem)) return false;
-            if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false;
-            return canAssign(j,d,a.id,true);
-          });
-          const uygunVar = adaylar.length>0;
-          console.log(`[Sorunlar] ${d}. gün ${a.name} Kıdem ihlali: K${gerekli.join('+K')}, müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok'}, alan dolu: ${alanDolu}`);
-          sorunlar.push({tip:'kidem', alan:a, gun:d, msg:ih.msg,
-            uygunVar, alanDolu,
-            cozumData:{d, aId:a.id, kidemler:gerekli, bagimlilik:true}});
+      } else if(ih.tip==='kidem'){
+        const gerekli = ih.yanindaKidemler||[ih.kidem||1];
+        cozumData.kidemler = gerekli;
+        cozumData.bagimlilik = true;
+        const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
+          if(!ASSISTANTS[j]||S.schedule[gk(j,d)]) return false;
+          if(!gerekli.includes(ASSISTANTS[j].kidem)) return false;
+          if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false;
+          return canAssign(j,d,a.id,true);
         });
+        uygunVar = adaylar.length>0;
+        console.log(`[Sorunlar] ${d}. gün ${a.name} Kıdem: müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok'}, alan dolu: ${alanDolu}`);
+      } else if(ih.tip==='kidemMin'){
+        cozumData.bagimlilik = true;
+        // kidemMin ihlali — eksik kıdemden asistan ekle
+        const kMatch = ih.msg.match(/K(\d+)/);
+        const gerekliK = kMatch ? [Number(kMatch[1])] : [];
+        cozumData.kidemler = gerekliK;
+        const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
+          if(!ASSISTANTS[j]||S.schedule[gk(j,d)]) return false;
+          if(gerekliK.length && !gerekliK.includes(ASSISTANTS[j].kidem)) return false;
+          if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false;
+          return canAssign(j,d,a.id,true);
+        });
+        uygunVar = adaylar.length>0;
+        console.log(`[Sorunlar] ${d}. gün ${a.name} KıdemMin: K${gerekliK.join('+K')}, müsait: ${adaylar.length}`);
+      } else if(ih.tip==='kidemMax'){
+        cozumData.fazla = 1;
+        console.log(`[Sorunlar] ${d}. gün ${a.name} KıdemMax aşım`);
       }
+
+      return {tip:ih.tip, alan:a, gun:d, msg:ih.msg, uygunVar, alanDolu, cozumData};
     });
 
-    if(sorunlar.length > 0){
-      toplamSorun += sorunlar.length;
-      sorunlar.forEach(s=>{
-        const cIdx = window._sorunCozCache.length;
-        window._sorunCozCache.push(s.cozumData);
+    toplamSorun += sorunlar.length;
+    sorunlar.forEach(s=>{
+      const cIdx = window._sorunCozCache.length;
+      window._sorunCozCache.push(s.cozumData);
 
-        // ── Tutarlı buton mantığı ──
-        // Her tip için: müsait asistan var mı? alan dolu mu?
-        let akBtn='';
-        if(isBasas){
-          if(s.tip==='min'){
-            // Min eksik: müsait asistan varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
-            if(s.uygunVar){
-              akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g">Çöz</button>`;
-            } else {
-              akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
-                <button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
-            }
-            // Alan max doluysa ek olarak Kapasiteyi Artır göster
-            if(s.alanDolu){
-              akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
-            }
-          } else if(s.tip==='max'){
-            // Max aşım: Çöz (fazla kişiyi çıkar) + Kapasiteyi Artır
-            akBtn=`<button onclick="sorunCoz(${cIdx},'cikar_alan')" class="sr-btn sr-btn-r">Çöz</button>
-              <button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
-          } else if(s.tip==='kidem'){
-            // Kıdem ihlali: müsait asistan varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
-            if(s.uygunVar){
-              akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g">Çöz</button>`;
-            } else {
-              akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
-                <button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
-            }
-            // Alan max doluysa ek olarak Kapasiteyi Artır göster
-            if(s.alanDolu){
-              akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
-            }
+      // ── Tutarlı buton mantığı ──
+      let akBtn='';
+      if(isBasas){
+        if(s.tip==='min' || s.tip==='kidemMin'){
+          // Eksik: müsait asistan varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
+          const cozTip = s.tip==='min' ? 'ekle_alan' : 'ekle_kidem';
+          if(s.uygunVar){
+            akBtn=`<button onclick="sorunCoz(${cIdx},'${cozTip}')" class="sr-btn sr-btn-g">Çöz</button>`;
+          } else {
+            akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
+              <button onclick="sorunCoz(${cIdx},'${cozTip}')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
+          }
+          if(s.alanDolu){
+            akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
+          }
+        } else if(s.tip==='max' || s.tip==='kidemMax'){
+          // Fazla: Çöz (çıkar) + Kapasiteyi Artır
+          akBtn=`<button onclick="sorunCoz(${cIdx},'cikar_alan')" class="sr-btn sr-btn-r">Çöz</button>
+            <button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
+        } else if(s.tip==='kidem'){
+          // Kıdem bağımlılık: müsait varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
+          if(s.uygunVar){
+            akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g">Çöz</button>`;
+          } else {
+            akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
+              <button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
+          }
+          if(s.alanDolu){
+            akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
           }
         }
+      }
 
-        // Onaylı ihlal kontrolü
-        const _onayli=window._onayliIhlaller&&window._onayliIhlaller.some(o=>o.d===d&&o.aId===s.alan.id);
-        const onayBadge=_onayli?'<span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;background:rgba(74,222,128,0.15);color:#4ade80;flex-shrink:0" title="Manuel olarak onaylandı">✓ Onaylı</span>':'';
+      // Onaylı ihlal kontrolü
+      const _onayli=window._onayliIhlaller&&window._onayliIhlaller.some(o=>o.d===d&&o.aId===s.alan.id);
+      const onayBadge=_onayli?'<span style="font-size:8px;font-weight:700;padding:1px 4px;border-radius:2px;background:rgba(74,222,128,0.15);color:#4ade80;flex-shrink:0" title="Manuel olarak onaylandı">✓ Onaylı</span>':'';
 
-        ihlalHtml += `<div style="display:flex;align-items:center;gap:5px;padding:4px 12px;border-bottom:1px solid var(--bord)${_onayli?';background:rgba(74,222,128,0.03)':''}">
-          <span style="font-size:10px;font-weight:700;color:var(--w1);min-width:22px;font-family:'DM Mono',monospace">${d}</span>
-          <span style="font-size:9px;color:var(--w4);min-width:22px">${gunAdi}</span>
-          <span style="width:8px;height:8px;border-radius:2px;background:${s.alan.color};flex-shrink:0"></span>
-          <span style="font-size:10px;color:${s.alan.color};min-width:40px;flex-shrink:0">${getAreaLabel(s.alan.id)}</span>
-          <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;background:${s.tip==='min'?'rgba(232,87,42,0.1)':s.tip==='max'?'rgba(240,160,64,0.1)':'rgba(155,122,224,0.1)'};color:${RENK[s.tip]};flex-shrink:0">${TIP_LBL[s.tip]}</span>
-          ${onayBadge}
-          <span style="font-size:10px;color:var(--w3);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.msg}</span>
-          <div style="display:flex;gap:3px;flex-shrink:0">${akBtn}</div>
-        </div>`;
-      });
-    }
+      const tipBg = {min:'rgba(232,87,42,0.1)',max:'rgba(240,160,64,0.1)',kidem:'rgba(155,122,224,0.1)',kidemMin:'rgba(155,122,224,0.1)',kidemMax:'rgba(155,122,224,0.1)'};
+
+      ihlalHtml += `<div style="display:flex;align-items:center;gap:5px;padding:4px 12px;border-bottom:1px solid var(--bord)${_onayli?';background:rgba(74,222,128,0.03)':''}">
+        <span style="font-size:10px;font-weight:700;color:var(--w1);min-width:22px;font-family:'DM Mono',monospace">${d}</span>
+        <span style="font-size:9px;color:var(--w4);min-width:22px">${gunAdi}</span>
+        <span style="width:8px;height:8px;border-radius:2px;background:${s.alan.color};flex-shrink:0"></span>
+        <span style="font-size:10px;color:${s.alan.color};min-width:40px;flex-shrink:0">${getAreaLabel(s.alan.id)}</span>
+        <span style="font-size:9px;font-weight:700;padding:1px 4px;border-radius:2px;background:${tipBg[s.tip]||'rgba(155,122,224,0.1)'};color:${RENK[s.tip]||'#9B7AE0'};flex-shrink:0">${TIP_LBL[s.tip]||s.tip}</span>
+        ${onayBadge}
+        <span style="font-size:10px;color:var(--w3);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.msg}</span>
+        <div style="display:flex;gap:3px;flex-shrink:0">${akBtn}</div>
+      </div>`;
+    });
   }
 
   // --- Birleştir ---
