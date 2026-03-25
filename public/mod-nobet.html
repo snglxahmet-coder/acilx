@@ -7380,23 +7380,44 @@ function renderSorunlar(){
       const rule = getDayRule(d, a.id);
       if(!rule.aktif) return;
       const cnt = ASSISTANTS.filter((_,i)=>S.schedule[gk(i,d)]===a.id).length;
+      const alanDolu = rule.max>0 && cnt>=rule.max;
 
       if(cnt < rule.min){
         const eksik = rule.min - cnt;
-        const boslar = ASSISTANTS.filter((ast,i)=> !S.schedule[gk(i,d)] && ((S.quota[a.id]||{})[ast.kidem]||0)>0);
-        const uygunVar = boslar.some(ast=> canAssign(ASSISTANTS.indexOf(ast),d,a.id,true));
-        sorunlar.push({tip:'min', alan:a, gun:d, eksik, msg:`${cnt}/${rule.min} — ${eksik} eksik`, uygunVar,
+        // Müsait asistan kontrolü: izinli değil, max dolmamış, art arda yok, kota var
+        const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
+          if(!ASSISTANTS[j]) return false;
+          if(S.schedule[gk(j,d)]) return false; // zaten atanmış
+          if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false; // kota yok
+          return canAssign(j,d,a.id,true);
+        });
+        const uygunVar = adaylar.length>0;
+        console.log(`[Sorunlar] ${d}. gün ${a.name} MIN eksik: ${eksik}, müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok (tümü izinli/max/art arda)'}`);
+        sorunlar.push({tip:'min', alan:a, gun:d, eksik, msg:`${cnt}/${rule.min} — ${eksik} eksik`,
+          uygunVar, alanDolu,
           cozumData:{d, aId:a.id, eksik}});
       }
       if(rule.max > 0 && cnt > rule.max){
+        console.log(`[Sorunlar] ${d}. gün ${a.name} MAX aşım: ${cnt}/${rule.max}`);
         sorunlar.push({tip:'max', alan:a, gun:d, msg:`${cnt}/${rule.max} — ${cnt-rule.max} fazla`,
+          alanDolu:true,
           cozumData:{d, aId:a.id, fazla:cnt-rule.max}});
       }
       if(cnt>0){
         kidemKuralIhlali(d,a.id).forEach(ih=>{
           const gerekli=ih.yaninda&&ih.yaninda.length?ih.yaninda:[ih.kidem];
-          const uygunRef=ASSISTANTS.some((ast,i)=> !S.schedule[gk(i,d)]&&gerekli.includes(ast.kidem)&&((S.quota[a.id]||{})[ast.kidem]||0)>0);
-          sorunlar.push({tip:'kidem', alan:a, gun:d, msg:ih.msg, uygunVar:uygunRef,
+          // Müsait asistan: gerekli kıdemden, boş, canAssign geçen
+          const adaylar = ASSISTANTS.map((_,j)=>j).filter(j=>{
+            if(!ASSISTANTS[j]) return false;
+            if(S.schedule[gk(j,d)]) return false;
+            if(!gerekli.includes(ASSISTANTS[j].kidem)) return false;
+            if(((S.quota[a.id]||{})[ASSISTANTS[j].kidem]||0)===0) return false;
+            return canAssign(j,d,a.id,true);
+          });
+          const uygunVar = adaylar.length>0;
+          console.log(`[Sorunlar] ${d}. gün ${a.name} Kıdem ihlali: K${gerekli.join('+K')}, müsait aday: ${adaylar.length}${uygunVar?'':' — Asistan yok'}, alan dolu: ${alanDolu}`);
+          sorunlar.push({tip:'kidem', alan:a, gun:d, msg:ih.msg,
+            uygunVar, alanDolu,
             cozumData:{d, aId:a.id, kidemler:gerekli, bagimlilik:true}});
         });
       }
@@ -7407,25 +7428,38 @@ function renderSorunlar(){
       sorunlar.forEach(s=>{
         const cIdx = window._sorunCozCache.length;
         window._sorunCozCache.push(s.cozumData);
-        const cozTip = s.tip==='max' ? 'cikar_alan' : s.tip==='kidem' ? 'ekle_kidem' : 'ekle_alan';
 
+        // ── Tutarlı buton mantığı ──
+        // Her tip için: müsait asistan var mı? alan dolu mu?
         let akBtn='';
         if(isBasas){
           if(s.tip==='min'){
+            // Min eksik: müsait asistan varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
             if(s.uygunVar){
-              akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g">Ek Nöbet Yaz</button>`;
+              akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g">Çöz</button>`;
             } else {
               akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
-                <button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g" title="Uygun asistan yoksa da dene">Ek Nöbet Yaz</button>`;
+                <button onclick="sorunCoz(${cIdx},'ekle_alan')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
+            }
+            // Alan max doluysa ek olarak Kapasiteyi Artır göster
+            if(s.alanDolu){
+              akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
             }
           } else if(s.tip==='max'){
+            // Max aşım: Çöz (fazla kişiyi çıkar) + Kapasiteyi Artır
             akBtn=`<button onclick="sorunCoz(${cIdx},'cikar_alan')" class="sr-btn sr-btn-r">Çöz</button>
               <button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
-          } else {
+          } else if(s.tip==='kidem'){
+            // Kıdem ihlali: müsait asistan varsa Çöz, yoksa Asistan yok + Ek Nöbet Yaz
             if(s.uygunVar){
               akBtn=`<button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g">Çöz</button>`;
             } else {
-              akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>`;
+              akBtn=`<span class="sr-lbl sr-lbl-o">Asistan yok</span>
+                <button onclick="sorunCoz(${cIdx},'ekle_kidem')" class="sr-btn sr-btn-g" title="Max dolmuş asistandan zorla yaz">Ek Nöbet Yaz</button>`;
+            }
+            // Alan max doluysa ek olarak Kapasiteyi Artır göster
+            if(s.alanDolu){
+              akBtn+=`<button onclick="sorunKapasiteArtir(${s.cozumData.d},'${s.cozumData.aId}')" class="sr-btn sr-btn-b">Kapasiteyi Artır</button>`;
             }
           }
         }
