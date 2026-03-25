@@ -7243,9 +7243,8 @@ function openUyarilarGun(d){
 /* ═══════════════════════════════════════════════════════════════
    TERCİHLER SEKMESİ
 ═══════════════════════════════════════════════════════════════ */
-var _tercihlerAstIdx = null; // Başasistan için seçili asistan
+var _tercihlerAstIdx = null; // Gösterilen asistan indexi
 var _tercihlerMonth = null;  // Tercihler sekmesinde gösterilen ay
-var _tercihlerExpandedIdx = null; // Başasistan listesinde açık kart
 
 function renderTercihler(){
   const isBasasistan = window.ACILX_ROLE === 'basasistan';
@@ -7282,132 +7281,24 @@ function renderTercihler(){
   }
 
   if(isBasasistan){
-    _renderTercihlerBasasistan(conEl, y, m, moKey, days, canEdit);
+    if(_tercihlerAstIdx===null && ASSISTANTS.length>0) _tercihlerAstIdx=0;
   } else {
     _tercihlerAstIdx = window._myAstIdx !== undefined ? window._myAstIdx : null;
-    if(_tercihlerAstIdx===null){
-      conEl.innerHTML = '<div style="text-align:center;color:var(--w4);padding:40px 0;font-size:13px">Asistan profili bulunamadı.</div>';
-      return;
-    }
-    _renderTercihlerAsistan(conEl, _tercihlerAstIdx, y, m, moKey, days, canEdit);
   }
+
+  if(_tercihlerAstIdx===null || !ASSISTANTS[_tercihlerAstIdx]){
+    conEl.innerHTML = '<div style="text-align:center;color:var(--w4);padding:40px 0;font-size:13px">'+(isBasasistan?'Asistan bulunamadı.':'Asistan profili bulunamadı.')+'</div>';
+    return;
+  }
+
+  _renderTercihlerEkran(conEl, _tercihlerAstIdx, y, m, moKey, days, canEdit);
 }
 
-/* ── Başasistan görünümü: asistan listesi + detay kartları ── */
-function _renderTercihlerBasasistan(conEl, y, m, moKey, days, canEdit){
-  let html = '';
-
-  // Ay navigasyonu
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:6px 0">';
-  html += '<button onclick="_tercihlerAyGec(-1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">◀</button>';
-  html += '<span style="font-size:14px;font-weight:700;color:var(--w1);font-family:\'DM Mono\',monospace">'+MONTHS[m]+' '+y+'</span>';
-  html += '<button onclick="_tercihlerAyGec(1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">▶</button>';
-  html += '</div>';
-
-  // Asistan listesi
-  html += '<div style="display:flex;flex-direction:column;gap:6px">';
-  ASSISTANTS.forEach((ast,i)=>{
-    if(!S.astProfiles) S.astProfiles={};
-    if(!S.astProfiles[i]) S.astProfiles[i]={};
-    const prof = S.astProfiles[i];
-    if(!prof.tercihAylik) prof.tercihAylik={};
-    if(!prof.kacAylik) prof.kacAylik={};
-    if(!prof.izinliAylik) prof.izinliAylik={};
-    if(!prof.tercihAylik[moKey]) prof.tercihAylik[moKey]=[];
-    if(!prof.kacAylik[moKey]) prof.kacAylik[moKey]=[];
-    if(!prof.izinliAylik[moKey]) prof.izinliAylik[moKey]=[];
-
-    const tArr = prof.tercihAylik[moKey];
-    const kArr = prof.kacAylik[moKey];
-    const iArr = prof.izinliAylik[moKey];
-    const hedef = _hesaplaHedef(i);
-    let mevcut=0;
-    const nobetler=[];
-    for(let d=1;d<=days;d++){
-      const aId=S.schedule[gk(i,d)];
-      if(aId){ mevcut++; const ar=AREAS.find(a=>a.id===aId); nobetler.push({d, alan:ar?ar.name:aId, color:ar?ar.color:'var(--w3)'}); }
-    }
-    const fark = mevcut - hedef;
-    const isExpanded = _tercihlerExpandedIdx === i;
-    const dur = prof.durum || 'aktif';
-    const durLbl = dur==='izinli'?'İzinli':dur==='rot_hayir'?'Rotasyon Dışı':'Aktif';
-    const durClr = dur==='aktif'?'#4ade80':dur==='izinli'?'#B090E0':'var(--w4)';
-
-    // Kart başlığı (her zaman görünür)
-    html += '<div style="background:var(--bg3);border:1px solid '+(isExpanded?'var(--orange)':'var(--bord)')+';border-radius:10px;overflow:hidden;transition:border-color .2s">';
-    html += '<div onclick="_tercihlerExpand('+i+')" style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;gap:8px">';
-    // Sol: ad, kıdem, durum
-    html += '<div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1">';
-    html += '<div style="width:32px;height:32px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--w2);flex-shrink:0">K'+ast.kidem+'</div>';
-    html += '<div style="min-width:0"><div style="font-size:13px;font-weight:600;color:var(--w1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+_esc(ast.name)+'</div>';
-    html += '<div style="font-size:10px;color:'+durClr+'">'+durLbl+'</div></div>';
-    html += '</div>';
-    // Sağ: tercih/kaçın/izin sayıları + hedef/gerçekleşen
-    html += '<div style="display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:11px">';
-    if(tArr.length) html += '<span style="color:#80B840" title="Tercih">'+tArr.length+'T</span>';
-    if(kArr.length) html += '<span style="color:#E87070" title="Kaçınma">'+kArr.length+'K</span>';
-    if(iArr.length) html += '<span style="color:#B090E0" title="İzin">'+iArr.length+'İ</span>';
-    html += '<span style="font-weight:600;color:'+(fark===0?'#4ade80':fark>0?'var(--orange)':'#E87070')+'" title="Gerçekleşen / Hedef">'+mevcut+'/'+hedef+'</span>';
-    html += '<span style="color:var(--w4);font-size:14px;transition:transform .2s;display:inline-block;transform:rotate('+(isExpanded?'180':'0')+'deg)">▼</span>';
-    html += '</div>';
-    html += '</div>';
-
-    // Detay paneli (açıksa)
-    if(isExpanded){
-      html += '<div style="border-top:1px solid var(--bord);padding:12px 14px">';
-
-      // ← → ok navigasyonu
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">';
-      html += '<button onclick="event.stopPropagation();_tercihlerNav(-1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 12px;color:var(--w2);cursor:pointer;font-size:13px">← Önceki</button>';
-      html += '<span style="font-size:12px;color:var(--w3)">'+(i+1)+' / '+ASSISTANTS.length+'</span>';
-      html += '<button onclick="event.stopPropagation();_tercihlerNav(1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 12px;color:var(--w2);cursor:pointer;font-size:13px">Sonraki →</button>';
-      html += '</div>';
-
-      // Tercih takvimi mini
-      html += _renderTercihMiniTakvim(i, y, m, days, tArr, kArr, iArr, canEdit);
-
-      // Tercih/Kaçınma/İzin özet
-      html += '<div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:12px;font-size:11px">';
-      html += '<div><span style="color:#80B840;font-weight:600">Tercih:</span> <span style="color:var(--w2)">'+(tArr.length>0?tArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-      html += '<div><span style="color:#E87070;font-weight:600">Kaçın:</span> <span style="color:var(--w2)">'+(kArr.length>0?kArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-      html += '<div><span style="color:#B090E0;font-weight:600">İzin:</span> <span style="color:var(--w2)">'+(iArr.length>0?iArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-      html += '</div>';
-
-      // Hedef vs gerçekleşen
-      html += '<div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;align-items:center">';
-      html += '<div><span style="color:var(--w3)">Hedef:</span> <span style="font-weight:700;color:var(--w1)">'+hedef+'</span></div>';
-      html += '<div><span style="color:var(--w3)">Gerçekleşen:</span> <span style="font-weight:700;color:var(--w1)">'+mevcut+'</span></div>';
-      html += '<div><span style="color:var(--w3)">Fark:</span> <span style="font-weight:700;color:'+(fark===0?'#4ade80':fark>0?'var(--orange)':'#E87070')+'">'+(fark>0?'+':'')+fark+'</span></div>';
-      html += '</div>';
-
-      // Bu aydaki nöbet listesi
-      if(nobetler.length>0){
-        html += '<div style="font-size:11px;font-weight:600;color:var(--w2);margin-bottom:6px">Bu Aydaki Nöbetler</div>';
-        html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">';
-        nobetler.forEach(n=>{
-          html += '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--bord);border-radius:6px;padding:3px 8px;font-size:11px;display:flex;align-items:center;gap:4px">';
-          html += '<span style="font-weight:600;color:var(--w1)">'+n.d+'.</span>';
-          html += '<span style="color:'+n.color+';font-weight:500">'+_esc(n.alan)+'</span>';
-          html += '</div>';
-        });
-        html += '</div>';
-      } else {
-        html += '<div style="font-size:11px;color:var(--w4);margin-bottom:4px">Bu ay henüz nöbet atanmadı.</div>';
-      }
-
-      html += '</div>'; // detay paneli sonu
-    }
-
-    html += '</div>'; // kart sonu
-  });
-  html += '</div>'; // liste sonu
-
-  conEl.innerHTML = html;
-}
-
-/* ── Asistan görünümü: kendi tercihleri + nöbet listesi ── */
-function _renderTercihlerAsistan(conEl, astIdx, y, m, moKey, days, canEdit){
-  if(!ASSISTANTS[astIdx]){
+/* ── Tek ekran asistan görünümü (başasistan + asistan ortak) ── */
+function _renderTercihlerEkran(conEl, astIdx, y, m, moKey, days, canEdit){
+  const isBasasistan = window.ACILX_ROLE === 'basasistan';
+  const ast = ASSISTANTS[astIdx];
+  if(!ast){
     conEl.innerHTML = '<div style="text-align:center;color:var(--w4);padding:40px 0;font-size:13px">Asistan bulunamadı.</div>';
     return;
   }
@@ -7426,120 +7317,204 @@ function _renderTercihlerAsistan(conEl, astIdx, y, m, moKey, days, canEdit){
   const kArr = prof.kacAylik[moKey];
   const iArr = prof.izinliAylik[moKey];
 
+  // Nöbet verileri hesapla
+  const hedef = _hesaplaHedef(astIdx);
+  let mevcut=0;
+  const nobetMap={}; // gün → {aId, alan, color}
+  const alanSayim={};
+  for(let d=1;d<=days;d++){
+    const aId=S.schedule[gk(astIdx,d)];
+    if(aId){
+      mevcut++;
+      const ar=AREAS.find(a=>a.id===aId);
+      nobetMap[d]={aId, alan:ar?ar.name:aId, color:ar?ar.color:'var(--w3)', label:getAreaLabel(aId)};
+      if(!alanSayim[aId]) alanSayim[aId]=0;
+      alanSayim[aId]++;
+    }
+  }
+  const fark = mevcut - hedef;
+
   let html = '';
 
-  // Ay navigasyonu
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:6px 0">';
+  // ── Asistan navigasyonu (başasistan: ok butonları, asistan: sadece ad) ──
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:8px 0;border-bottom:1px solid var(--bord)">';
+  if(isBasasistan){
+    html += '<button onclick="_tercihlerNav(-1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:5px 14px;color:var(--w2);cursor:pointer;font-size:13px;font-family:var(--font-sans)">← Önceki</button>';
+  } else {
+    html += '<div></div>';
+  }
+  html += '<div style="text-align:center">';
+  html += '<div style="font-size:15px;font-weight:700;color:var(--w1)">'+_esc(ast.name)+'</div>';
+  html += '<div style="font-size:11px;color:var(--w3)">Kıdem '+ast.kidem;
+  if(isBasasistan) html += ' · '+(astIdx+1)+'/'+ASSISTANTS.length;
+  html += '</div>';
+  html += '</div>';
+  if(isBasasistan){
+    html += '<button onclick="_tercihlerNav(1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:5px 14px;color:var(--w2);cursor:pointer;font-size:13px;font-family:var(--font-sans)">Sonraki →</button>';
+  } else {
+    html += '<div></div>';
+  }
+  html += '</div>';
+
+  // ── Özet istatistik şeridi ──
+  html += '<div style="display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap">';
+  html += '<div style="flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:10px 12px;text-align:center">';
+  html += '<div style="font-size:20px;font-weight:700;color:'+(fark===0?'#4ade80':fark>0?'var(--orange)':'#E87070')+'">'+mevcut+'<span style="font-size:13px;color:var(--w3)"> / '+hedef+'</span></div>';
+  html += '<div style="font-size:10px;color:var(--w3);margin-top:2px">Nöbet / Hedef</div>';
+  html += '</div>';
+  html += '<div style="flex:1;min-width:60px;background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:10px 12px;text-align:center">';
+  html += '<div style="font-size:20px;font-weight:700;color:'+(fark===0?'#4ade80':fark>0?'var(--orange)':'#E87070')+'">'+(fark>0?'+':'')+fark+'</div>';
+  html += '<div style="font-size:10px;color:var(--w3);margin-top:2px">Fark</div>';
+  html += '</div>';
+  if(tArr.length||kArr.length||iArr.length){
+    html += '<div style="flex:1;min-width:80px;background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:10px 12px;text-align:center">';
+    html += '<div style="font-size:13px;font-weight:600">';
+    if(tArr.length) html += '<span style="color:#80B840">'+tArr.length+'T</span> ';
+    if(kArr.length) html += '<span style="color:#E87070">'+kArr.length+'K</span> ';
+    if(iArr.length) html += '<span style="color:#B090E0">'+iArr.length+'İ</span>';
+    html += '</div>';
+    html += '<div style="font-size:10px;color:var(--w3);margin-top:2px">Tercih / Kaçın / İzin</div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  // ── Ay navigasyonu ──
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;padding:4px 0">';
   html += '<button onclick="_tercihlerAyGec(-1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">◀</button>';
   html += '<span style="font-size:14px;font-weight:700;color:var(--w1);font-family:\'DM Mono\',monospace">'+MONTHS[m]+' '+y+'</span>';
   html += '<button onclick="_tercihlerAyGec(1)" style="background:none;border:1px solid var(--bord);border-radius:6px;padding:4px 10px;color:var(--w2);cursor:pointer;font-size:14px">▶</button>';
   html += '</div>';
 
-  // Legend
-  html += '<div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;flex-wrap:wrap">';
-  html += '<span style="color:#80B840">● Tercih</span>';
-  html += '<span style="color:#E87070">● Kaçın</span>';
-  html += '<span style="color:#B090E0">● İzin</span>';
-  html += '<span style="color:var(--w4)">(Günlere tıkla: boş→tercih→kaçın→temizle)</span>';
-  html += '</div>';
-
-  // Takvim
-  html += _renderTercihMiniTakvim(astIdx, y, m, days, tArr, kArr, iArr, canEdit);
-
-  // Tercih/Kaçınma/İzin özet
-  html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px;margin-bottom:12px">';
-  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">'+_esc(ASSISTANTS[astIdx].name)+' — '+MONTHS[m]+' '+y+' Özet</div>';
-  html += '<div style="display:flex;gap:16px;flex-wrap:wrap">';
-  html += '<div><span style="color:#80B840;font-weight:600">Tercih:</span> <span style="color:var(--w2)">'+(tArr.length>0?tArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-  html += '<div><span style="color:#E87070;font-weight:600">Kaçın:</span> <span style="color:var(--w2)">'+(kArr.length>0?kArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-  html += '<div><span style="color:#B090E0;font-weight:600">İzin:</span> <span style="color:var(--w2)">'+(iArr.length>0?iArr.slice().sort((a,b)=>a-b).join(', '):'—')+'</span></div>';
-  html += '</div></div>';
-
-  // Bu aydaki nöbet listesi
-  const hedef = _hesaplaHedef(astIdx);
-  let mevcut=0;
-  const nobetler=[];
+  // ── Aylık takvim — nöbet günleri alan rengiyle ──
+  const firstDow = new Date(y,m,1).getDay();
+  const calOffset = firstDow===0?6:firstDow-1;
+  html += '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:14px">';
+  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(g=>{
+    html += '<div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">'+g+'</div>';
+  });
+  for(let i=0;i<calOffset;i++) html += '<div></div>';
   for(let d=1;d<=days;d++){
-    const aId=S.schedule[gk(astIdx,d)];
-    if(aId){ mevcut++; const ar=AREAS.find(a=>a.id===aId); nobetler.push({d, alan:ar?ar.name:aId, color:ar?ar.color:'var(--w3)'}); }
-  }
-  const fark = mevcut - hedef;
+    const nb = nobetMap[d];
+    const isIzin = iArr.includes(d);
+    const isTercih = tArr.includes(d);
+    const isKac = kArr.includes(d);
+    const dow = new Date(y,m,d).getDay();
+    const isWeekend = dow===0||dow===6;
 
-  html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px">';
-  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">Nöbet Durumum</div>';
-  html += '<div style="display:flex;gap:16px;margin-bottom:10px;align-items:center">';
-  html += '<div><span style="color:var(--w3)">Hedef:</span> <span style="font-weight:700;color:var(--w1)">'+hedef+'</span></div>';
-  html += '<div><span style="color:var(--w3)">Gerçekleşen:</span> <span style="font-weight:700;color:var(--w1)">'+mevcut+'</span></div>';
-  html += '<div><span style="color:var(--w3)">Fark:</span> <span style="font-weight:700;color:'+(fark===0?'#4ade80':fark>0?'var(--orange)':'#E87070')+'">'+(fark>0?'+':'')+fark+'</span></div>';
+    let bg='var(--bg3)', brd='var(--bord)', clr='var(--w2)';
+    let topLabel='', botLabel='';
+
+    if(nb){
+      // Nöbet günü — alan rengiyle göster
+      bg=nb.color+'18'; brd=nb.color+'60'; clr=nb.color;
+      topLabel='<div style="font-size:9px;font-weight:700;color:'+nb.color+';margin-top:1px">'+_esc(nb.label)+'</div>';
+    } else if(isIzin){
+      bg='rgba(176,144,224,0.12)'; brd='rgba(176,144,224,0.4)'; clr='#B090E0';
+      topLabel='<div style="font-size:9px;color:#B090E0;margin-top:1px">İzin</div>';
+    }
+
+    // Tercih/kaçınma işaretleri (küçük nokta)
+    if(isTercih) botLabel='<div style="width:5px;height:5px;border-radius:50%;background:#80B840;margin:1px auto 0"></div>';
+    else if(isKac) botLabel='<div style="width:5px;height:5px;border-radius:50%;background:#E87070;margin:1px auto 0"></div>';
+
+    const click = canEdit ? 'onclick="_tercihlerToggle('+astIdx+','+d+')"' : '';
+    html += '<div '+click+' style="text-align:center;padding:4px 2px;border-radius:6px;background:'+bg+';border:1px solid '+brd+';'+(canEdit?'cursor:pointer;':'')+(isWeekend&&!nb&&!isIzin?'color:var(--w4);':'')+';min-height:38px;display:flex;flex-direction:column;align-items:center;justify-content:center">';
+    html += '<div style="font-size:12px;font-weight:600;color:'+clr+'">'+d+'</div>';
+    html += topLabel;
+    html += botLabel;
+    html += '</div>';
+  }
   html += '</div>';
 
-  if(nobetler.length>0){
-    html += '<div style="display:flex;flex-wrap:wrap;gap:4px">';
-    nobetler.forEach(n=>{
-      html += '<div style="background:rgba(255,255,255,0.04);border:1px solid var(--bord);border-radius:6px;padding:4px 10px;font-size:11px;display:flex;align-items:center;gap:4px">';
-      html += '<span style="font-weight:600;color:var(--w1)">'+n.d+'.</span>';
-      html += '<span style="color:'+n.color+';font-weight:500">'+_esc(n.alan)+'</span>';
-      html += '</div>';
+  // Legend
+  html += '<div style="display:flex;gap:10px;margin-bottom:14px;font-size:10px;flex-wrap:wrap;color:var(--w3)">';
+  html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#80B840;vertical-align:middle"></span> Tercih</span>';
+  html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#E87070;vertical-align:middle"></span> Kaçın</span>';
+  html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:rgba(176,144,224,0.3);border:1px solid rgba(176,144,224,0.5);vertical-align:middle"></span> İzin</span>';
+  AREAS.forEach(a=>{
+    html += '<span><span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:'+a.color+'30;border:1px solid '+a.color+'80;vertical-align:middle"></span> '+_esc(getAreaLabel(a.id))+'</span>';
+  });
+  if(canEdit) html += '<span style="color:var(--w4)">(Günlere tıkla: boş→tercih→kaçın'+(isBasasistan?'→izin':'')+'→temizle)</span>';
+  html += '</div>';
+
+  // ── Tercihler bölümü: uygulanma durumu ──
+  html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px;margin-bottom:10px">';
+  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">Tercihler</div>';
+
+  // Tercih günleri — uygulandı mı?
+  if(tArr.length>0){
+    html += '<div style="margin-bottom:6px"><span style="color:#80B840;font-weight:600;font-size:11px">Tercih edilen günler:</span></div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
+    tArr.slice().sort((a,b)=>a-b).forEach(d=>{
+      const applied = !!nobetMap[d]; // O gün nöbet atanmış mı?
+      html += '<span style="padding:2px 8px;border-radius:4px;font-size:11px;border:1px solid '+(applied?'rgba(74,222,128,0.3)':'var(--bord)')+';background:'+(applied?'rgba(74,222,128,0.08)':'var(--bg2)')+';color:'+(applied?'#4ade80':'var(--w4)')+'">';
+      html += (applied?'✓':'✗')+' '+d+'.';
+      html += '</span>';
     });
     html += '</div>';
-  } else {
-    html += '<div style="color:var(--w4)">Bu ay henüz nöbet atanmadı.</div>';
+  }
+
+  // Kaçınma günleri — kaçınıldı mı?
+  if(kArr.length>0){
+    html += '<div style="margin-bottom:6px"><span style="color:#E87070;font-weight:600;font-size:11px">Kaçınılan günler:</span></div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px">';
+    kArr.slice().sort((a,b)=>a-b).forEach(d=>{
+      const avoided = !nobetMap[d]; // O gün nöbet YOK = başarılı kaçınma
+      html += '<span style="padding:2px 8px;border-radius:4px;font-size:11px;border:1px solid '+(avoided?'rgba(74,222,128,0.3)':'rgba(232,112,112,0.3)')+';background:'+(avoided?'rgba(74,222,128,0.08)':'rgba(232,112,112,0.08)')+';color:'+(avoided?'#4ade80':'#E87070')+'">';
+      html += (avoided?'✓ Kaçınıldı':'✗ Kaçınılamadı')+' '+d+'.';
+      html += '</span>';
+    });
+    html += '</div>';
+  }
+
+  // İzin günleri — uygulandı mı?
+  if(iArr.length>0){
+    html += '<div style="margin-bottom:6px"><span style="color:#B090E0;font-weight:600;font-size:11px">İzin günleri:</span></div>';
+    html += '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px">';
+    iArr.slice().sort((a,b)=>a-b).forEach(d=>{
+      const respected = !nobetMap[d]; // İzin gününde nöbet yok = uygulandı
+      html += '<span style="padding:2px 8px;border-radius:4px;font-size:11px;border:1px solid '+(respected?'rgba(176,144,224,0.3)':'rgba(232,112,112,0.3)')+';background:'+(respected?'rgba(176,144,224,0.08)':'rgba(232,112,112,0.08)')+';color:'+(respected?'#B090E0':'#E87070')+'">';
+      html += (respected?'✓':'✗')+' '+d+'.';
+      html += '</span>';
+    });
+    html += '</div>';
+  }
+
+  if(!tArr.length && !kArr.length && !iArr.length){
+    html += '<div style="color:var(--w4);font-size:11px">Bu ay için tercih girilmemiş.</div>';
   }
   html += '</div>';
+
+  // ── Alan dağılımı: hedef vs gerçekleşen ──
+  html += '<div style="background:var(--bg3);border:1px solid var(--bord);border-radius:8px;padding:12px;font-size:12px">';
+  html += '<div style="font-weight:700;color:var(--w1);margin-bottom:8px">Alan Dağılımı</div>';
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px">';
+  let hasAlanDetay = false;
+  AREAS.forEach(a=>{
+    const alanH = (S.quota[a.id]||{})[ast.kidem]||0;
+    if(alanH<=0) return;
+    hasAlanDetay = true;
+    const alanM = alanSayim[a.id]||0;
+    const ok = alanM >= alanH;
+    html += '<div style="padding:4px 10px;border-radius:6px;border:1px solid '+a.color+'40;background:'+a.color+'10;display:flex;align-items:center;gap:5px">';
+    html += '<span style="font-weight:700;color:'+a.color+'">'+_esc(getAreaLabel(a.id))+':</span>';
+    html += '<span style="font-weight:600;color:'+(ok?'#4ade80':'#E87070')+'">'+alanM+'/'+alanH+'</span>';
+    html += '</div>';
+  });
+  if(!hasAlanDetay) html += '<div style="color:var(--w4);font-size:11px">Alan kotası tanımlanmamış.</div>';
+  html += '</div></div>';
 
   conEl.innerHTML = html;
 }
 
-/* ── Paylaşılan mini takvim grid ── */
-function _renderTercihMiniTakvim(astIdx, y, m, days, tArr, kArr, iArr, canEdit){
-  const firstDow = new Date(y,m,1).getDay();
-  const offset = firstDow===0?6:firstDow-1;
-  let h = '<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:12px">';
-  ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'].forEach(g=>{
-    h += '<div style="text-align:center;font-size:10px;color:var(--w4);padding:4px 0;font-weight:600">'+g+'</div>';
-  });
-  for(let i=0;i<offset;i++) h += '<div></div>';
-  for(let d=1;d<=days;d++){
-    const isTercih = tArr.includes(d);
-    const isKac = kArr.includes(d);
-    const isIzin = iArr.includes(d);
-    let bg='var(--bg3)', brd='var(--bord)', clr='var(--w2)', icon='';
-    if(isTercih){ bg='rgba(128,184,64,0.12)'; brd='rgba(128,184,64,0.4)'; clr='#80B840'; icon='✓'; }
-    else if(isKac){ bg='rgba(232,112,112,0.12)'; brd='rgba(232,112,112,0.4)'; clr='#E87070'; icon='✕'; }
-    else if(isIzin){ bg='rgba(176,144,224,0.12)'; brd='rgba(176,144,224,0.4)'; clr='#B090E0'; icon='⊘'; }
-    const dow = new Date(y,m,d).getDay();
-    const isWeekend = dow===0||dow===6;
-    const click = canEdit ? 'onclick="_tercihlerToggle('+astIdx+','+d+')"' : '';
-    h += '<div '+click+' style="text-align:center;padding:6px 2px;border-radius:6px;background:'+bg+';border:1px solid '+brd+';'+(canEdit?'cursor:pointer;':'opacity:.7;')+(isWeekend&&!isTercih&&!isKac&&!isIzin?'color:var(--w4);':'')+'">';
-    h += '<div style="font-size:12px;font-weight:600;color:'+clr+'">'+d+'</div>';
-    if(icon) h += '<div style="font-size:10px;color:'+clr+'">'+icon+'</div>';
-    h += '</div>';
-  }
-  h += '</div>';
-  return h;
-}
-
-/* ── Başasistan listesinde kart aç/kapa ── */
-function _tercihlerExpand(idx){
-  _tercihlerExpandedIdx = _tercihlerExpandedIdx===idx ? null : idx;
-  _tercihlerAstIdx = idx;
-  renderTercihler();
-}
-
-/* ── Ok butonuyla asistanlar arası gezinme (genişletilmiş kart) ── */
+/* ── Ok butonuyla asistanlar arası gezinme ── */
 function _tercihlerNav(delta){
   if(!ASSISTANTS.length) return;
-  let idx = (_tercihlerExpandedIdx !== null ? _tercihlerExpandedIdx : 0) + delta;
+  let idx = (_tercihlerAstIdx !== null ? _tercihlerAstIdx : 0) + delta;
   if(idx<0) idx=ASSISTANTS.length-1;
   if(idx>=ASSISTANTS.length) idx=0;
-  _tercihlerExpandedIdx = idx;
   _tercihlerAstIdx = idx;
   renderTercihler();
-  // Scroll kartı görünür yap
-  setTimeout(()=>{
-    const cards = document.querySelectorAll('#tercihlerContent > div > div');
-    if(cards[idx]) cards[idx].scrollIntoView({behavior:'smooth',block:'nearest'});
-  },50);
 }
 
 function _tercihlerAyGec(delta){
