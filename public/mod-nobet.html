@@ -5244,24 +5244,73 @@ function _renderDayModal(day){
 
 
 
-  // Tüm asistanlar tek listede
-  html+=`<div style="display:flex;flex-direction:column;gap:4px">`;
-
-  ASSISTANTS.forEach((ast,i)=>{
+  // Tüm asistanlar tek listede — uyarılarla birlikte
+  // Önce her asistan için uyarıları hesapla
+  const _astRows = ASSISTANTS.map((ast,i)=>{
     const mevcutAlanId=S.schedule[gk(i,day)]||null;
     const egtBloke=isEgtFull(y,mo,day,ast.kidem);
-    const artArda=!mevcutAlanId&&artArdaEngel(i); // nöbet yokken art arda engel
-
-    // Yazılabilir alanlar
+    const artArda=!mevcutAlanId&&artArdaEngel(i);
+    const prof=S.astProfiles&&S.astProfiles[i]?S.astProfiles[i]:{};
+    const dur=prof.durum||'aktif';
+    const moKey2=y+'_'+mo;
+    const izinGunler=((prof.izinliAylik&&prof.izinliAylik[moKey2])||[]);
+    const izinli=dur==='izinli'||dur==='rot_hayir'||izinGunler.includes(day);
     const yazAlanlar=AREAS.filter(a=>yazilabilir(i,a.id,mevcutAlanId));
 
-    // Satır görünümü
+    // Her alan için uyarı hesapla
+    const alanUyarilar={};
+    AREAS.forEach(a=>{
+      const uyarilar=[];
+      const kota=(S.quota[a.id]||{})[ast.kidem]||0;
+      if(kota===0) return; // bu alana giremez, göstermeyeceğiz
+      // Alan günlük max dolu mu?
+      const cnt=getAreaCount(day,a.id);
+      const maxRule=getDayRule(day,a.id).max||99;
+      if(!mevcutAlanId&&cnt>=maxRule) uyarilar.push({tip:'alan_dolu',msg:'Alan dolu',renk:'var(--orange)'});
+      // Aylık kota doldu mu?
+      const kullanim=astKotaKullanimi(i,a.id);
+      if(mevcutAlanId!==a.id&&kullanim>=kota) uyarilar.push({tip:'kota_dolu',msg:'Kota dolu',renk:'var(--red)'});
+      // Kıdem ihlali olacak mı? — simüle et
+      if(!mevcutAlanId||mevcutAlanId!==a.id){
+        const eskiSched=S.schedule[gk(i,day)];
+        S.schedule[gk(i,day)]=a.id;
+        const ihl=kidemKuralIhlali(day,a.id);
+        if(eskiSched) S.schedule[gk(i,day)]=eskiSched; else delete S.schedule[gk(i,day)];
+        if(ihl.length>0) uyarilar.push({tip:'kidem',msg:'Kıdem ihlali',renk:'var(--orange)'});
+      }
+      alanUyarilar[a.id]=uyarilar;
+    });
+
+    // Genel uyarılar (asistan seviyesi)
+    const genelUyarilar=[];
+    if(egtBloke) genelUyarilar.push({msg:'Eğitim engeli',renk:'var(--w4)'});
+    if(artArda) genelUyarilar.push({msg:'Art arda yasak',renk:'var(--w4)'});
+    if(izinli) genelUyarilar.push({msg:'İzinli',renk:'var(--w4)'});
+
+    // Sıralama skoru: aktif (seçili) en üst, sonra uyarısız, sonra uyarılı
     const aktif=!!mevcutAlanId;
+    const herhangiUyari=genelUyarilar.length>0||Object.values(alanUyarilar).every(u=>u.length>0);
+    const skor=aktif?0:(genelUyarilar.length>0?2:(herhangiUyari?1:0));
+
+    return {ast,i,mevcutAlanId,egtBloke,artArda,izinli,yazAlanlar,alanUyarilar,genelUyarilar,aktif,skor};
+  });
+
+  // Sırala: aktif → uyarısız → uyarılı
+  _astRows.sort((a,b)=>{
+    if(a.aktif!==b.aktif) return a.aktif?-1:1;
+    return a.skor-b.skor;
+  });
+
+  html+=`<div style="display:flex;flex-direction:column;gap:4px">`;
+
+  _astRows.forEach(row=>{
+    const {ast,i,mevcutAlanId,egtBloke,artArda,izinli,alanUyarilar,genelUyarilar,aktif}=row;
     const satirBg=aktif?'var(--bg3)':'transparent';
     const satirBord=aktif?'1px solid var(--bord)':'1px solid transparent';
+    const dimmed=egtBloke||izinli;
 
     html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;
-      background:${satirBg};border:${satirBord};${egtBloke?'opacity:.45':''}">`;
+      background:${satirBg};border:${satirBord};${dimmed?'opacity:.45':''}">`;
 
     // İsim + kıdem
     html+=`<div style="min-width:130px;flex-shrink:0;cursor:pointer" onclick="closeDayModal();openAstProfile(${i})" title="Profili aç">
@@ -5271,37 +5320,37 @@ function _renderDayModal(day){
       <span class="kt ${KIDEM_CLS[ast.kidem]}" style="font-size:9px;padding:1px 3px;margin-left:3px">K${ast.kidem}</span>
     </div>`;
 
-    // Alan butonları
-    html+=`<div style="display:flex;gap:4px;flex-wrap:wrap;flex:1">`;
+    // Alan butonları + uyarılar
+    html+=`<div style="display:flex;gap:4px;flex-wrap:wrap;flex:1;align-items:center">`;
 
-    if(artArda){
-      const engelGun=artArda;
-      if(typeof engelGun === 'string'){
-        // Ay sınırı — 'önceki ay son gün' veya 'sonraki ay ilk gün'
-        html+=`<span style="font-size:11px;color:var(--w4)">Art arda yasak (${engelGun})</span>`;
-      } else {
-        const engelAlanId=S.schedule[gk(i,engelGun)];
-        const engelAlan=AREAS.find(a=>a.id===engelAlanId);
-        html+=`<span style="font-size:11px;color:var(--w4)" title="${engelGun}. gün ${engelAlan?engelAlan.name:''} nöbeti var">Art arda yasak (${engelGun}. gün${engelAlan?' — '+engelAlan.name:''})</span>`;
-      }
-    } else {
-      AREAS.forEach(a=>{
-        const secili=mevcutAlanId===a.id;
-        const yazilabilirMi=yazilabilir(i,a.id,mevcutAlanId);
-        if(!yazilabilirMi&&!secili) return; // ne seçili ne yazılabilir → gösterme
-        html+=`<button onclick="${secili?`manuelKaldir(${i},${day})`:`manuelAta(${i},${day},'${a.id}')`}"
-          style="font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-weight:${secili?'700':'500'};
-          border:${secili?'2px solid '+a.color:'1px solid var(--bord)'};
-          background:${secili?a.color+'22':'var(--bg4)'};
-          color:${secili?a.color:'var(--w3)'};"
-          title="${secili?'Tıkla: kaldır':'Tıkla: '+a.name+'a ata'}"
-        >${a.name}${secili?' ✕':''}</button>`;
+    if(genelUyarilar.length>0 && !aktif){
+      // Genel engel varsa ama yine de alan butonlarını göster
+      genelUyarilar.forEach(u=>{
+        html+=`<span style="font-size:9px;color:${u.renk};padding:1px 4px;border-radius:2px;background:${u.renk}15">${u.msg}</span>`;
       });
-      // Hiç alan yoksa ve nöbet de yoksa
-      if(!mevcutAlanId&&yazAlanlar.length===0){
-        html+=`<span style="font-size:11px;color:var(--w4)">Kota yok</span>`;
-      }
     }
+
+    // Alan butonları — tüm kotası olan alanlar
+    AREAS.forEach(a=>{
+      const kota=(S.quota[a.id]||{})[ast.kidem]||0;
+      if(kota===0) return;
+      const secili=mevcutAlanId===a.id;
+      const uyarilar=alanUyarilar[a.id]||[];
+
+      html+=`<button onclick="${secili?`manuelKaldir(${i},${day})`:`manuelAtaUyarili(${i},${day},'${a.id}')`}"
+        style="font-size:11px;padding:3px 9px;border-radius:4px;cursor:pointer;font-weight:${secili?'700':'500'};
+        border:${secili?'2px solid '+a.color:'1px solid '+(uyarilar.length>0?'var(--orange)':'var(--bord)')};
+        background:${secili?a.color+'22':'var(--bg4)'};
+        color:${secili?a.color:uyarilar.length>0?'var(--orange)':'var(--w3)'};"
+        title="${secili?'Tıkla: kaldır':a.name+(uyarilar.length?' — '+uyarilar.map(u=>u.msg).join(', '):'')}"
+      >${getAreaLabel(a.id)}${secili?' ✕':''}${uyarilar.length>0?'<span style="margin-left:2px;font-size:9px">⚠</span>':''}</button>`;
+    });
+
+    // Hiç kotası olan alan yoksa
+    if(AREAS.every(a=>((S.quota[a.id]||{})[ast.kidem]||0)===0)){
+      html+=`<span style="font-size:11px;color:var(--w4)">Kota yok</span>`;
+    }
+
     html+='</div></div>';
   });
 
@@ -5330,9 +5379,39 @@ function manuelAta(i,day,aId){
   S.schedule[gk(i,day)]=aId;
   save();_renderDayModal(day);renderSchedule(window._lastGenLog);
 }
+function manuelAtaUyarili(i,day,aId){
+  const ast=ASSISTANTS[i]; if(!ast) return;
+  const days2=daysInMonth(S.currentDate.y,S.currentDate.m);
+  const mevcutVar=!!S.schedule[gk(i,day)];
+  const uyarilar=[];
+  // Art arda
+  if(!mevcutVar){
+    if(day>1&&S.schedule[gk(i,day-1)]) uyarilar.push('Art arda nöbet yasak (dün nöbet var)');
+    if(day<days2&&S.schedule[gk(i,day+1)]) uyarilar.push('Art arda nöbet yasak (yarın nöbet var)');
+  }
+  // Alan dolu
+  if(!mevcutVar&&getAreaCount(day,aId)>=(getDayRule(day,aId).max||99))
+    uyarilar.push('Alan günlük max dolulukta');
+  // Kota dolu
+  const kullanim=Object.keys(S.schedule).filter(k=>{const [ai]=k.split('_');return parseInt(ai)===i&&S.schedule[k]===aId;}).length;
+  const kotaMax=(S.quota[aId]||{})[ast.kidem]||0;
+  if(!mevcutVar&&kullanim>=kotaMax&&kotaMax>0) uyarilar.push('Aylık kota dolu ('+kullanim+'/'+kotaMax+')');
+  // Kıdem ihlali
+  const eskiSched=S.schedule[gk(i,day)];
+  S.schedule[gk(i,day)]=aId;
+  const ihl=kidemKuralIhlali(day,aId);
+  if(eskiSched) S.schedule[gk(i,day)]=eskiSched; else delete S.schedule[gk(i,day)];
+  if(ihl.length>0) uyarilar.push('Kıdem kuralı ihlali: '+ihl[0].msg);
+  // Uyarı varsa göster ama ata
+  if(uyarilar.length>0){
+    showToast('⚠ '+uyarilar.join(' · '));
+  }
+  S.schedule[gk(i,day)]=aId;
+  save();_renderDayModal(day);renderSchedule(window._lastGenLog);renderUyarilar();
+}
 function manuelKaldir(i,day){
   delete S.schedule[gk(i,day)];
-  save();_renderDayModal(day);renderSchedule(window._lastGenLog);
+  save();_renderDayModal(day);renderSchedule(window._lastGenLog);renderUyarilar();
 }
 
 function closeDayModal(){document.getElementById('dayModal').classList.remove('open');}
