@@ -967,8 +967,16 @@ function openSwapModal(astIdx, d, alanId){
   const days = daysInMonth(y,m);
   const eslesme = [];
 
+  const _swMoKey = y+'_'+m;
   for(let iB=0; iB<ASSISTANTS.length; iB++){
     if(iB===astIdx) continue;
+    // İzinli/rotasyon dışı asistanları atla
+    const _swProf=(S.astProfiles&&S.astProfiles[iB])||{};
+    const _swDur=_swProf.durum||'aktif';
+    if(_swDur==='izinli'||_swDur==='rot_hayir') continue;
+    // d gününde izinliyse bu asistan aday olamaz
+    const _swIzin=((_swProf.izinliAylik)||{})[_swMoKey]||[];
+    if(_swIzin.includes(d)) continue;
 
     // Farklı gün, aynı alan
     for(let dB=1; dB<=days; dB++){
@@ -6946,6 +6954,21 @@ function takasMumkunMu(iA, dA, alanA, iB, dB, alanB){
   const y = _m.y, mo = _m.m;
   const days = daysInMonth(y, mo);
   const astA = ASSISTANTS[iA], astB = ASSISTANTS[iB];
+  const moKey = y+'_'+mo;
+
+  // 0) İzin kontrolü — izinli asistanlar takas edemez
+  const profA = (S.astProfiles&&S.astProfiles[iA])||{};
+  const profB = (S.astProfiles&&S.astProfiles[iB])||{};
+  const durA = profA.durum||'aktif';
+  const durB = profB.durum||'aktif';
+  if(durA==='izinli'||durA==='rot_hayir') return {ok:false, reason:astA.name+' izinli/rotasyon dışı'};
+  if(durB==='izinli'||durB==='rot_hayir') return {ok:false, reason:astB.name+' izinli/rotasyon dışı'};
+  const izinA = ((profA.izinliAylik)||{})[moKey]||[];
+  const izinB = ((profB.izinliAylik)||{})[moKey]||[];
+  // A, dB gününde izinliyse oraya gidemez
+  if(izinA.includes(dB)) return {ok:false, reason:astA.name+' '+dB+'. gün izinli'};
+  // B, dA gününde izinliyse oraya gidemez
+  if(izinB.includes(dA)) return {ok:false, reason:astB.name+' '+dA+'. gün izinli'};
 
   // 1) Kıdem uyumu: A → alanB, B → alanA girebilmeli
   if(((S.quota[alanB]||{})[astA.kidem]||0) === 0) return {ok:false, reason:'Kıdem uyumsuz ('+astA.name+' → '+AREAS.find(a=>a.id===alanB)?.name+')'};
@@ -7031,8 +7054,13 @@ function takasListesiBul(iA){
     const eslesmeler = [];
     for(let iB=0; iB<ASSISTANTS.length; iB++){
       if(iB===iA) continue;
-      const _tkDur=(S.astProfiles&&S.astProfiles[iB]&&S.astProfiles[iB].durum)||'aktif';
+      const _tkProf=(S.astProfiles&&S.astProfiles[iB])||{};
+      const _tkDur=_tkProf.durum||'aktif';
       if(_tkDur==='izinli'||_tkDur==='rot_hayir') continue;
+      const _tkMoKey=y+'_'+mo;
+      const _tkIzin=((_tkProf.izinliAylik)||{})[_tkMoKey]||[];
+      // iB, dA gününde izinliyse bu asistanla takas yapılamaz (B → dA'ya gidemez)
+      if(_tkIzin.includes(dA)) continue;
       for(let dB=1; dB<=days; dB++){
         const alanB = S.schedule[gk(iB,dB)];
         if(!alanB) continue;
@@ -8865,12 +8893,19 @@ function _cozumEkle(d, aId, kidemFiltre){
 // Her iki yön de kural kontrolünden geçer
 function _cozumTakas(d, aId, kidemFiltre){
   const {y,m}=S.currentDate; const days=daysInMonth(y,m);
+  const _ctMoKey=y+'_'+m;
   const sonuclar=[];
-  
+
   // Bu güne (d, aId) gelmesi gereken kıdemdeki asistanlar başka günde nöbetçi
   for(let iB=0; iB<ASSISTANTS.length; iB++){
     if(!ASSISTANTS[iB]) continue;
     if(kidemFiltre&&kidemFiltre.length&&!kidemFiltre.includes(ASSISTANTS[iB].kidem)) continue;
+    // İzinli asistanları atla
+    const _ctProf=(S.astProfiles&&S.astProfiles[iB])||{};
+    const _ctDur=_ctProf.durum||'aktif';
+    if(_ctDur==='izinli'||_ctDur==='rot_hayir') continue;
+    const _ctIzin=((_ctProf.izinliAylik)||{})[_ctMoKey]||[];
+    if(_ctIzin.includes(d)) continue; // Hedef günde izinli
     for(let dB=1; dB<=days; dB++){
       if(dB===d) continue;
       const alanB = S.schedule[gk(iB,dB)];
@@ -8904,6 +8939,12 @@ function _cozumTakas(d, aId, kidemFiltre){
       if(!ASSISTANTS[iB]) continue;
       if(iB===iA) continue;
       if(kidemFiltre&&kidemFiltre.length&&!kidemFiltre.includes(ASSISTANTS[iB].kidem)) continue;
+      // İzinli asistanları atla
+      const _ct2Prof=(S.astProfiles&&S.astProfiles[iB])||{};
+      const _ct2Dur=_ct2Prof.durum||'aktif';
+      if(_ct2Dur==='izinli'||_ct2Dur==='rot_hayir') continue;
+      const _ct2Izin=((_ct2Prof.izinliAylik)||{})[_ctMoKey]||[];
+      if(_ct2Izin.includes(d)) continue;
       for(let dB=1; dB<=days; dB++){
         if(dB===d) continue;
         const alanB=S.schedule[gk(iB,dB)];
