@@ -1,0 +1,141 @@
+@import 'tailwindcss';
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+@import "@fontsource-variable/inter";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+    --font-heading: var(--font-sans);
+    --font-sans: 'Inter Variable', sans-serif;
+    --font-mono: 'SF Mono', 'JetBrains Mono', monospace;
+
+    --color-sidebar-ring: var(--sidebar-ring);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar: var(--sidebar);
+    --color-chart-5: var(--chart-5);
+    --color-chart-4: var(--chart-4);
+    --color-chart-3: var(--chart-3);
+    --color-chart-2: var(--chart-2);
+    --color-chart-1: var(--chart-1);
+    --color-ring: var(--ring);
+    --color-input: var(--input);
+    --color-border: var(--border);
+    --color-destructive: var(--destructive);
+    --color-accent-foreground: var(--accent-foreground);
+    --color-accent: var(--accent);
+    --color-muted-foreground: var(--muted-foreground);
+    --color-muted: var(--muted);
+    --color-secondary-foreground: var(--secondary-foreground);
+    --color-secondary: var(--secondary);
+    --color-primary-foreground: var(--primary-foreground);
+    --color-primary: var(--primary);
+    --color-popover-foreground: var(--popover-foreground);
+    --color-popover: var(--popover);
+    --color-card-foreground: var(--card-foreground);
+    --color-card: var(--card);
+    --color-foreground: var(--foreground);
+    --color-background: var(--background);
+    --color-success: var(--success);
+    --color-success-foreground: var(--success-foreground);
+    --color-warning: var(--warning);
+    --color-warning-foreground: var(--warning-foreground);
+    --color-info: var(--info);
+    --color-info-foreground: var(--info-foreground);
+    --radius-sm: calc(var(--radius) * 0.6);
+    --radius-md: calc(var(--radius) * 0.8);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) * 1.4);
+    --radius-2xl: calc(var(--radius) * 1.8);
+    --radius-3xl: calc(var(--radius) * 2.2);
+    --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ACİLX DARK THEME (varsayilan — PRD §9) */
+:root {
+    --background: #0A0E1A;
+    --foreground: #FFFFFF;
+    --card: #111B33;
+    --card-foreground: #FFFFFF;
+    --popover: #111B33;
+    --popover-foreground: #FFFFFF;
+    --primary: #F27B2C;
+    --primary-foreground: #FFFFFF;
+    --secondary: #1A2847;
+    --secondary-foreground: #C8CED8;
+    --muted: #1A2847;
+    --muted-foreground: #8892A8;
+    --accent: #F27B2C;
+    --accent-foreground: #FFFFFF;
+    --destructive: #EF4444;
+    --border: #1A2847;
+    --input: #1A2847;
+    --ring: #F27B2C;
+    --success: #22C55E;
+    --success-foreground: #FFFFFF;
+    --warning: #FACC15;
+    --warning-foreground: #0A0E1A;
+    --info: #3B82F6;
+    --info-foreground: #FFFFFF;
+    --chart-1: #F27B2C;
+    --chart-2: #FF9A54;
+    --chart-3: #22C55E;
+    --chart-4: #3B82F6;
+    --chart-5: #FACC15;
+    --radius: 0.75rem;
+    --sidebar: #111B33;
+    --sidebar-foreground: #FFFFFF;
+    --sidebar-primary: #F27B2C;
+    --sidebar-primary-foreground: #FFFFFF;
+    --sidebar-accent: #1A2847;
+    --sidebar-accent-foreground: #C8CED8;
+    --sidebar-border: #1A2847;
+    --sidebar-ring: #F27B2C;
+}
+
+/* ACİLX LIGHT THEME (sadece farkli degerler) */
+.light {
+    --background: #FFFFFF;
+    --foreground: #0A0E1A;
+    --card: #F8F9FB;
+    --card-foreground: #0A0E1A;
+    --popover: #FFFFFF;
+    --popover-foreground: #0A0E1A;
+    --primary: #E85D0F;
+    --secondary: #F0F2F5;
+    --secondary-foreground: #3A4258;
+    --muted: #F0F2F5;
+    --accent: #E85D0F;
+    --border: #E2E5EB;
+    --input: #E2E5EB;
+    --ring: #E85D0F;
+    --chart-1: #E85D0F;
+    --chart-2: #F27B2C;
+    --sidebar: #F8F9FB;
+    --sidebar-foreground: #0A0E1A;
+    --sidebar-primary: #E85D0F;
+    --sidebar-accent: #F0F2F5;
+    --sidebar-accent-foreground: #3A4258;
+    --sidebar-border: #E2E5EB;
+    --sidebar-ring: #E85D0F;
+}
+
+@layer base {
+    * {
+        @apply border-border outline-ring/50;
+    }
+    body {
+        @apply bg-background text-foreground;
+    }
+    html {
+        @apply font-sans antialiased;
+    }
+    a, button, input, select, textarea, [role="button"] {
+        touch-action: manipulation;
+    }
+}

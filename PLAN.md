@@ -192,7 +192,13 @@ ACiLX'i MedShift'in yerini alacak sekilde kliniğe sunmak. "Nobet sistemini yeni
 - [x] Domain ayari: app.acilx.org → Firebase Hosting (29 Mart — yayinda)
 - [x] FCM push bildirimleri React'te (29 Mart — useNotifications hook, firebase-messaging-sw.js, foreground toast)
 - [x] Firestore Security Rules son review (29 Mart — 4 guvenlik acigi duzeltildi)
-- [ ] **Gercek veri girisi:** asistanlar, zone'lar, PGY (basasistan yapar)
+- [ ] **Ilk kurulum:** super_admin hesabi → klinik olustur → chief_resident ata
+- [x] **Listeden ice aktar:** PDF/resim yukle → Claude API ile asistan + alan otomatik cikar (29 Mart — CF + UI tamamlandi)
+- [x] **Ice aktarma klinik secimi:** Dialog'a klinik dropdown eklendi, hedef klinik secilmeden aktar devre disi (29 Mart)
+- [x] **Klinik silme:** deleteClinic CF + ClinicCard sil butonu + onay dialogu + alt koleksiyon temizligi (29 Mart)
+- [x] **Klinik formu sadelestir:** Tek alan formatina gecildi — "Antalya Sehir Hastanesi Acil Tip Klinigi" (29 Mart)
+- [x] **Vardiya modeli esneklestir:** shiftTypes[] ile coklu vardiya secimi (24h / 12-12 / 8-8-8 mix), eski shiftModel geriye uyumlu (29 Mart)
+- [ ] **Gercek veri girisi:** asistanlar (isim + email + PGY), zone'lar (alan adi + min/max + renk)
 - [ ] **Karsilastirmali test:** ACiLX cizelge vs MedShift Nisan cizelgesi
 - [ ] **Go/No-Go karari (12 Nisan)**
 - [ ] Tercih donemini ac, asistanlara WhatsApp'tan link gonder

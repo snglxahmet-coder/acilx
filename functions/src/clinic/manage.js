@@ -23,9 +23,9 @@ function randCode(n) {
 exports.createClinic = onCall(async (request) => {
   if (!request.auth) throw new HttpsError('unauthenticated', 'Giriş yapmanız gerekiyor.');
 
-  const { name, hospitalName, shiftModel, trainingMode } = request.data;
-  if (!name || !hospitalName) {
-    throw new HttpsError('invalid-argument', 'Klinik ve hastane adı gerekli.');
+  const { name, hospitalName, shiftModel, shiftTypes, trainingMode } = request.data;
+  if (!name) {
+    throw new HttpsError('invalid-argument', 'Klinik adı gerekli.');
   }
 
   const db  = getFirestore();
@@ -40,9 +40,14 @@ exports.createClinic = onCall(async (request) => {
   const clinicRef        = db.collection('clinics').doc();
   const status           = userRole === 'super_admin' ? 'approved' : 'pending';
 
+  const resolvedShiftTypes = Array.isArray(shiftTypes) && shiftTypes.length > 0
+    ? shiftTypes
+    : shiftModel ? [shiftModel] : ['24h'];
+
   await clinicRef.set({
-    name, hospitalName,
-    shiftModel:   shiftModel   || '24h',
+    name, hospitalName: hospitalName || '',
+    shiftModel:   resolvedShiftTypes[0],
+    shiftTypes:   resolvedShiftTypes,
     trainingMode: trainingMode || 'within_shift',
     joinCode, residentJoinCode, status,
     chiefResidentIds: [uid],
@@ -207,6 +212,49 @@ exports.autoMatchResident = onCall(async (request) => {
   }
 
   return { matched: false };
+});
+
+// ── deleteClinic ─────────────────────────────────────────────────────────────────
+exports.deleteClinic = onCall(async (request) => {
+  if (!request.auth) throw new HttpsError('unauthenticated', 'Giriş yapmanız gerekiyor.');
+
+  const { clinicId } = request.data;
+  if (!clinicId) throw new HttpsError('invalid-argument', 'clinicId gerekli.');
+
+  const db  = getFirestore();
+  const uid = request.auth.uid;
+
+  // Yetki: super_admin veya klinik sahibi (chief_resident)
+  const userSnap = await refs.user(uid).get();
+  if (!userSnap.exists) throw new HttpsError('not-found', 'Kullanıcı bulunamadı.');
+  const userRole = userSnap.data().role;
+
+  const clinicRef = refs.clinic(clinicId);
+  const clinicDoc = await clinicRef.get();
+  if (!clinicDoc.exists) throw new HttpsError('not-found', 'Klinik bulunamadı.');
+
+  const clinicData = clinicDoc.data();
+  const isOwner = clinicData.createdBy === uid;
+  const isChief = (clinicData.chiefResidentIds || []).includes(uid);
+  const isSuperAdmin = userRole === 'super_admin';
+
+  if (!isSuperAdmin && !isOwner && !isChief) {
+    throw new HttpsError('permission-denied', 'Bu kliniği silme yetkiniz yok.');
+  }
+
+  // Alt koleksiyonları sil (residents, pendingResidents, zones)
+  const subcollections = ['residents', 'pendingResidents', 'zones', 'trainingBlocks'];
+  for (const sub of subcollections) {
+    const snap = await clinicRef.collection(sub).get();
+    const batch = db.batch();
+    snap.docs.forEach((d) => batch.delete(d.ref));
+    if (snap.docs.length > 0) await batch.commit();
+  }
+
+  // Klinik dokümanını sil
+  await clinicRef.delete();
+
+  return { ok: true, clinicId };
 });
 
 // ── joinClinic ─────────────────────────────────────────────────────────────────

@@ -20,7 +20,8 @@ const { onSwapCreated, onSwapUpdated } = require('./swap/triggers');
 const { scheduledShiftReminder, scheduledPreferenceReminder } = require('./notifications/scheduled');
 
 // ── Klinik yönetimi ───────────────────────────────────
-const { createClinic, approveClinic, joinClinic, autoMatchResident } = require('./clinic/manage');
+const { createClinic, approveClinic, joinClinic, autoMatchResident, deleteClinic } = require('./clinic/manage');
+const { importFromSchedule } = require('./clinic/import-schedule');
 
 module.exports = {
   // Nöbet
@@ -44,4 +45,6 @@ module.exports = {
   approveClinic,
   joinClinic,
   autoMatchResident,
+  importFromSchedule,
+  deleteClinic,
 };
