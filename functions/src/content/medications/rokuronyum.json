@@ -1,0 +1,32 @@
+{
+  "name": "Roküronyum",
+  "category": "RSI",
+  "adultDosing": "RSI (hızlı seri entübasyon): 1.2 mg/kg IV (60-90 saniyede etki başlar). Standart entübasyon: 0.6 mg/kg IV (90-120 saniyede etki başlar). İdame: 0.1-0.2 mg/kg IV, gerektiğinde.",
+  "pediatricDosing": "RSI: 1 mg/kg IV. Standart entübasyon: 0.6 mg/kg IV. İdame: 0.1-0.2 mg/kg IV, gerektiğinde. Yenidoğan: 0.6 mg/kg IV.",
+  "contraindications": [
+    "Roküronyum veya bromürlere karşı bilinen alerji",
+    "Nöromüsküler bloker kullanımına mutlak kontrendikasyon yoktur (zor havayolu yönetimi endişesi dışında)"
+  ],
+  "warnings": [
+    "Bilinç veya ağrı algısını etkilemez; mutlaka yeterli sedasyon/analjezi sağlanmalıdır",
+    "Sugammadeks (2-16 mg/kg IV) ile hızla geri döndürülebilir",
+    "Nöromüsküler monitörizasyon (TOF) ile etki takibi önerilir",
+    "Karaciğer yetmezliğinde etki süresi uzayabilir",
+    "Miyastenia gravis ve diğer nöromüsküler hastalıklarda aşırı duyarlılık; doz %50-75 azaltılmalıdır",
+    "Hipotermi etki süresini uzatır",
+    "RSI dozunda etki süresi 45-70 dakikadır; havayolu güvence altına alınamazsa sugammadeks hazır olmalıdır",
+    "Aminoglikozidler ve magnezyum nöromüsküler blokajı potansiyalize eder"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon",
+      "concentration": "10 mg/mL",
+      "volume": "5 mL (50 mg)"
+    },
+    {
+      "form": "Flakon",
+      "concentration": "10 mg/mL",
+      "volume": "10 mL (100 mg)"
+    }
+  ]
+}

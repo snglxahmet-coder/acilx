@@ -1,0 +1,151 @@
+{
+  "name": "ACLS Kardiyak Arrest Algoritması",
+  "category": "Kardiyovasküler",
+  "steps": [
+    {
+      "stepId": "step_1",
+      "question": "Kardiyak arrest onaylandı mı? (Yanıtsız, solunumu yok veya anormal, nabız yok)",
+      "description": "Hastayı sarsarak ve seslenme ile uyarın. 10 saniye içinde karotis nabzını kontrol edin. Nabız yoksa kardiyak arrest kabul edin.",
+      "options": [
+        { "label": "Evet, kardiyak arrest → CPR başlat ve monitörize et", "nextStepId": "step_2" },
+        { "label": "Nabız var ama solunum yok → Solunum arresti", "nextStepId": "step_end_respiratory_arrest" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_respiratory_arrest",
+      "question": "Solunum Arresti — Nabız Mevcut",
+      "description": "Nabız alınıyor ancak yeterli solunum yok.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Balon-valf-maske (BVM) ile ventilasyon başlayın (her 6 saniyede 1 nefes = 10/dk). Pulse oksimetre ve kapnografi takın. IV/IO erişim sağlayın. Havayolu güvenliği için entübasyon değerlendirin. Her 2 dakikada nabız kontrolü yapın. Nabız kaybolursa CPR'a geçin. Altta yatan nedeni araştırın (opioid intoksikasyonunda Nalokson)."
+    },
+    {
+      "stepId": "step_2",
+      "question": "Monitörde ritim nedir?",
+      "description": "Yüksek kaliteli CPR başlatın (100-120/dk hız, 5-6 cm derinlik, tam göğüs geri dönüşü). Defibrilatör/monitör bağlayın ve ritmi analiz edin.",
+      "options": [
+        { "label": "Ventriküler Fibrilasyon (VF) veya Nabızsız Ventriküler Taşikardi (pVT) → Şoklanabilir ritim", "nextStepId": "step_3_shockable" },
+        { "label": "Asistoli veya Nabızsız Elektriksel Aktivite (NEA) → Şoklanamaz ritim", "nextStepId": "step_3_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_3_shockable",
+      "question": "Şoklanabilir Ritim (VF/pVT) — İlk Defibrilasyon",
+      "description": "Bifazik defibrilatör ile şok verin. CPR'ı şok öncesi mümkün olduğunca az kesintiye uğratın.",
+      "options": [
+        { "label": "Şok verildi → 2 dakika CPR devam et", "nextStepId": "step_4_shockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_4_shockable",
+      "question": "2. Ritim Kontrolü — VF/pVT devam ediyor mu?",
+      "description": "2 dakika CPR sonrası ritmi tekrar kontrol edin. Bu sırada IV/IO erişim sağlayın.",
+      "options": [
+        { "label": "VF/pVT devam ediyor → 2. Şok ver", "nextStepId": "step_5_shockable" },
+        { "label": "Organize ritim görüldü → Nabız kontrol", "nextStepId": "step_rosc_check" },
+        { "label": "Asistoli/NEA → Şoklanamaz protokole geç", "nextStepId": "step_3_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_5_shockable",
+      "question": "2. Şok sonrası — Adrenalin ve 3. Şok",
+      "description": "2. şok sonrası 2 dakika CPR yapın. Bu döngüde Adrenalin 1 mg IV/IO verin. Ritim hâlâ VF/pVT ise 3. şok uygulayın.",
+      "options": [
+        { "label": "3. Şok verildi → Amiodaron ver, CPR devam", "nextStepId": "step_6_amiodarone" },
+        { "label": "Organize ritim → Nabız kontrol", "nextStepId": "step_rosc_check" },
+        { "label": "Asistoli/NEA → Şoklanamaz protokole geç", "nextStepId": "step_3_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_6_amiodarone",
+      "question": "Amiodaron uygulaması ve devam eden CPR döngüleri",
+      "description": "3. şok sonrasında Amiodaron 300 mg IV/IO bolus verin. Refrakter VF/pVT'de 5. şok sonrası ek 150 mg Amiodaron verilebilir.",
+      "options": [
+        { "label": "VF/pVT devam ediyor → Döngüye devam (şok + CPR + Adrenalin her 3-5 dk)", "nextStepId": "step_7_ongoing" },
+        { "label": "Organize ritim → Nabız kontrol", "nextStepId": "step_rosc_check" },
+        { "label": "Asistoli/NEA → Şoklanamaz protokole geç", "nextStepId": "step_3_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_3_nonshockable",
+      "question": "Şoklanamaz Ritim (Asistoli/NEA) — CPR ve Adrenalin",
+      "description": "Şok uygulanmaz. Yüksek kaliteli CPR'a devam edin. Adrenalin 1 mg IV/IO hemen verin ve her 3-5 dakikada tekrarlayın.",
+      "options": [
+        { "label": "2 dakika CPR sonrası ritim kontrolü yap", "nextStepId": "step_4_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_4_nonshockable",
+      "question": "Ritim kontrolü — Değişiklik var mı?",
+      "description": "Her 2 dakikada ritim ve nabız kontrolü yapın. Geri dönüşümlü nedenleri (4H-4T) araştırın.",
+      "options": [
+        { "label": "Asistoli/NEA devam ediyor → CPR + Adrenalin döngüsü devam", "nextStepId": "step_reversible" },
+        { "label": "VF/pVT'ye dönüştü → Şoklanabilir protokole geç", "nextStepId": "step_3_shockable" },
+        { "label": "Organize ritim → Nabız kontrol", "nextStepId": "step_rosc_check" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_reversible",
+      "question": "Geri Dönüşümlü Nedenleri (4H-4T) Araştırın",
+      "description": "4H: Hipoksi, Hipovolemi, Hipo/Hiperkalemi, Hipotermi. 4T: Tansiyon pnömotoraks, Tamponad, Toksinler, Tromboz (koroner/pulmoner).",
+      "options": [
+        { "label": "Geri dönüşümlü neden saptandı ve tedavi edildi → Döngüye devam", "nextStepId": "step_4_nonshockable" },
+        { "label": "Uzamış resüsitasyon, düzelmıyor → Sonlandırma değerlendirmesi", "nextStepId": "step_end_termination" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_7_ongoing",
+      "question": "Devam Eden Refrakter VF/pVT Döngüleri",
+      "description": "Her 2 dakikada: ritim kontrolü, gerekirse şok, Adrenalin 1 mg her 3-5 dk, 4H-4T araştırması.",
+      "options": [
+        { "label": "Organize ritim → Nabız kontrol", "nextStepId": "step_rosc_check" },
+        { "label": "Refrakter VF/pVT devam ediyor → Ek müdahale düşün", "nextStepId": "step_end_refractory" },
+        { "label": "Sonlandırma değerlendirmesi", "nextStepId": "step_end_termination" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_refractory",
+      "question": "Refrakter VF/pVT — İleri Müdahale Seçenekleri",
+      "description": "Standart ACLS protokolüne yanıt vermeyen VF/pVT.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Defibrilatör ped pozisyonunu değiştirin (ön-arka). Çift ardışık defibrilasyon düşünün (iki defibrilatör ile). Lidokain 1-1.5 mg/kg IV alternatif olarak denenebilir. MgSO4 2 g IV (Torsades de Pointes düşünülüyorsa). Koroner anjiyografi/PKG veya ECMO-CPR (E-CPR) imkanı varsa değerlendirin. 4H-4T nedenlerini tekrar gözden geçirin."
+    },
+    {
+      "stepId": "step_rosc_check",
+      "question": "Organize ritim görüldü — Nabız var mı?",
+      "description": "Monitörde organize ritim saptandığında 10 saniye içinde karotis nabzını kontrol edin.",
+      "options": [
+        { "label": "Nabız var → ROSC (Spontan Dolaşımın Geri Dönüşü)", "nextStepId": "step_end_rosc" },
+        { "label": "Nabız yok → NEA, CPR'a devam", "nextStepId": "step_3_nonshockable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_rosc",
+      "question": "ROSC Sağlandı — Post-Kardiyak Arrest Bakımı",
+      "description": "Spontan dolaşım geri dönmüştür. Post-resüsitasyon bakımı kritik öneme sahiptir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "12 derivasyonlu EKG çekin (STEMI varsa acil koroner anjiyografi). Hedef: SpO2 %92-98, PaCO2 35-45 mmHg, sistolik TA >90 mmHg (vazopresör/sıvı ile). Hedefli ısı yönetimi (32-36°C, 24 saat) uygulayın. Kan gazı, laktat, elektrolitler, troponin, glukoz kontrol edin. Havayolu güvenliğini sağlayın. Nörolojik prognozu 72 saatten önce değerlendirmeyin. Yoğun bakıma nakil edin."
+    },
+    {
+      "stepId": "step_end_termination",
+      "question": "Resüsitasyonun Sonlandırılması Değerlendirmesi",
+      "description": "Uzamış resüsitasyona rağmen ROSC sağlanamamıştır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Sonlandırma kararı ekip lideri tarafından verilir. Değerlendirme kriterleri: geri dönüşümlü tüm nedenler tedavi edildi mi, asistoli süresi, toplam resüsitasyon süresi, EtCO2 <10 mmHg (uzamış). Aile bilgilendirmesi yapın. Ölüm saatini kaydedin. Adli vaka ise ilgili birimleri bilgilendirin. Ekip debriefing'i yapın."
+    }
+  ]
+}

@@ -1,0 +1,94 @@
+{
+  "id": "abcd2",
+  "name": "ABCD² Skoru",
+  "description": "Geçici iskemik atak (TIA) sonrası kısa vadede (2, 7, 90 gün) inme riskini değerlendirir.",
+  "category": "nöroloji",
+  "parameters": [
+    {
+      "name": "age",
+      "label": "Yaş ≥ 60",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "blood_pressure",
+      "label": "Kan basıncı: sistolik ≥ 140 ve/veya diastolik ≥ 90 mmHg",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "clinical_features",
+      "label": "Klinik Bulgular",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Diğer semptomlar" },
+        { "value": 1, "label": "Güçsüzlük olmadan konuşma bozukluğu" },
+        { "value": 2, "label": "Tek taraflı güçsüzlük" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "duration",
+      "label": "Semptom Süresi",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "< 10 dakika" },
+        { "value": 1, "label": "10–59 dakika" },
+        { "value": 2, "label": "≥ 60 dakika" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "diabetes",
+      "label": "Diabetes Mellitus",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 7,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 3,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "2 günlük inme riski ~%1. Hızlı ayaktan değerlendirme (24–48 saat içinde) yeterli olabilir."
+    },
+    {
+      "min": 4,
+      "max": 5,
+      "label": "Orta Risk",
+      "severity": "moderate",
+      "recommendation": "2 günlük inme riski ~%4. Acil değerlendirme ve nöroloji konsültasyonu önerilir."
+    },
+    {
+      "min": 6,
+      "max": 7,
+      "label": "Yüksek Risk",
+      "severity": "high",
+      "recommendation": "2 günlük inme riski ~%8. Hastaneye yatış, acil nörovasküler görüntüleme ve antiagregan tedavi başlanmalı."
+    }
+  ],
+  "references": [
+    {
+      "title": "Validation and refinement of scores to predict very early stroke risk after transient ischaemic attack",
+      "authors": "Johnston SC, Rothwell PM, Nguyen-Huynh MN, et al.",
+      "journal": "The Lancet",
+      "year": 2007
+    }
+  ]
+}

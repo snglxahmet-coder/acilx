@@ -1,0 +1,210 @@
+{
+  "id": "sepsis",
+  "name": "Sepsis Yönetimi",
+  "category": "Enfeksiyon",
+  "description": "Sepsis ve septik şok tanı ve tedavi algoritması (Surviving Sepsis Campaign rehberleri temelinde).",
+  "steps": [
+    {
+      "stepId": "start",
+      "question": "Enfeksiyon şüphesi olan hastada qSOFA kriterleri kaç?",
+      "description": "qSOFA: (1) Sistolik KB ≤100 mmHg, (2) Solunum hızı ≥22/dk, (3) Bilinç değişikliği (GKS <15). ≥2 kriter pozitifse sepsis açısından ileri değerlendirme yapılmalıdır.",
+      "options": [
+        { "label": "qSOFA ≥ 2 (yüksek risk)", "nextStepId": "lactate" },
+        { "label": "qSOFA 0-1, ancak enfeksiyon şüphesi var", "nextStepId": "sirs_check" },
+        { "label": "Enfeksiyon şüphesi düşük", "nextStepId": "no_sepsis" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "sirs_check",
+      "question": "SIRS kriterleri kaç?",
+      "description": "SIRS: (1) Ateş >38°C veya <36°C, (2) Kalp hızı >90/dk, (3) Solunum hızı >20/dk veya PaCO2 <32 mmHg, (4) Lökosit >12.000 veya <4.000 veya >%10 bant. ≥2 kriter + enfeksiyon şüphesi.",
+      "options": [
+        { "label": "SIRS ≥ 2 + enfeksiyon şüphesi", "nextStepId": "lactate" },
+        { "label": "SIRS < 2, düşük risk", "nextStepId": "no_sepsis" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "no_sepsis",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Sepsis kriterleri karşılanmıyor. Enfeksiyon odağı araştırması devam ettirilebilir. Klinik kötüleşme açısından takip edin. Vital bulgular ve bilinç düzenli değerlendirilmeli."
+    },
+    {
+      "stepId": "lactate",
+      "question": "Laktat düzeyi nedir?",
+      "description": "Venöz veya arteriyel kan gazından laktat bakın. Laktat, doku hipoperfüzyonunun önemli bir göstergesidir. İlk 1 saat içinde sonuçlanmalıdır.",
+      "options": [
+        { "label": "Laktat < 2 mmol/L", "nextStepId": "organ_dysfunction" },
+        { "label": "Laktat 2-4 mmol/L", "nextStepId": "organ_dysfunction" },
+        { "label": "Laktat > 4 mmol/L (ağır hipoperfüzyon)", "nextStepId": "septic_shock_bundle" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "organ_dysfunction",
+      "question": "Organ disfonksiyonu bulguları var mı?",
+      "description": "SOFA skoru ≥2 artış: Kardiyovasküler (hipotansiyon), Solunum (PaO2/FiO2 <300), Renal (kreatinin yüksekliği, oligüri), Hepatik (bilirubin yüksekliği), Hematolojik (trombositopeni), Nörolojik (bilinç değişikliği).",
+      "options": [
+        { "label": "Organ disfonksiyonu var → Sepsis tanısı", "nextStepId": "blood_culture" },
+        { "label": "Organ disfonksiyonu yok, enfeksiyon mevcut", "nextStepId": "uncomplicated_infection" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "uncomplicated_infection",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Organ disfonksiyonu olmayan enfeksiyon: Uygun ampirik antibiyotik başlayın. Kültürler alın. Sepsis gelişimi açısından 4-6 saatte tekrar değerlendirin. Laktat takibi yapın. Klinik kötüleşmede sepsis protokolünü başlatın."
+    },
+    {
+      "stepId": "septic_shock_bundle",
+      "question": "1 saatlik sepsis demeti başlatıldı mı?",
+      "description": "Laktat >4 mmol/L = septik şok riski yüksek. 1 SAAT İÇİNDE: Laktat ölçümü (tamam), Kan kültürleri alın, Geniş spektrumlu antibiyotik başlayın, 30 mL/kg kristaloid başlayın, Vazopressör (MAP <65 ise).",
+      "options": [
+        { "label": "Demet başlatıldı, sıvı resüsitasyonu devam ediyor", "nextStepId": "fluid_response" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "blood_culture",
+      "question": "Kan kültürleri alındı mı?",
+      "description": "Antibiyotik uygulamasından ÖNCE en az 2 set kan kültürü alın (biri periferden, biri varsa santral kateterden). İdrar, balgam ve şüpheli odak kültürleri de alın.",
+      "options": [
+        { "label": "Kültürler alındı, antibiyotik başlanacak", "nextStepId": "antibiotic" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "antibiotic",
+      "question": "Olası enfeksiyon kaynağı nedir?",
+      "description": "Tanıdan itibaren İLK 1 SAAT İÇİNDE ampirik geniş spektrumlu antibiyotik başlayın. Her saat gecikme mortaliteyi artırır.",
+      "options": [
+        { "label": "Pnömoni / Solunum yolu", "nextStepId": "abx_respiratory" },
+        { "label": "Üriner sistem", "nextStepId": "abx_urinary" },
+        { "label": "İntraabdominal", "nextStepId": "abx_abdominal" },
+        { "label": "Kaynak belirsiz", "nextStepId": "abx_empiric" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "abx_respiratory",
+      "question": "Antibiyotik başlandı. Sıvı resüsitasyonuna geçiliyor.",
+      "description": "Toplum kökenli: Seftriakson 2g/gün IV + Klaritromisin 500 mg IV/12s. Hastane kökenli/VAP: Piperasilin-tazobaktam 4.5g IV/6s veya Meropenem 1g IV/8s + Vankomisin (MRSA şüphesi varsa).",
+      "options": [
+        { "label": "Devam et: Sıvı resüsitasyonu", "nextStepId": "fluid_resus" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "abx_urinary",
+      "question": "Antibiyotik başlandı. Sıvı resüsitasyonuna geçiliyor.",
+      "description": "Seftriakson 2g/gün IV veya Piperasilin-tazobaktam 4.5g IV/6s. Obstrüksiyon varsa acil üroloji konsültasyonu (nefrostomi/DJ stent).",
+      "options": [
+        { "label": "Devam et: Sıvı resüsitasyonu", "nextStepId": "fluid_resus" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "abx_abdominal",
+      "question": "Antibiyotik başlandı. Kaynak kontrolü değerlendirilmeli.",
+      "description": "Piperasilin-tazobaktam 4.5g IV/6s veya Meropenem 1g IV/8s + Metronidazol 500 mg IV/8s. Cerrahi kaynak kontrolü (apse drenajı, perforasyon onarımı) acil değerlendirilmeli.",
+      "options": [
+        { "label": "Devam et: Sıvı resüsitasyonu", "nextStepId": "fluid_resus" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "abx_empiric",
+      "question": "Antibiyotik başlandı. Sıvı resüsitasyonuna geçiliyor.",
+      "description": "Kaynak belirsiz: Meropenem 1g IV/8s + Vankomisin 25-30 mg/kg yükleme. Antifungal eklenmesi risk faktörlerine göre değerlendirilmeli. Görüntüleme ile kaynak araştırması yapın.",
+      "options": [
+        { "label": "Devam et: Sıvı resüsitasyonu", "nextStepId": "fluid_resus" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "fluid_resus",
+      "question": "Sıvı resüsitasyonu yanıtı nasıl?",
+      "description": "İlk 3 saatte 30 mL/kg kristaloid (izotonik NaCl veya Ringer laktat) uygulayın. Sıvı yanıtını değerlendirin: pasif bacak kaldırma, pulse pressure varyasyonu, IVC çapı.",
+      "options": [
+        { "label": "MAP ≥ 65 mmHg sağlandı", "nextStepId": "lactate_recheck" },
+        { "label": "Sıvıya rağmen MAP < 65 mmHg", "nextStepId": "vasopressor" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "fluid_response",
+      "question": "30 mL/kg sıvı sonrası hemodinamik yanıt nasıl?",
+      "description": "Sıvı yanıtını değerlendirin. Aşırı sıvıdan kaçının (akciğer ödemi riski).",
+      "options": [
+        { "label": "MAP ≥ 65 mmHg, perfüzyon düzeliyor", "nextStepId": "lactate_recheck" },
+        { "label": "MAP < 65 mmHg, vazopressör gerekli", "nextStepId": "vasopressor" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "vasopressor",
+      "question": "Vazopressör başlandı. Yanıt nasıl?",
+      "description": "İlk seçenek: Noradrenalin 0.1-2 mcg/kg/dk (santral kateterden, acil durumda periferden başlanabilir). MAP ≥65 mmHg hedefleyin.",
+      "options": [
+        { "label": "Noradrenalin ile MAP ≥ 65 sağlandı", "nextStepId": "lactate_recheck" },
+        { "label": "Noradrenalin yüksek doz, MAP hâlâ düşük", "nextStepId": "refractory_shock" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "refractory_shock",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Refrakter septik şok: 2. vazopressör ekleyin (Vazopressin 0.03 U/dk). Hidrokortizon 200 mg/gün IV düşünün (stres dozu steroid). Adrenal yetmezlik değerlendirin. İnvaziv hemodinamik monitörizasyon (arteriyel kateter, santral venöz kateter). Yoğun bakım yatışı zorunlu."
+    },
+    {
+      "stepId": "lactate_recheck",
+      "question": "2-4 saat sonra kontrol laktat değeri nedir?",
+      "description": "Laktat klerensini değerlendirin. İlk değere göre ≥%10 düşüş hedeflenmelidir. Laktat normale dönmesi tedavi yanıtının önemli göstergesidir.",
+      "options": [
+        { "label": "Laktat düşüyor, klinik iyileşiyor", "nextStepId": "source_control" },
+        { "label": "Laktat düşmüyor veya yükseliyor", "nextStepId": "reassess" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "reassess",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Laktat klerensı yetersiz: Sıvı yanıtını tekrar değerlendirin. Antibiyotik yeterliliğini sorgulayın. Drenaj gerektiren kaynak (apse, ampiyem, obstrüksiyon) arayın. Vazopressör titrasyonu. End-organ perfüzyonunu değerlendirin (idrar çıkışı, kapiller geri dolum). Yoğun bakım yatışı."
+    },
+    {
+      "stepId": "source_control",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Kaynak kontrolü ve devam tedavisi: Cerrahi drenaj/debridman gerekiyorsa mümkün olan en kısa sürede yapılmalı (ilk 6-12 saat). Kültür sonuçlarına göre antibiyotiği daraltın (de-eskalasyon). Prokalsitonin takibi ile antibiyotik süresini optimize edin. DVT profilaksisi, stres ülser profilaksisi, glukoz kontrolü. Yoğun bakım takibi."
+    }
+  ],
+  "references": [
+    {
+      "title": "Surviving Sepsis Campaign: International Guidelines for Management of Sepsis and Septic Shock 2021",
+      "authors": "Evans L, Rhodes A, Alhazzani W, et al.",
+      "journal": "Intensive Care Medicine",
+      "year": 2021
+    },
+    {
+      "title": "The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3)",
+      "authors": "Singer M, Deutschman CS, Seymour CW, et al.",
+      "journal": "JAMA",
+      "year": 2016
+    }
+  ]
+}

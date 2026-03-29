@@ -1,0 +1,197 @@
+{
+  "name": "Travma ABCDE Yaklaşımı",
+  "category": "Travma",
+  "steps": [
+    {
+      "stepId": "step_a",
+      "question": "A — Havayolu (Airway) ve Servikal Stabilizasyon: Havayolu açık mı?",
+      "description": "Tüm travma hastalarında servikal omurga koruması sağlayın (servikal yakalık). Havayolunu değerlendirin: konuşabiliyor mu, stridor var mı, yabancı cisim/kan/kusmuk var mı?",
+      "options": [
+        { "label": "Havayolu açık, hasta konuşuyor", "nextStepId": "step_b" },
+        { "label": "Havayolu tehlikede (stridor, obstrüksiyon, GCS ≤8)", "nextStepId": "step_a_intervention" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_a_intervention",
+      "question": "Havayolu Müdahalesi Gerekli",
+      "description": "Havayolu açıklığı sağlanamıyor veya koruma refleksleri kaybolmuş.",
+      "options": [
+        { "label": "Jaw-thrust ile havayolu açıldı", "nextStepId": "step_b" },
+        { "label": "Entübasyon/cerrahi havayolu gerekli", "nextStepId": "step_end_airway_emergency" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_airway_emergency",
+      "question": "Acil Havayolu Yönetimi",
+      "description": "Manuel manevra ve basit araçlarla havayolu sağlanamıyor.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Rapid Sequence Intubation (RSI) ile orotrakeal entübasyon yapın (servikal immobilizasyonu koruyarak, in-line stabilizasyon). Entübasyon başarısızsa supraglottik araç (LMA) yerleştirin. O da başarısızsa cerrahi havayolu (krikotirotomi) açın. Yüz/havayolu travmasında video laringoskopi tercih edin. Entübasyon sonrası tüp pozisyonunu kapnografi ile doğrulayın."
+    },
+    {
+      "stepId": "step_b",
+      "question": "B — Solunum (Breathing): Solunum yeterli mi?",
+      "description": "Solunum hızı, derinliği, simetrisi, SpO2 değerlendirin. Göğüs duvarını inspeksiyon ve palpasyonla inceleyin. Her iki hemitoraksı oskülte edin.",
+      "options": [
+        { "label": "Solunum yeterli, bilateral eşit havalanma", "nextStepId": "step_c" },
+        { "label": "Tek taraflı solunum sesi kaybı, subkutan amfizem", "nextStepId": "step_b_ptx" },
+        { "label": "Yelken göğüs (flail chest) / açık pnömotoraks", "nextStepId": "step_b_flail" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_b_ptx",
+      "question": "Pnömotoraks Şüphesi — Tansiyon pnömotoraks bulguları var mı?",
+      "description": "Hipotansiyon, boyun ven dolgunluğu, trakeal deviasyon tansiyon pnömotoraksı düşündürür.",
+      "options": [
+        { "label": "Tansiyon pnömotoraks bulguları (+)", "nextStepId": "step_end_tension_ptx" },
+        { "label": "Basit pnömotoraks, hemodinamik stabil", "nextStepId": "step_end_simple_ptx" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_tension_ptx",
+      "question": "Tansiyon Pnömotoraks — Acil Dekompresyon",
+      "description": "Hayatı tehdit eden tansiyon pnömotoraks tanısı kliniktir, görüntüleme beklenmez.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Hemen iğne dekompresyonu yapın: 2. interkostal aralık midklaviküler hat veya 4-5. interkostal aralık anterior aksiller hattan 14G iğne/kanül ile. Ardından tüp torakostomi (28-32F göğüs tüpü) yerleştirin. Göğüs cerrahisi konsültasyonu isteyin. Solunum desteği ve monitörizasyona devam edin."
+    },
+    {
+      "stepId": "step_end_simple_ptx",
+      "question": "Basit Pnömotoraks / Hemotoraks Yönetimi",
+      "description": "Hemodinamik stabil, basit pnömotoraks veya hemotoraks.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Tüp torakostomi (28-32F) yerleştirin. İlk drenaj miktarını kaydedin. Hemotoraks >1500 mL (masif) veya saatlik >200 mL devam eden kanama varsa acil torakotomi endikasyonu vardır. Göğüs cerrahisi konsültasyonu isteyin. Akciğer grafisi ile tüp pozisyonunu ve ekspansiyonu kontrol edin."
+    },
+    {
+      "stepId": "step_b_flail",
+      "question": "Yelken Göğüs veya Açık Pnömotoraks",
+      "description": "Yelken göğüs: ≥3 komşu kostanın ≥2 yerden kırılması ile paradoksal hareket. Açık pnömotoraks: göğüs duvarında açık yara.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Açık pnömotoraks: üç tarafı yapışık kapatıcı pansuman uygulayın, ardından tüp torakostomi yerleştirin. Yelken göğüs: altta yatan pulmoner kontüzyon önemlidir. Yeterli oksijenizasyon ve ventilasyon sağlayın. Ağrı kontrolü (IV analjezi, interkostal blok) kritiktir. Solunum yetmezliği gelişirse pozitif basınçlı ventilasyon (entübasyon) uygulayın. Toraks BT ile eşlik eden yaralanmaları değerlendirin."
+    },
+    {
+      "stepId": "step_c",
+      "question": "C — Dolaşım (Circulation): Hemodinamik durum ve kanama kontrolü",
+      "description": "Nabız, TA, kapiller dolum, cilt rengi/ısısı değerlendirin. Dış kanama kaynağı arayın. Şok sınıflaması yapın (Sınıf I-IV).",
+      "options": [
+        { "label": "Hemodinamik stabil, aktif kanama yok", "nextStepId": "step_d" },
+        { "label": "Aktif dış kanama mevcut", "nextStepId": "step_c_bleeding" },
+        { "label": "Şok bulguları (+), dış kanama yok → İç kanama şüphesi", "nextStepId": "step_c_internal" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_c_bleeding",
+      "question": "Aktif Dış Kanama — Kanama Kontrolü",
+      "description": "Görünür dış kanama kaynağı tespit edilmiştir.",
+      "options": [
+        { "label": "Direkt bası ile kanama kontrol altında", "nextStepId": "step_d" },
+        { "label": "Extremite kanaması, bası ile kontrol edilemiyor", "nextStepId": "step_end_tourniquet" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_tourniquet",
+      "question": "Kontrol Edilemeyen Extremite Kanaması",
+      "description": "Direkt bası ile kontrol altına alınamayan ekstremite kanaması.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Turnike uygulayın (yaranın proksimaline, sıkı). Uygulama saatini kaydedin. İki geniş çaplı IV yol açın. Masif transfüzyon protokolünü aktive edin (1:1:1 oranında ES:TDP:TS). Traneksamik asit 1 g IV 10 dk'da verin (travma sonrası <3 saat). Cerrahi veya girişimsel radyoloji ile kesin kanama kontrolü sağlayın."
+    },
+    {
+      "stepId": "step_c_internal",
+      "question": "İç Kanama Şüphesi — FAST USG",
+      "description": "Şok bulguları var ama dış kanama yok. İntraabdominal, intrathorasik, retroperitoneal veya pelvik kanama düşünülmelidir.",
+      "options": [
+        { "label": "FAST (+) → İntraabdominal serbest sıvı", "nextStepId": "step_end_internal_bleed" },
+        { "label": "FAST (−), pelvik instabilite var", "nextStepId": "step_end_pelvic" },
+        { "label": "FAST (−), pelvis stabil → Diğer kayıp kaynakları", "nextStepId": "step_d" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_internal_bleed",
+      "question": "İntraabdominal Kanama — Acil Cerrahi",
+      "description": "FAST pozitif ve hemodinamik instabilite mevcuttur.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Masif transfüzyon protokolünü başlatın. Traneksamik asit 1 g IV verin. Sıvı resüsitasyonu: permisif hipotansiyon (hedef sistolik TA 80-90 mmHg, kafa travması yoksa). Acil laparotomi için genel cerrahi konsültasyonu yapın. Damage control cerrahisi prensibi ile kanama kontrolü ve kontaminasyon kontrolü önceliklidir."
+    },
+    {
+      "stepId": "step_end_pelvic",
+      "question": "Pelvik Fraktür ve Kanama",
+      "description": "Pelvik instabilite ve hemodinamik bozukluk, masif pelvik kanama düşündürür.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Pelvik bağlayıcı (pelvic binder) hemen uygulayın. Masif transfüzyon protokolünü aktive edin. Traneksamik asit verin. Pelvis AP grafisi çekin. Hemodinamik stabilizasyon sağlanamazsa anjiyoembolizasyon veya preperitoneal pelvik packing düşünün. Ortopedi ve genel cerrahi konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_d",
+      "question": "D — Nörolojik Durum (Disability): GCS ve pupil muayenesi",
+      "description": "GCS skoru, pupil boyutu/reaktivitesi, lateralize edici bulgular ve ekstremite hareketlerini değerlendirin.",
+      "options": [
+        { "label": "GCS 14-15, pupiller normal reaktif", "nextStepId": "step_e" },
+        { "label": "GCS ≤13 veya pupil anormalliği var", "nextStepId": "step_end_head_injury" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_head_injury",
+      "question": "Kafa Travması — İleri Değerlendirme",
+      "description": "Bilinç düzeyinde bozulma veya nörolojik defisit saptanmıştır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil kontrastsız kranial BT çekin. Yatak başını 30° yükseltin. Hipotansiyondan kaçının (hedef sistolik TA >100 mmHg). Hiperglisemi ve hipertermiden kaçının. Epidural/subdural hematom veya beyin kontüzyonunda nöroşirürji acil konsültasyonu isteyin. GCS ≤8 ise entübasyon ve mekanik ventilasyon uygulayın. İKB monitörizasyonu düşünün."
+    },
+    {
+      "stepId": "step_e",
+      "question": "E — Maruz Bırakma (Exposure) ve Çevresel Kontrol",
+      "description": "Hastanın tüm giysilerini çıkarın. Ön-arka ve yanlarda tam vücut muayenesi yapın. Log-roll ile sırt muayenesi yapın. Hipotermiden koruyun.",
+      "options": [
+        { "label": "Ek yaralanma saptanmadı → İkincil değerlendirmeye geç", "nextStepId": "step_secondary" },
+        { "label": "Ek yaralanma saptandı (yanık, açık kırık, penetran yara)", "nextStepId": "step_end_additional_injury" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_additional_injury",
+      "question": "Ek Yaralanma Saptandı",
+      "description": "Primer survey sırasında tespit edilen ek yaralanmalar.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Her yaralanmayı belgeleyin ve öncelik sırasına göre tedavi edin. Açık kırıklar: steril pansuman, antibiyotik (Sefazolin 2 g IV) ve tetanoz profilaksisi verin. Yanıklarda Parkland formülü ile sıvı resüsitasyonu başlayın. Penetran yaralarda organı değerlendirin, sondaj yapmayın. Hipotermiden koruyun (ısıtılmış sıvılar, sıcak battaniye). İlgili branş konsültasyonları isteyin."
+    },
+    {
+      "stepId": "step_secondary",
+      "question": "İkincil Değerlendirme (Secondary Survey)",
+      "description": "Birincil değerlendirme ve resüsitasyon tamamlandıktan sonra baş-parmak ucu ayrıntılı muayene yapın. AMPLE öykü alın.",
+      "options": [
+        { "label": "Ek patoloji saptanmadı → Görüntüleme planla", "nextStepId": "step_end_imaging" },
+        { "label": "Spinal hassasiyet / nörolojik defisit saptandı", "nextStepId": "step_end_spine" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_imaging",
+      "question": "Travma Görüntüleme Planı",
+      "description": "Klinik bulgulara göre görüntüleme istemleri planlanmalıdır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Yüksek enerjili travmada tüm vücut BT (pan-scan: kranial + servikal + toraks + abdomen + pelvis) altın standarttır. Alternatif olarak hedefe yönelik: akciğer grafisi, pelvis AP grafisi, FAST USG ve gerekli bölgelere yönelik BT. Servikal omurga grafisi veya BT ile servikal yaralanmayı ekarte edin. Sonuçlara göre ilgili cerrahi branş konsültasyonları planlayın."
+    },
+    {
+      "stepId": "step_end_spine",
+      "question": "Spinal Yaralanma Şüphesi",
+      "description": "Spinal hassasiyet, nörolojik defisit veya yüksek riskli mekanizma.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Servikal immobilizasyonu sürdürün. Tüm omurgayı (servikal, torakal, lomber, sakral) BT ile görüntüleyin. Nörolojik muayeneyi ASIA sınıflaması ile belgeleyin. Spinal şok düşünülüyorsa (bradikardi + hipotansiyon + sıcak-kuru cilt) vazopresör verin. Nöroşirürji/ortopedi konsültasyonu isteyin. Metilprednizolon rutin önerilmemektedir."
+    }
+  ]
+}

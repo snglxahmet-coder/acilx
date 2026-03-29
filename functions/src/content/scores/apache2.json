@@ -1,0 +1,227 @@
+{
+  "id": "apache2",
+  "name": "APACHE II",
+  "description": "Yoğun bakım hastalarında hastalık şiddetini ve hastane içi mortalite riskini değerlendirir. Yatışın ilk 24 saatindeki en kötü değerler kullanılır.",
+  "category": "yoğun_bakım",
+  "parameters": [
+    {
+      "name": "temperature",
+      "label": "Vücut Sıcaklığı (°C, rektal)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 41 veya ≤ 29.9" },
+        { "value": 3, "label": "39–40.9 veya 30–31.9" },
+        { "value": 2, "label": "32–33.9" },
+        { "value": 1, "label": "38.5–38.9 veya 34–35.9" },
+        { "value": 0, "label": "36–38.4" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "mean_arterial_pressure",
+      "label": "Ortalama Arter Basıncı (mmHg)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 160 veya ≤ 49" },
+        { "value": 3, "label": "130–159" },
+        { "value": 2, "label": "110–129 veya 50–69" },
+        { "value": 0, "label": "70–109" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "heart_rate",
+      "label": "Kalp Hızı (/dk)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 180 veya ≤ 39" },
+        { "value": 3, "label": "140–179 veya 40–54" },
+        { "value": 2, "label": "110–139 veya 55–69" },
+        { "value": 0, "label": "70–109" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "respiratory_rate",
+      "label": "Solunum Hızı (/dk)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 50 veya ≤ 5" },
+        { "value": 3, "label": "35–49" },
+        { "value": 1, "label": "25–34 veya 6–9" },
+        { "value": 0, "label": "10–24" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "oxygenation",
+      "label": "Oksijenizasyon",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "FiO₂ ≥0.5: A-aDO₂ ≥ 500" },
+        { "value": 3, "label": "FiO₂ ≥0.5: A-aDO₂ 350–499" },
+        { "value": 2, "label": "FiO₂ ≥0.5: A-aDO₂ 200–349" },
+        { "value": 0, "label": "FiO₂ <0.5: PaO₂ > 70" },
+        { "value": 1, "label": "FiO₂ <0.5: PaO₂ 61–70" },
+        { "value": 3, "label": "FiO₂ <0.5: PaO₂ 55–60" },
+        { "value": 4, "label": "FiO₂ <0.5: PaO₂ < 55" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "arterial_ph",
+      "label": "Arteriyel pH",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 7.70 veya < 7.15" },
+        { "value": 3, "label": "7.60–7.69 veya 7.15–7.24" },
+        { "value": 2, "label": "7.50–7.59" },
+        { "value": 1, "label": "7.25–7.32" },
+        { "value": 0, "label": "7.33–7.49" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "sodium",
+      "label": "Serum Sodyum (mEq/L)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 180 veya ≤ 110" },
+        { "value": 3, "label": "160–179 veya 111–119" },
+        { "value": 2, "label": "155–159 veya 120–129" },
+        { "value": 1, "label": "150–154" },
+        { "value": 0, "label": "130–149" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "potassium",
+      "label": "Serum Potasyum (mEq/L)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 7.0 veya < 2.5" },
+        { "value": 3, "label": "6.0–6.9" },
+        { "value": 2, "label": "2.5–2.9" },
+        { "value": 1, "label": "5.5–5.9 veya 3.0–3.4" },
+        { "value": 0, "label": "3.5–5.4" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "creatinine",
+      "label": "Serum Kreatinin (mg/dL) — Akut böbrek yetmezliğinde ×2",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 3.5" },
+        { "value": 3, "label": "2.0–3.4" },
+        { "value": 2, "label": "1.5–1.9 veya < 0.6" },
+        { "value": 0, "label": "0.6–1.4" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "hematocrit",
+      "label": "Hematokrit (%)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 60 veya < 20" },
+        { "value": 2, "label": "50–59.9 veya 20–29.9" },
+        { "value": 1, "label": "46–49.9" },
+        { "value": 0, "label": "30–45.9" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "wbc",
+      "label": "Lökosit (×1000/mm³)",
+      "type": "select",
+      "options": [
+        { "value": 4, "label": "≥ 40 veya < 1" },
+        { "value": 2, "label": "20–39.9 veya 1–2.9" },
+        { "value": 1, "label": "15–19.9" },
+        { "value": 0, "label": "3–14.9" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "gcs_score",
+      "label": "Glasgow Koma Skoru (GCS puanı)",
+      "description": "15 - GCS değeri puan olarak eklenir",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "GCS 15" },
+        { "value": 2, "label": "GCS 13–14" },
+        { "value": 5, "label": "GCS 10–12" },
+        { "value": 9, "label": "GCS 7–9" },
+        { "value": 12, "label": "GCS 3–6" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "age_points",
+      "label": "Yaş",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "< 45" },
+        { "value": 2, "label": "45–54" },
+        { "value": 3, "label": "55–64" },
+        { "value": 5, "label": "65–74" },
+        { "value": 6, "label": "≥ 75" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "chronic_health",
+      "label": "Kronik Sağlık Puanı",
+      "description": "Organ yetmezliği veya immünsüpresyon öyküsü",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 2, "label": "Var — elektif postop hasta" },
+        { "value": 5, "label": "Var — acil postop veya non-operatif hasta" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 71,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 9,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "Tahmini mortalite ~%4. Standart yoğun bakım izlemi."
+    },
+    {
+      "min": 10,
+      "max": 19,
+      "label": "Orta Risk",
+      "severity": "moderate",
+      "recommendation": "Tahmini mortalite ~%8–15. Yakın monitorizasyon ve agresif destek tedavisi."
+    },
+    {
+      "min": 20,
+      "max": 29,
+      "label": "Yüksek Risk",
+      "severity": "high",
+      "recommendation": "Tahmini mortalite ~%25–40. İleri organ destek tedavileri gerekebilir."
+    },
+    {
+      "min": 30,
+      "max": 71,
+      "label": "Çok Yüksek Risk",
+      "severity": "high",
+      "recommendation": "Tahmini mortalite ≥%50. Prognoz kötü; multidisipliner değerlendirme ve aile görüşmesi önerilir."
+    }
+  ],
+  "references": [
+    {
+      "title": "APACHE II: a severity of disease classification system",
+      "authors": "Knaus WA, Draper EA, Wagner DP, Zimmerman JE.",
+      "journal": "Critical Care Medicine",
+      "year": 1985
+    }
+  ]
+}

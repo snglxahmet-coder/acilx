@@ -1,0 +1,27 @@
+{
+  "name": "Dopamin",
+  "category": "Vazoaktif",
+  "adultDosing": "Düşük doz (renal doz): 2-5 mcg/kg/dk IV infüzyon — renal ve mezenterik vazodilatasyon. Orta doz (kardiyak doz): 5-10 mcg/kg/dk — pozitif inotrop etki, kalp debisini artırır. Yüksek doz (vazopressör doz): 10-20 mcg/kg/dk — alfa-adrenerjik vazokonstriksiyon baskın. Yanıta göre titre edilir.",
+  "pediatricDosing": "2-20 mcg/kg/dk IV/IO infüzyon. Düşük dozda başlanıp hemodinamik yanıta göre titre edilir. Santral venöz yol tercih edilir.",
+  "contraindications": [
+    "Feokromositoma (hipertansif kriz riski)",
+    "Düzeltilmemiş taşiaritmi (ventriküler fibrilasyon, ventriküler taşikardi)",
+    "Sülfit alerjisi olan hastalarda dikkat (bazı preparatlar sülfit içerir)"
+  ],
+  "warnings": [
+    "Taşikardi ve aritmi riski yüksektir, sürekli monitörizasyon gerekir",
+    "Damar dışına kaçış halinde ciddi doku nekrozu gelişir — fentolamın lokal infiltrasyon hazır bulundurulmalıdır",
+    "MAO inhibitörü kullanan hastalarda etki belirgin şekilde artar, doz 1/10'a düşürülmelidir",
+    "Hipovolemi düzeltilmeden kullanılmamalıdır",
+    "Alkalin solüsyonlarla (NaHCO₃) geçimsizdir",
+    "Ani kesilmemelidir, doz kademeli olarak azaltılmalıdır",
+    "Periferik gangren riski nedeniyle uzun süreli yüksek doz kullanımından kaçınılmalıdır"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "200 mg/5 mL (40 mg/mL)",
+      "volume": "5 mL"
+    }
+  ]
+}

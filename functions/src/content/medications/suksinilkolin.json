@@ -1,0 +1,38 @@
+{
+  "name": "Süksinilkolin",
+  "category": "RSI",
+  "adultDosing": "RSI: 1-1.5 mg/kg IV (genellikle 1.5 mg/kg). IV yol yoksa: 3-4 mg/kg IM (etki başlangıcı 3-4 dk). Laringospazm: 0.5-1 mg/kg IV veya 4 mg/kg IM.",
+  "pediatricDosing": ">10 kg: 1-2 mg/kg IV. <10 kg: 2 mg/kg IV (daha yüksek dağılım hacmi nedeniyle). IM: 4-5 mg/kg (maks 150 mg). Tüm pediyatrik hastalarda IV verilirken önce 0.02 mg/kg atropin (min 0.1 mg) ile premedikasyon önerilir (bradikardi riski).",
+  "contraindications": [
+    "Kişisel veya ailesel malign hipertermi öyküsü",
+    "İskelet kas miyopatileri (Duchenne, Becker musküler distrofi)",
+    "Akut denervason yaralanmaları (omurilik yaralanması >48-72 saat, ciddi yanık >24 saat) — hiperkaliemi riski",
+    "Uzun süreli immobilizasyon veya yatak istirahati (>72 saat)",
+    "Plazma kolinesteraz eksikliği (bilinen)",
+    "Penetran göz yaralanması (relatif; göz içi basıncını artırır)",
+    "Hiperpotasemi veya hiperpotasemi riski olan durumlar (böbrek yetmezliği, crush sendromu, rabdomiyoliz)"
+  ],
+  "warnings": [
+    "Malign hipertermi tetikleyebilir; dantrolen hazır bulundurulmalıdır",
+    "Serum potasyumunu 0.5-1 mEq/L artırır; yanık, crush yaralanması, denervasyonda hayatı tehdit edici hiperkaliemi",
+    "Pediyatrik hastalarda rutin kullanım önerilmez (FDA uyarısı: kardiyak arrest ve hiperkaliemi riski)",
+    "Bradikardi yapabilir; özellikle tekrarlayan dozlarda ve çocuklarda atropin premedikasyonu gerekir",
+    "Pseudokolinesteraz eksikliğinde etki süresi saatler sürebilir",
+    "Etki süresi kısa: 6-10 dakika (depolarizan blok); gerekirse ventilasyon desteği sağlanmalıdır",
+    "Göz içi basıncını geçici olarak artırır",
+    "Mide içi basıncını artırabilir; ancak alt özofageal sfinkter tonusunu da artırır",
+    "Fasikülasyonlar görülebilir; pediatrik hastalarda prekürarizasyon düşünülebilir"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon",
+      "concentration": "20 mg/mL (%2)",
+      "volume": "10 mL (200 mg)"
+    },
+    {
+      "form": "Flakon (toz)",
+      "concentration": "500 mg (sulandırılacak)",
+      "volume": "Kuru toz — 10 mL SF ile sulandırıldığında 50 mg/mL"
+    }
+  ]
+}

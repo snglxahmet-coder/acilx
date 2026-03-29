@@ -1,0 +1,30 @@
+{
+  "name": "Fentanil",
+  "category": "Analjezik",
+  "adultDosing": "25-100 mcg IV yavaş bolus (1-2 dakikada), gerekirse her 5 dakikada 25-50 mcg tekrar edilebilir. Prosedürel sedasyon: 50-100 mcg IV. İnfüzyon: 25-200 mcg/saat.",
+  "pediatricDosing": "1-2 mcg/kg IV yavaş bolus (maksimum 50 mcg), gerekirse her 30-60 dakikada tekrarlanabilir. İntranasal: 1.5-2 mcg/kg (maksimum 100 mcg).",
+  "contraindications": [
+    "Ciddi solunum depresyonu (monitörizasyonsuz ortamda)",
+    "MAO inhibitörü kullanımı (son 14 gün içinde)"
+  ],
+  "warnings": [
+    "Yüksek dozlarda (>5 mcg/kg) göğüs duvarı rijiditesi gelişebilir — tedavi: nöromüsküler bloker",
+    "Hemodinamik olarak en stabil opioiddir: hemodinamik instabilite olan hastalarda tercih edilir",
+    "Nalokson (0.4-2 mg IV) her zaman hazır bulundurulmalıdır",
+    "Hızlı IV uygulamadan kaçınılmalıdır (rijidite ve apne riski)",
+    "Etki başlangıcı çok hızlıdır (1-2 dk IV), etki süresi kısadır (30-60 dk)",
+    "Yaşlı ve kaşektik hastalarda doz azaltılmalıdır"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "50 mcg/mL",
+      "volume": "2 mL (100 mcg)"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "50 mcg/mL",
+      "volume": "10 mL (500 mcg)"
+    }
+  ]
+}

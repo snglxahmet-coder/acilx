@@ -1,0 +1,32 @@
+{
+  "name": "Pediatrik Adrenalin (Epinefrin)",
+  "category": "Pediatrik",
+  "adultDosing": "Pediatrik kullanım — yetişkin dozu için adrenalin.json dosyasına bakınız.",
+  "pediatricDosing": "Kardiyak arrest: 0.01 mg/kg (0.1 mL/kg 1:10.000 solüsyon) IV/IO, her 3-5 dakikada bir tekrarlanır, maks 1 mg/doz. Anafilaksi: 0.01 mg/kg (0.01 mL/kg 1:1.000 solüsyon) IM anterolateral uyluğa, maks 0.3 mg/doz, gerekirse 5-15 dk arayla tekrarlanır. Krup (laringotrakeobronsit): 0.5 mL/kg (maks 5 mL) 1:1.000 solüsyon nebülizatörle. Ciddi bronkospazm: 0.01 mg/kg SC, maks 0.3 mg/doz.",
+  "contraindications": [
+    "Kardiyak arrest ve anafilakside mutlak kontrendikasyon yoktur — hayat kurtarıcı endikasyonlarda verilmelidir",
+    "Relatif: Dar açılı glokom",
+    "Relatif: Dijital toksisitesine bağlı aritmi"
+  ],
+  "warnings": [
+    "DOZ KARIŞIKLIĞI RİSKİ: 1:1.000 (1 mg/mL) ile 1:10.000 (0.1 mg/mL) konsantrasyonları kesinlikle karıştırılmamalıdır",
+    "IV yoldan verilecekse DAIMA 1:10.000 (0.1 mg/mL) dilüsyon kullanılmalıdır",
+    "IM yolda 1:1.000 (1 mg/mL) konsantrasyon kullanılır",
+    "Kilo bazlı doz hesaplaması için Broselow bandı kullanılması önerilir",
+    "Endotrakeal yol artık önerilmemektedir; IV/IO erişim sağlanamazsa intraosseöz yol tercih edilmelidir",
+    "Nebül adrenalin sonrası en az 2-4 saat gözlem gerekir (rebound etki riski)",
+    "Hipotermi durumunda ilaç aralıkları uzatılmalıdır"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "1 mg/mL (1:1.000)",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Hazır enjektör",
+      "concentration": "0.1 mg/mL (1:10.000)",
+      "volume": "10 mL"
+    }
+  ]
+}

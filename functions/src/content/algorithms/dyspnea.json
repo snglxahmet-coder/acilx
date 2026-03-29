@@ -1,0 +1,189 @@
+{
+  "name": "Dispne Yaklaşımı",
+  "category": "Solunumsal",
+  "steps": [
+    {
+      "stepId": "step_1",
+      "question": "Hava yolu açık mı?",
+      "description": "Hastanın havayolu açıklığını değerlendirin. Stridor, horlama, tükürük birikimi, yabancı cisim şüphesi kontrol edin.",
+      "options": [
+        { "label": "Evet, hava yolu açık", "nextStepId": "step_2" },
+        { "label": "Hayır, hava yolu tehlikede", "nextStepId": "step_end_airway" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_airway",
+      "question": "Havayolu Obstrüksiyonu — Acil Müdahale",
+      "description": "Hava yolu açıklığı tehlike altındadır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Heimlich manevrası (yabancı cisim şüphesinde) uygulayın. Jaw-thrust/chin-lift ile havayolu açın. Orofaringeal veya nazofaringeal airway yerleştirin. Gerekirse acil entübasyon veya cerrahi havayolu (krikotirotomi) hazırlığı yapın. Anestezi/YBÜ ekibini çağırın."
+    },
+    {
+      "stepId": "step_2",
+      "question": "SpO2 değeri nedir?",
+      "description": "Pulse oksimetre ile periferik oksijen satürasyonunu ölçün.",
+      "options": [
+        { "label": "SpO2 < %90 — Ciddi hipoksemi", "nextStepId": "step_3_urgent" },
+        { "label": "SpO2 %90-94 — Orta hipoksemi", "nextStepId": "step_3" },
+        { "label": "SpO2 ≥ %95 — Normal", "nextStepId": "step_3" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_3_urgent",
+      "question": "Ciddi hipoksemi — Oksijen desteği başlatıldı. Dispne akut mu kronik mi?",
+      "description": "Yüksek akımlı oksijen (15 L/dk rezervuarlı maske) başlayın. Düzelme yoksa NIV veya entübasyon hazırlayın.",
+      "options": [
+        { "label": "Akut başlangıçlı (saatler-günler)", "nextStepId": "step_4" },
+        { "label": "Kronik alevlenme (bilinen akciğer hastalığı)", "nextStepId": "step_4" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_3",
+      "question": "Dispne akut başlangıçlı mı, kronik alevlenme mi?",
+      "description": "Semptomların başlangıç zamanını ve önceki öyküyü sorgulayın.",
+      "options": [
+        { "label": "Akut başlangıçlı (saatler-günler)", "nextStepId": "step_4" },
+        { "label": "Kronik alevlenme (KOAH, astım, KKY öyküsü)", "nextStepId": "step_4" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_4",
+      "question": "Akciğer oskültasyon bulguları nedir?",
+      "description": "Her iki hemitoraksı dikkatli oskülte edin. Solunum seslerinin varlığı, kalitesi ve ek sesleri değerlendirin.",
+      "options": [
+        { "label": "Bilateral ronküs/wheezing", "nextStepId": "step_5_wheeze" },
+        { "label": "Bilateral ralleri (krepitan)/yaş raller", "nextStepId": "step_5_rales" },
+        { "label": "Tek taraflı solunum sesi azalmış/yok", "nextStepId": "step_5_unilateral" },
+        { "label": "Normal oskültasyon", "nextStepId": "step_5_normal" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_5_wheeze",
+      "question": "Bilateral wheezing/ronküs — Obstrüktif patoloji düşünülüyor",
+      "description": "Yaygın bilateral wheezing obstrüktif havayolu hastalığını düşündürür.",
+      "options": [
+        { "label": "Bilinen astım veya ilk atak, genç hasta", "nextStepId": "step_end_asthma" },
+        { "label": "Bilinen KOAH, sigara öyküsü, ileri yaş", "nextStepId": "step_end_copd" },
+        { "label": "Anafilaksi bulguları (ürtiker, anjiyoödem, hipotansiyon)", "nextStepId": "step_end_anaphylaxis" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_asthma",
+      "question": "Astım Atak Yönetimi",
+      "description": "Akut bronkospazm ve hava yolu inflamasyonu.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Salbutamol nebül 2.5-5 mg (20 dk arayla 3 doz) verin. İpratropium bromür 0.5 mg nebül ekleyin. Prednizolon 40-60 mg PO veya Metilprednizolon 40-125 mg IV verin. Ağır atakta MgSO4 2 g IV 20 dk'da düşünün. PEF ve SpO2 ile yanıtı değerlendirin. Yanıt yoksa NIV veya entübasyon hazırlayın."
+    },
+    {
+      "stepId": "step_end_copd",
+      "question": "KOAH Alevlenme Yönetimi",
+      "description": "Kronik obstrüktif akciğer hastalığının akut alevlenmesi.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Kontrollü oksijen (hedef SpO2 %88-92) verin. Salbutamol + İpratropium bromür nebül başlayın. Sistemik kortikosteroid (Prednizolon 40 mg PO veya Metilprednizolon 40 mg IV) verin. İnfeksiyöz alevlenmede antibiyotik ekleyin. Solunum yetmezliği gelişirse BiPAP (NIV) uygulayın. AKG takibi yapın."
+    },
+    {
+      "stepId": "step_end_anaphylaxis",
+      "question": "Anafilaksi — Acil Tedavi",
+      "description": "Sistemik alerjik reaksiyon ve bronkospazm.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Adrenalin 0.5 mg IM (uyluk anterolateral) hemen uygulayın. IV erişim sağlayın, agresif sıvı resüsitasyonu başlayın. Salbutamol nebül, antihistaminik (Feniramin 45.5 mg IV) ve kortikosteroid (Metilprednizolon 80 mg IV) verin. 5 dakika sonra düzelme yoksa adrenalin tekrarlayın. En az 6-24 saat gözlem yapın."
+    },
+    {
+      "stepId": "step_5_rales",
+      "question": "Bilateral raller — Kalp yetersizliği veya pnömoni?",
+      "description": "Bilateral bazal ralleri, akciğer ödemi veya bilateral pnömoniyi düşündürür. BNP/NT-proBNP, akciğer grafisi ve ekokardiyografi yardımcıdır.",
+      "options": [
+        { "label": "KKY bulguları (ödem, ortopne, JVD, S3) mevcut", "nextStepId": "step_end_chf" },
+        { "label": "Ateş, balgam, enfeksiyon bulguları mevcut", "nextStepId": "step_end_pneumonia" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_chf",
+      "question": "Akut Dekompanse Kalp Yetersizliği",
+      "description": "Akut pulmoner ödem ve konjestif kalp yetersizliği.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Hastayı oturtun. IV Furosemid 40-80 mg bolus verin. Nitrogliserin infüzyonu başlayın (sistolik TA >110 mmHg ise). NIV (CPAP/BiPAP) uygulayın. Oksijen desteği verin. BNP, troponin, EKG, ekokardiyografi isteyin. Kardiyoloji konsültasyonu yapın. Kardiyojenik şok gelişirse inotrop düşünün."
+    },
+    {
+      "stepId": "step_end_pneumonia",
+      "question": "Pnömoni Yönetimi",
+      "description": "Toplum kökenli veya hastane kökenli pnömoni.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Akciğer grafisi isteyin. Kan kültürü, balgam kültürü, tam kan sayımı, CRP, prokalsitonin gönderin. CURB-65 skoru ile şiddet değerlendirmesi yapın. Ampirik antibiyotik başlayın (toplum kökenli: Amoksisilin-Klavulanat + Makrolid veya Solunum Kinolon). Oksijen desteği ve IV sıvı verin. Ağır pnömonide YBÜ değerlendirmesi yapın."
+    },
+    {
+      "stepId": "step_5_unilateral",
+      "question": "Tek taraflı solunum sesi kaybı — Pnömotoraks mı, plevral efüzyon mu?",
+      "description": "Tek taraflı solunum sesi kaybında perküsyon önemlidir: hipersonorite (pnömotoraks) vs matite (efüzyon).",
+      "options": [
+        { "label": "Perküsyonda hipersonorite + tansiyon pnömotoraks bulguları", "nextStepId": "step_end_tension_ptx" },
+        { "label": "Perküsyonda matite → Plevral efüzyon", "nextStepId": "step_end_effusion" },
+        { "label": "Stabil, basit pnömotoraks şüphesi", "nextStepId": "step_end_simple_ptx" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_tension_ptx",
+      "question": "Tansiyon Pnömotoraks — Acil Dekompresyon",
+      "description": "Hayatı tehdit eden tansiyon pnömotoraks. Trakeal deviasyon, hipotansiyon, boyun ven dolgunluğu.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "KLİNİK TANI İLE HEMEN müdahale edin, görüntüleme beklemeyin! İğne dekompresyonu: 2. interkostal aralık midklaviküler hat veya 4-5. interkostal aralık ön aksiller hattan 14-16G iğne ile yapın. Ardından tüp torakostomi (göğüs tüpü) yerleştirin. Göğüs cerrahisi konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_end_simple_ptx",
+      "question": "Basit Pnömotoraks Yönetimi",
+      "description": "Hemodinamik olarak stabil, basit pnömotoraks.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "PA akciğer grafisi ile boyutu değerlendirin. Küçük pnömotoraks (<2 cm): gözlem ve oksijen tedavisi. Büyük pnömotoraks (≥2 cm) veya semptomatik: aspirasyon veya tüp torakostomi. Göğüs cerrahisi konsültasyonu isteyin. Kontrol grafi ile takip edin."
+    },
+    {
+      "stepId": "step_end_effusion",
+      "question": "Plevral Efüzyon Yönetimi",
+      "description": "Tek taraflı solunum sesi kaybı ve matite ile plevral efüzyon düşünülmektedir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "PA akciğer grafisi ve toraks USG isteyin. Masif efüzyonda ve solunum sıkıntısında terapötik torasentez yapın. Plevral sıvı analizi gönderin (biyokimya, sitoloji, kültür, pH, LDH, protein — Light kriterleri). Etiyolojiye yönelik tedaviyi planlayın. Göğüs hastalıkları konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_5_normal",
+      "question": "Oskültasyon normal — Pulmoner emboli düşünülüyor mu?",
+      "description": "Normal oskültasyon bulgularıyla birlikte akut dispne ve hipoksemi, pulmoner emboli açısından şüphe uyandırmalıdır.",
+      "options": [
+        { "label": "PE risk faktörleri mevcut (immobilizasyon, DVT, malignite, OKS)", "nextStepId": "step_end_pe" },
+        { "label": "PE olası değil, diğer nedenler araştırılacak", "nextStepId": "step_end_other" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_pe",
+      "question": "Pulmoner Emboli Şüphesi",
+      "description": "Akut dispne, taşikardi, hipoksemi ve risk faktörleri ile PE ön tanısı.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Wells veya revize Geneva skoru hesaplayın. Yüksek olasılık: BT pulmoner anjiyografi isteyin, sonuç beklenmeden antikoagülan (Heparin bolus 80 IU/kg + infüzyon) başlayın. Düşük-orta olasılık: D-dimer isteyin, pozitifse BTPA çekin. Masif PE (şok/hipotansiyon): trombolitik tedavi (Alteplaz) değerlendirin."
+    },
+    {
+      "stepId": "step_end_other",
+      "question": "Diğer Dispne Nedenleri Araştırması",
+      "description": "Yaygın pulmoner ve kardiyak nedenler dışlanmıştır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Metabolik asidoz (DKA, laktik asidoz, üremik asidoz), anemi, anksiyete/panik atak, nöromüsküler hastalık düşünün. AKG, tam kan sayımı, biyokimya, laktat, tiroid fonksiyonları isteyin. Klinik tabloya göre ilgili branş konsültasyonu planlayın."
+    }
+  ]
+}

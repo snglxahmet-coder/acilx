@@ -1,0 +1,92 @@
+{
+  "id": "curb65",
+  "name": "CURB-65",
+  "description": "Toplum kökenli pnömonide mortalite riskini ve hastaneye yatış gerekliliğini değerlendirir.",
+  "category": "pulmoner",
+  "parameters": [
+    {
+      "name": "confusion",
+      "label": "Konfüzyon (yeni başlangıçlı mental durum değişikliği)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "bun",
+      "label": "BUN > 19 mg/dL (veya üre > 7 mmol/L)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "respiratory_rate",
+      "label": "Solunum hızı ≥ 30/dk",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "blood_pressure",
+      "label": "Kan basıncı: sistolik < 90 mmHg veya diastolik ≤ 60 mmHg",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "age_65",
+      "label": "Yaş ≥ 65",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 5,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 1,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "30 günlük mortalite <%3. Ayaktan tedavi düşünülebilir."
+    },
+    {
+      "min": 2,
+      "max": 2,
+      "label": "Orta Risk",
+      "severity": "moderate",
+      "recommendation": "30 günlük mortalite ~%9. Kısa süreli hastane yatışı veya yakın poliklinik takibi önerilir."
+    },
+    {
+      "min": 3,
+      "max": 5,
+      "label": "Yüksek Risk",
+      "severity": "high",
+      "recommendation": "30 günlük mortalite %15–40. Hastaneye yatış gereklidir; skor ≥4 ise yoğun bakım değerlendirmesi yapılmalıdır."
+    }
+  ],
+  "references": [
+    {
+      "title": "Defining community acquired pneumonia severity on presentation to hospital",
+      "authors": "Lim WS, van der Eerden MM, Laing R, et al.",
+      "journal": "Thorax",
+      "year": 2003
+    }
+  ]
+}

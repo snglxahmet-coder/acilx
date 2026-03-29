@@ -1,0 +1,33 @@
+{
+  "name": "N-Asetilsistein (NAC)",
+  "category": "Antidot",
+  "adultDosing": "IV protokol (21 saat): 150 mg/kg IV 200 mL D5 içinde 15-60 dakikada → 50 mg/kg IV 500 mL D5 içinde 4 saatte → 100 mg/kg IV 1000 mL D5 içinde 16 saatte. PO protokol (72 saat): 140 mg/kg yükleme dozu → ardından 70 mg/kg her 4 saatte bir x 17 doz.",
+  "pediatricDosing": "IV protokol: Aynı mg/kg dozları uygulanır ancak sıvı volümleri ağırlığa göre ayarlanır (sıvı yüklenmesini önlemek için). <20 kg: 3 mL/kg D5 → 7 mL/kg D5 → 14 mL/kg D5. 20-40 kg: 100 mL → 250 mL → 500 mL D5. PO protokol: Yetişkinle aynı mg/kg dozları.",
+  "contraindications": [
+    "Astım (göreceli kontrendikasyon — anafilaktoid reaksiyon riski artmıştır, ancak asetaminofen zehirlenmesinde yarar/risk oranı genellikle NAC lehine)"
+  ],
+  "warnings": [
+    "Anafilaktoid reaksiyon (özellikle IV yolda): Flushing, ürtiker, bronkospazm, hipotansiyon — antihistaminik (difenhidramin) ve gerekirse adrenalin hazır bulundurulmalıdır",
+    "IV ilk yükleme dozu sırasında reaksiyon riski en yüksektir — infüzyon hızı yavaşlatılabilir (60 dakikaya uzatma)",
+    "PO formda bulantı/kusma sık görülür — antiemetik verilebilir, kusma 1 saat içinde olursa doz tekrarlanır",
+    "Asetaminofen zehirlenmesinde NAC 8 saat içinde başlanırsa en etkilidir, ancak geç başlansa bile faydalıdır",
+    "Karaciğer yetmezliği olan hastalarda koagülopati izlenmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul (IV)",
+      "concentration": "200 mg/mL",
+      "volume": "10 mL (2000 mg)"
+    },
+    {
+      "form": "Ampul (IV)",
+      "concentration": "200 mg/mL",
+      "volume": "25 mL (5000 mg)"
+    },
+    {
+      "form": "Oral solüsyon",
+      "concentration": "%20 (200 mg/mL)",
+      "volume": "10 mL ve 30 mL şişeler"
+    }
+  ]
+}

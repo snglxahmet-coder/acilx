@@ -2,62 +2,54 @@
 <html lang="tr">
 <head>
 <meta charset="UTF-8">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="ACİLX">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#0E0D0C">
+<meta name="theme-color" content="#0A0E1A">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <link rel="apple-touch-startup-image" href="icons/icon-512.png">
 <title>ACİLX</title>
 <link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/animations.css">
 
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-functions-compat.js"></script>
 
 <style>
-/* ── RESET & BASE ── */
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+/* ── OVERRIDES for login page ── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&display=swap');
 html, body { height: 100%; overflow: hidden; }
-body {
-  font-family: 'Inter', sans-serif;
-  background: #0E0D0C;
-  color: #F0EDE8;
-  -webkit-font-smoothing: antialiased;
-}
 
-/* ── TOKENS ── */
+/* ── TOKENS (mapped to design-system) ── */
 :root {
-  --bg0: #0E0D0C;
-  --bg1: #161412;
-  --bg2: #1E1B18;
-  --bg3: #262320;
-  --bg4: #302C28;
-  --acc: #E8572A;
-  --acc2: #F0A040;
-  --w1: #F0EDE8;
-  --w2: #C8C0B8;
-  --w3: #807870;
-  --w4: #504840;
-  --bord: rgba(255,240,220,0.07);
-  --bord2: rgba(255,240,220,0.12);
-  --radius: 12px;
-  --nav-h: 60px;
+  --bg0: var(--bg-primary);
+  --bg1: var(--bg-card);
+  --bg2: var(--bg-border);
+  --bg3: #1E2847;
+  --bg4: #253050;
+  --acc: var(--accent);
+  --acc2: var(--accent-light);
+  --w1: var(--text-primary);
+  --w2: var(--text-body);
+  --w3: var(--text-secondary);
+  --w4: var(--text-disabled);
+  --bord: rgba(26,40,71,0.4);
+  --bord2: rgba(26,40,71,0.7);
+  --radius: var(--radius-card);
   --safe-top:    env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-left:   env(safe-area-inset-left, 0px);
   --safe-right:  env(safe-area-inset-right, 0px);
 }
-
-/* ── SKELETON PULSE ── */
-@keyframes skPulse { 0%,100%{opacity:.4} 50%{opacity:.8} }
 
 /* ── SCREENS ── */
 .screen {
@@ -69,9 +61,7 @@ body {
   opacity: 0; pointer-events: none; transform: translateY(8px);
 }
 
-/* ══════════════════════════════════
-   LOGIN SCREEN
-══════════════════════════════════ */
+/* ── LOGIN SCREEN ── */
 #loginScreen {
   background: var(--bg0);
   align-items: center;
@@ -83,7 +73,7 @@ body {
   position: absolute;
   width: 480px; height: 480px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(232,87,42,0.14) 0%, rgba(232,87,42,0.04) 50%, transparent 70%);
+  background: radial-gradient(circle, rgba(242,123,44,0.14) 0%, rgba(242,123,44,0.04) 50%, transparent 70%);
   top: 50%; left: 50%;
   transform: translate(-50%, -65%);
   pointer-events: none;
@@ -98,17 +88,16 @@ body {
   width: 100%; max-width: 360px;
   background: var(--bg1);
   border: 1px solid var(--bord2);
-  border-radius: 20px;
+  border-radius: var(--radius-card);
   animation: cardSlideUp .5s cubic-bezier(.2,.8,.2,1) both;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+  box-shadow: var(--shadow-card);
 }
 @keyframes cardSlideUp {
   from { opacity: 0; transform: translateY(24px); }
   to   { opacity: 1; transform: translateY(0); }
-}
-.login-card {
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
 }
 
 .login-bar {
@@ -123,13 +112,14 @@ body {
   margin-bottom: 24px;
 }
 .login-logo-icon {
-  width: 40px; height: 40px; border-radius: 10px;
-  background: var(--acc);
+  width: 40px; height: 40px; border-radius: var(--radius-btn);
+  background: linear-gradient(135deg, var(--acc), var(--acc2));
+  box-shadow: 0 2px 8px rgba(242,123,44,0.3);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
 }
-.login-logo-name { font-size: 18px; font-weight: 900; letter-spacing: 2px; }
-.login-logo-sub { font-size: 10px; color: var(--w3); margin-top: 1px; letter-spacing: .5px; }
+.login-logo-name { font-size: var(--fs-page-title); font-weight: 900; letter-spacing: 2px; }
+.login-logo-sub { font-size: var(--fs-caption); color: var(--w3); margin-top: 1px; letter-spacing: .5px; }
 
 /* Steps */
 .login-step { display: none; }
@@ -147,67 +137,104 @@ body {
   width: 100%; padding: 13px;
   background: rgba(255,255,255,0.06);
   border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 10px;
-  color: var(--w1); font-size: 13px; font-weight: 600;
-  font-family: 'Inter', sans-serif;
+  border-radius: var(--radius-btn);
+  color: var(--w1); font-size: 14px; font-weight: var(--fw-semibold);
+  font-family: var(--font-sans);
   cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px;
-  transition: background .15s, border-color .15s;
+  transition: all var(--duration-fast) var(--ease-default);
+  box-shadow: var(--shadow-btn);
 }
-.btn-google:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.18); }
+.btn-google:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  box-shadow: var(--shadow-btn-hover);
+  transform: translateY(-1px);
+}
+.btn-google:active { transform: translateY(0) scale(0.97); }
 
-.btn-primary {
+.login-body .btn-primary {
   width: 100%; padding: 13px;
-  background: var(--acc);
-  border: none; border-radius: 10px;
-  color: #fff; font-size: 13px; font-weight: 700;
-  font-family: 'Inter', sans-serif; cursor: pointer;
-  transition: background .15s;
+  background: linear-gradient(135deg, var(--acc) 0%, var(--accent-dark) 100%);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: var(--radius-btn);
+  color: #fff; font-size: 14px; font-weight: var(--fw-semibold);
+  font-family: var(--font-sans); cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
+  box-shadow: var(--shadow-btn);
 }
-.btn-primary:hover { background: #D04820; }
-.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.login-body .btn-primary:hover {
+  background: linear-gradient(135deg, var(--acc2) 0%, var(--acc) 100%);
+  box-shadow: var(--shadow-btn-hover), var(--shadow-glow);
+  transform: translateY(-1px);
+}
+.login-body .btn-primary:active { transform: translateY(0) scale(0.97); box-shadow: var(--shadow-sm); }
+.login-body .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; box-shadow: none; }
 
 .btn-ghost {
-  background: none; border: 1px solid var(--bord2);
-  border-radius: 10px; padding: 11px;
-  width: 100%; color: var(--w3); font-size: 12px;
-  font-family: 'Inter', sans-serif; cursor: pointer;
+  background: rgba(26,40,71,0.3); border: 1px solid var(--bord2);
+  border-radius: var(--radius-btn); padding: 11px;
+  width: 100%; color: var(--w3); font-size: 13px;
+  font-family: var(--font-sans); cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-default);
 }
+.btn-ghost:hover { border-color: var(--acc); color: var(--acc); background: rgba(242,123,44,0.06); }
 
-/* Step 1: Seçenek kartları */
+/* Option cards */
 .option-cards { display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px; }
 .option-card {
   padding: 14px 16px;
   background: var(--bg2);
   border: 1px solid var(--bord);
-  border-radius: 12px;
+  border-radius: var(--radius-card);
   cursor: pointer;
-  transition: border-color .15s, background .15s;
+  transition: all var(--duration-fast) var(--ease-default);
   display: flex; align-items: center; gap: 12px;
+  box-shadow: var(--shadow-sm);
 }
-.option-card:hover { border-color: var(--bord2); background: var(--bg3); }
-.option-card.selected { border-color: var(--acc); background: rgba(232,87,42,0.08); }
+.option-card:hover { border-color: var(--bord2); background: var(--bg3); box-shadow: var(--shadow-card); transform: translateY(-1px); }
+.option-card.selected { border-color: var(--acc); background: rgba(242,123,44,0.08); box-shadow: 0 0 16px rgba(242,123,44,0.12); }
 .option-icon {
-  width: 36px; height: 36px; border-radius: 9px;
+  width: 36px; height: 36px; border-radius: var(--radius-btn);
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0; font-size: 16px;
 }
 .option-title { font-size: 13px; font-weight: 700; color: var(--w1); }
 .option-desc { font-size: 11px; color: var(--w3); margin-top: 2px; }
 
-/* Grup kodu input */
+/* Form inputs */
+.form-input {
+  width: 100%; padding: 12px 14px;
+  background: var(--bg0);
+  border: 1.5px solid var(--bord2);
+  border-radius: var(--radius-btn);
+  color: var(--w1); font-size: 14px; font-weight: 500;
+  font-family: var(--font-sans);
+  margin-bottom: 10px;
+  transition: border-color var(--duration-fast) var(--ease-default),
+              box-shadow var(--duration-fast) var(--ease-default);
+}
+.form-input:focus { outline: none; border-color: var(--acc); box-shadow: var(--shadow-input); }
+.form-input::placeholder { color: var(--w4); }
+
+.form-label {
+  font-size: 11px; font-weight: 700; color: var(--w3);
+  text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 6px; display: block;
+}
+
 .code-input {
   width: 100%; padding: 14px;
-  background: var(--bg2);
+  background: var(--bg0);
   border: 1.5px solid var(--bord2);
-  border-radius: 10px;
+  border-radius: var(--radius-btn);
   color: var(--w1); font-size: 22px; font-weight: 700;
-  font-family: 'DM Mono', monospace;
+  font-family: var(--font-mono);
   text-align: center; letter-spacing: 4px;
   text-transform: uppercase;
-  margin-bottom: 12px;
+  margin-bottom: 10px;
   transition: border-color .15s;
 }
-.code-input:focus { outline: none; border-color: var(--acc); }
+.code-input:focus { outline: none; border-color: var(--acc); box-shadow: var(--shadow-input); }
 .code-input::placeholder { color: var(--w4); font-size: 16px; letter-spacing: 2px; }
 
 /* Step back button */
@@ -215,9 +242,10 @@ body {
   display: flex; align-items: center; gap: 8px;
   margin-bottom: 16px;
   background: none; border: none; cursor: pointer;
-  color: var(--w3); font-size: 12px; font-family: 'Inter', sans-serif;
+  color: var(--w3); font-size: 12px; font-family: var(--font-sans);
+  transition: color var(--duration-fast) var(--ease-default);
 }
-.step-back:hover { color: var(--w2); }
+.step-back:hover { color: var(--acc); }
 
 /* Pending screen */
 .pending-icon {
@@ -228,12 +256,21 @@ body {
   font-size: 24px;
 }
 
+/* Success screen */
+.success-icon {
+  width: 56px; height: 56px; border-radius: 50%;
+  background: rgba(34,197,94,0.12);
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 16px;
+  font-size: 24px;
+}
+
 .login-footer {
   border-top: 1px solid var(--bord);
   padding: 10px 24px;
   display: flex; justify-content: space-between;
-  font-size: 10px; color: var(--w4);
-  font-family: 'DM Mono', monospace;
+  font-size: var(--fs-caption); color: var(--w4);
+  font-family: var(--font-mono);
 }
 .login-footer-dot {
   width: 5px; height: 5px; border-radius: 50%;
@@ -241,145 +278,7 @@ body {
   margin-right: 5px; vertical-align: middle;
 }
 
-/* ══════════════════════════════════
-   APP SHELL
-══════════════════════════════════ */
-#appScreen {
-  background: var(--bg0);
-}
-
-/* Header */
-.app-header {
-  height: calc(52px + var(--safe-top));
-  padding-top: var(--safe-top);
-  flex-shrink: 0;
-  background: var(--bg1);
-  border-bottom: 1px solid var(--bord);
-  display: flex; align-items: flex-end;
-  padding-left: calc(16px + var(--safe-left));
-  padding-right: calc(16px + var(--safe-right));
-  padding-bottom: 0;
-  gap: 12px;
-}
-.app-header-title {
-  font-size: 14px; font-weight: 700; color: var(--w1);
-  flex: 1;
-}
-.header-chip {
-  font-size: 10px; font-family: 'DM Mono', monospace;
-  color: var(--w3); background: var(--bg3);
-  border: 1px solid var(--bord); border-radius: 5px;
-  padding: 2px 7px;
-}
-.header-badge {
-  font-size: 9px; font-weight: 700;
-  padding: 2px 7px; border-radius: 4px;
-  background: rgba(232,87,42,0.15); color: var(--acc);
-  border: 1px solid rgba(232,87,42,0.25);
-  font-family: 'DM Mono', monospace;
-  display: none;
-}
-.header-group-code {
-  font-size: 10px; font-weight: 700;
-  padding: 3px 8px; border-radius: 5px;
-  background: rgba(232,87,42,0.1); color: var(--acc);
-  border: 1px solid rgba(232,87,42,0.2);
-  font-family: 'DM Mono', monospace;
-  cursor: pointer; display: none; letter-spacing: .5px;
-}
-.header-btn {
-  width: 32px; height: 32px; border-radius: 8px;
-  background: var(--bg3); border: 1px solid var(--bord);
-  display: flex; align-items: center; justify-content: center;
-  cursor: pointer; flex-shrink: 0;
-}
-.header-btn svg { width: 14px; height: 14px; stroke: var(--w3); fill: none; }
-.header-btn:hover { border-color: var(--bord2); }
-
-/* Content area */
-.app-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-
-/* Module iframes */
-.module-frame {
-  position: absolute; inset: 0;
-  width: 100%; height: 100%;
-  border: none;
-  display: none;
-}
-.module-frame.active { display: block; }
-
-/* Placeholder screens */
-.module-placeholder {
-  position: absolute; inset: 0;
-  display: none; flex-direction: column;
-  align-items: center; justify-content: center;
-  padding: 32px;
-  text-align: center;
-}
-.module-placeholder.active { display: flex; }
-
-/* Bottom Nav */
-.bottom-nav {
-  height: calc(var(--nav-h) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
-  padding-left: var(--safe-left);
-  padding-right: var(--safe-right);
-  flex-shrink: 0;
-  background: var(--bg1);
-  border-top: 1px solid var(--bord);
-  display: flex; align-items: flex-start;
-}
-.nav-item {
-  flex: 1; height: var(--nav-h);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  gap: 4px; cursor: pointer;
-  position: relative;
-  -webkit-tap-highlight-color: transparent;
-}
-.nav-item .nav-icon {
-  width: 22px; height: 22px;
-  stroke: var(--w4); fill: none;
-  transition: stroke .15s;
-}
-.nav-item .nav-label {
-  font-size: 10px; font-weight: 600;
-  color: var(--w4); transition: color .15s;
-  letter-spacing: .2px;
-}
-.nav-item .nav-lock {
-  position: absolute; top: 8px; right: calc(50% - 18px);
-  font-size: 8px; color: var(--w4);
-}
-.nav-item.active .nav-icon { stroke: var(--acc); }
-.nav-item.active .nav-label { color: var(--acc); }
-.nav-item.active::before {
-  content: '';
-  position: absolute; top: 0; left: 50%;
-  transform: translateX(-50%);
-  width: 32px; height: 2px;
-  background: var(--acc); border-radius: 0 0 3px 3px;
-}
-
-/* Toast */
-#toast {
-  position: fixed; bottom: calc(var(--nav-h) + var(--safe-bottom) + 12px);
-  left: 50%; transform: translateX(-50%);
-  background: var(--bg3);
-  border: 1px solid var(--bord2);
-  color: var(--w1); padding: 10px 18px;
-  border-radius: 10px; font-size: 12px; font-weight: 600;
-  z-index: 9999; opacity: 0;
-  transition: opacity .25s;
-  pointer-events: none; white-space: nowrap;
-}
-#toast.show { opacity: 1; }
-
-/* Loading */
+/* Loading dots */
 .loading-dots {
   display: flex; gap: 6px; margin-bottom: 12px;
 }
@@ -392,109 +291,32 @@ body {
 .loading-dot:nth-child(3) { animation-delay: .4s; }
 @keyframes dotPulse { 0%,100%{opacity:.3} 50%{opacity:1} }
 
-/* Upgrade card */
-.upgrade-card {
-  background: var(--bg2);
-  border: 1px solid rgba(232,87,42,0.2);
-  border-radius: 16px; padding: 24px;
-  max-width: 280px; text-align: center;
+/* Toast */
+#toast {
+  position: fixed; bottom: calc(var(--safe-bottom) + 24px);
+  left: 50%; transform: translateX(-50%);
+  background: var(--bg3);
+  border: 1px solid var(--bord2);
+  color: var(--w1); padding: 10px 18px;
+  border-radius: 10px; font-size: 12px; font-weight: 600;
+  z-index: 9999; opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none; white-space: nowrap;
 }
-.upgrade-card .lock-icon {
-  width: 48px; height: 48px; border-radius: 50%;
-  background: rgba(232,87,42,0.1);
-  display: flex; align-items: center; justify-content: center;
-  margin: 0 auto 14px;
-}
+#toast.show { opacity: 1; }
 
-/* ── IFRAME LOADING OVERLAY ── */
-#nobetLoadingOverlay {
-  position: absolute; inset: 0;
-  background: var(--bg0);
-  display: flex; flex-direction: column;
-  align-items: center; justify-content: center;
-  z-index: 10; gap: 0;
-  transition: opacity .35s ease;
-}
-#nobetLoadingOverlay.fadeout { opacity: 0; pointer-events: none; }
-#nobetLoadingOverlay.hidden  { display: none; }
-
-/* ── Ortak animasyon bileşenleri ── */
-.nlo-icon-wrap {
-  position: relative; width: 72px; height: 72px; margin-bottom: 22px;
-}
-.nlo-ring {
-  position: absolute; inset: 0; border-radius: 50%;
-  border: 2px solid transparent;
-  border-top-color: var(--acc);
-  border-right-color: rgba(232,87,42,0.22);
-  animation: nloRing 1.1s cubic-bezier(.6,0,.4,1) infinite;
-}
-.nlo-ring2 {
-  position: absolute; inset: 10px; border-radius: 50%;
-  border: 1.5px solid transparent;
-  border-bottom-color: rgba(232,87,42,0.5);
-  border-left-color: rgba(232,87,42,0.1);
-  animation: nloRing 1.1s cubic-bezier(.6,0,.4,1) infinite reverse;
-  animation-delay: -.4s;
-}
-.nlo-center {
-  position: absolute; inset: 18px;
-  background: var(--acc); border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  animation: nloPulse 2s ease-in-out infinite;
-  box-shadow: 0 0 16px rgba(232,87,42,0.6), 0 0 32px rgba(232,87,42,0.2);
-}
-.nlo-cross { position: relative; width: 18px; height: 18px; }
-.nlo-cross::before, .nlo-cross::after {
-  content: ''; position: absolute;
-  background: #fff; border-radius: 2px;
-  width: 16px; height: 2.5px;
-  top: 50%; left: 50%;
-}
-.nlo-cross::before { transform: translate(-50%,-50%) rotate(45deg); }
-.nlo-cross::after  { transform: translate(-50%,-50%) rotate(-45deg); }
-.nlo-ekg { display: block; margin-bottom: 28px; }
-.nlo-ekg-path {
-  stroke-dasharray: 200; stroke-dashoffset: 200;
-  animation: nloEkg 1.8s ease-in-out infinite;
-}
-@keyframes nloRing  { to { transform: rotate(360deg); } }
-@keyframes nloPulse {
-  0%,100% { box-shadow: 0 0 12px rgba(232,87,42,0.5), 0 0 24px rgba(232,87,42,0.2); transform: scale(1); }
-  50%     { box-shadow: 0 0 22px rgba(232,87,42,0.8), 0 0 40px rgba(232,87,42,0.3); transform: scale(1.05); }
-}
-@keyframes nloEkg {
-  0%   { stroke-dashoffset: 200; opacity: 0; }
-  15%  { opacity: 1; }
-  60%  { stroke-dashoffset: 0; opacity: 1; }
-  85%  { stroke-dashoffset: 0; opacity: 0; }
-  100% { stroke-dashoffset: 0; opacity: 0; }
-}
-.nlo-name {
-  font-size: 22px; font-weight: 900; letter-spacing: 4px;
-  color: var(--w1); margin-bottom: 4px;
-}
-.nlo-sub {
-  font-size: 10px; color: var(--w3); letter-spacing: 1px;
-  text-transform: uppercase; margin-bottom: 24px;
-}
-.nlo-tip {
-  position: absolute; bottom: 28px;
-  font-size: 10px; color: var(--w4); letter-spacing: .3px;
-}
 /* ── AUTH GATE: HEART SPLASH ── */
 #authGate {
-  position:fixed;inset:0;z-index:999999;background:#000;
+  position:fixed;inset:0;z-index:999999;background:var(--bg-primary);
   overflow:hidden;transition:opacity .5s ease;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
 }
 #authGate.fade-out { opacity:0; pointer-events:none; }
 
-/* Kalp ikonu */
 .ag-heart {
   margin-bottom:24px;
   animation:agHeartbeat 2.4s cubic-bezier(.4,0,.2,1) infinite;
-  filter:drop-shadow(0 0 12px rgba(232,87,42,0.4));
+  filter:drop-shadow(0 0 12px rgba(242,123,44,0.4));
 }
 @keyframes agHeartbeat {
   0%   { transform:scale(1); }
@@ -505,29 +327,26 @@ body {
   100% { transform:scale(1); }
 }
 
-/* EKG çizgisi — JS animasyonu ile yönetilir */
 .ag-ekg-wrap {
   width:min(200px,60vw);height:32px;margin-bottom:28px;overflow:hidden;
 }
 .ag-ekg-svg { width:100%;height:100%; }
 .ag-ekg-line {
-  fill:none;stroke:#E8572A;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
-  filter:drop-shadow(0 0 3px rgba(232,87,42,0.4));
+  fill:none;stroke:var(--accent);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;
+  filter:drop-shadow(0 0 3px rgba(242,123,44,0.4));
 }
 
-/* Logo */
 .ag-logo { text-align:center; }
 .ag-logo-text {
-  font-family:'DM Mono',monospace;font-size:24px;font-weight:900;letter-spacing:6px;
-  background:linear-gradient(135deg,#E8572A,#F0A040);
+  font-family:var(--font-mono);font-size:var(--fs-logo);font-weight:900;letter-spacing:6px;
+  background:linear-gradient(135deg,var(--accent),var(--accent-light));
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;
 }
 
-/* Yükleme durumu */
 .ag-status {
-  font-family:'DM Mono',monospace;font-size:10px;
-  color:rgba(232,87,42,0.4);letter-spacing:1px;text-align:center;
+  font-family:var(--font-mono);font-size:var(--fs-caption);
+  color:rgba(242,123,44,0.4);letter-spacing:1px;text-align:center;
   margin-top:12px;
   animation:agStatusPulse 2.4s ease-in-out infinite;
 }
@@ -539,33 +358,188 @@ body {
 </head>
 <body>
 
-<!-- ══ LOGIN SCREEN ══ -->
+<!-- ══ AUTH GATE SPLASH ══ -->
 <div id="authGate">
-
-  <!-- Kalp ikonu -->
   <svg class="ag-heart" width="40" height="36" viewBox="0 0 40 36" fill="none">
-    <path d="M20 36 C20 36 0 22 0 11 A10 10 0 0 1 20 8 A10 10 0 0 1 40 11 C40 22 20 36 20 36Z" fill="#E8572A"/>
+    <path d="M20 36 C20 36 0 22 0 11 A10 10 0 0 1 20 8 A10 10 0 0 1 40 11 C40 22 20 36 20 36Z" fill="#F27B2C"/>
   </svg>
-
-  <!-- EKG çizgisi -->
   <div class="ag-ekg-wrap">
     <svg class="ag-ekg-svg" viewBox="0 0 200 32">
       <path class="ag-ekg-line" d="M0,16 L50,16 L60,16 L68,14 L74,18 L80,12 L84,16 L90,16 L96,4 L102,28 L108,2 L114,26 L118,12 L122,16 L150,16 L158,14 L164,18 L168,12 L172,16 L200,16"/>
     </svg>
   </div>
-
-  <!-- Logo -->
   <div class="ag-logo">
     <div class="ag-logo-text">ACiLX</div>
   </div>
-
-  <!-- Yükleme durumu -->
   <div class="ag-status" id="agStatus">Sisteme baglaniyor...</div>
-
 </div>
 
+<!-- ══ LOGIN / ONBOARDING SCREEN ══ -->
+<div class="screen" id="loginScreen" style="opacity:0;transition:opacity .3s ease">
+  <div class="login-glow"></div>
+  <div class="login-card" style="position:relative;z-index:10">
+    <div class="login-bar"></div>
+    <div class="login-body">
+
+      <div class="login-logo">
+        <div class="login-logo-icon">
+          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+            <line x1="4" y1="4" x2="18" y2="18" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+            <line x1="18" y1="4" x2="4" y2="18" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div>
+          <div class="login-logo-name">ACİLX</div>
+          <div class="login-logo-sub">Acil Tıp Platformu</div>
+        </div>
+      </div>
+
+      <!-- ADIM 0: Giriş -->
+      <div class="login-step active" id="step-auth">
+        <div class="login-headline">ACİLX'e<br><span>Hoş Geldin.</span></div>
+        <div class="login-sub">E-posta veya Google hesabınla giriş yap.</div>
+        <div class="login-error" id="authError"></div>
+
+        <!-- Email Giriş Formu -->
+        <div id="loginForm">
+          <label class="form-label">E-posta</label>
+          <input class="form-input" id="loginEmail" type="email" placeholder="ornek@hastane.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <label class="form-label">Şifre</label>
+          <input class="form-input" id="loginPassword" type="password" placeholder="Şifre" onkeydown="if(event.key==='Enter')doEmailLogin()">
+          <button class="btn-primary" onclick="doEmailLogin()" id="emailLoginBtn" style="margin-bottom:10px">Giriş Yap</button>
+          <div style="text-align:center;margin-bottom:10px">
+            <button style="background:none;border:none;color:var(--w3);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline" onclick="toggleAuthForm()">Hesabın yok mu? Kayıt ol</button>
+          </div>
+        </div>
+
+        <!-- Email Kayıt Formu (gizli) -->
+        <div id="registerForm" style="display:none">
+          <label class="form-label">Ad Soyad</label>
+          <input class="form-input" id="regName" type="text" placeholder="Dr. Ahmet Yılmaz" autocomplete="name">
+          <label class="form-label">E-posta</label>
+          <input class="form-input" id="regEmail" type="email" placeholder="ornek@hastane.com" autocomplete="email" autocapitalize="off" autocorrect="off" spellcheck="false">
+          <label class="form-label">Şifre</label>
+          <input class="form-input" id="regPassword" type="password" placeholder="En az 6 karakter" onkeydown="if(event.key==='Enter')doEmailRegister()">
+          <button class="btn-primary" onclick="doEmailRegister()" id="emailRegBtn" style="margin-bottom:10px">Hesap Oluştur</button>
+          <div style="text-align:center;margin-bottom:10px">
+            <button style="background:none;border:none;color:var(--w3);font-size:12px;cursor:pointer;font-family:var(--font-sans);text-decoration:underline" onclick="toggleAuthForm()">Zaten hesabın var? Giriş yap</button>
+          </div>
+        </div>
+
+        <!-- Ayırıcı -->
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+          <div style="flex:1;height:1px;background:var(--bord2)"></div>
+          <span style="font-size:11px;color:var(--w4);text-transform:uppercase;letter-spacing:1px">veya</span>
+          <div style="flex:1;height:1px;background:var(--bord2)"></div>
+        </div>
+
+        <!-- Google Butonu -->
+        <button class="btn-google" onclick="doGoogleLogin()">
+          <svg width="16" height="16" viewBox="0 0 48 48">
+            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/>
+            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.1z"/>
+            <path fill="#FBBC05" d="M10.5 28.6A14.8 14.8 0 019.5 24c0-1.6.3-3.2.8-4.6L2.4 13.3A23.8 23.8 0 000 24c0 3.8.9 7.4 2.5 10.6l8-6z"/>
+            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.6-5.9c-2 1.4-4.6 2.2-7.6 2.2-6.3 0-11.6-3.7-13.5-9l-8 6.1C6.5 42.6 14.6 48 24 48z"/>
+          </svg>
+          Google ile Giriş Yap
+        </button>
+      </div>
+
+      <!-- ADIM 1: Rol seçimi -->
+      <div class="login-step" id="step-choose">
+        <div class="login-headline" style="font-size:18px">Ne yapmak istiyorsun?</div>
+        <div class="login-sub">Rolünü seç, seni yönlendirelim.</div>
+        <div class="option-cards">
+          <div class="option-card" onclick="showStep('step-create')">
+            <div class="option-icon" style="background:rgba(128,80,200,0.12)">👑</div>
+            <div>
+              <div class="option-title">Klinik Kur</div>
+              <div class="option-desc">Başasistan olarak kliniğini oluştur ve yönet</div>
+            </div>
+          </div>
+          <div class="option-card" onclick="showStep('step-join')">
+            <div class="option-icon" style="background:rgba(60,160,100,0.12)">🏥</div>
+            <div>
+              <div class="option-title">Kliniğe Katıl</div>
+              <div class="option-desc">Başasistanından aldığın kodlarla katıl</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ADIM 2a: Klinik Kur formu -->
+      <div class="login-step" id="step-create">
+        <button class="step-back" onclick="showStep('step-choose')">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 4 7 10 13 16"/></svg>
+          Geri
+        </button>
+        <div class="login-headline" style="font-size:17px">Klinik Oluştur</div>
+        <div class="login-sub">Kliniğini kur, asistanlarını ekle, nöbet listeni oluştur.</div>
+        <div class="login-error" id="createError"></div>
+        <label class="form-label">Klinik Adı</label>
+        <input class="form-input" id="createClinicName" type="text" placeholder="Acil Tıp AD" autocomplete="off">
+        <label class="form-label">Hastane Adı</label>
+        <input class="form-input" id="createHospitalName" type="text" placeholder="Ankara Şehir Hastanesi" autocomplete="off">
+        <button class="btn-primary" onclick="submitCreateClinic()" id="createBtn" style="margin-top:8px">Klinik Oluştur</button>
+      </div>
+
+      <!-- ADIM 2b: Kliniğe Katıl formu -->
+      <div class="login-step" id="step-join">
+        <button class="step-back" onclick="showStep('step-choose')">
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 4 7 10 13 16"/></svg>
+          Geri
+        </button>
+        <div class="login-headline" style="font-size:17px">Kliniğe Katıl</div>
+        <div class="login-sub">Başasistanından aldığın iki kodu gir.</div>
+        <div class="login-error" id="joinError"></div>
+        <label class="form-label">Hastane Kodu</label>
+        <input class="code-input" id="joinHospitalCode" type="text" maxlength="6"
+          placeholder="ABC123" autocomplete="off" autocorrect="off" spellcheck="false"
+          oninput="this.value=this.value.toUpperCase()">
+        <label class="form-label">Kişisel Asistan Kodun</label>
+        <input class="code-input" id="joinResidentCode" type="text" maxlength="6"
+          placeholder="XYZ789" autocomplete="off" autocorrect="off" spellcheck="false"
+          oninput="this.value=this.value.toUpperCase()"
+          onkeydown="if(event.key==='Enter')submitJoinClinic()">
+        <button class="btn-primary" onclick="submitJoinClinic()" id="joinBtn" style="margin-top:4px">Kliniğe Katıl</button>
+      </div>
+
+      <!-- ADIM 3: Klinik onay bekleniyor -->
+      <div class="login-step" id="step-pending">
+        <div class="pending-icon">⏳</div>
+        <div style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">Klinik Onay Bekliyor</div>
+        <div style="font-size:12px;color:var(--w3);line-height:1.6;margin-bottom:20px;text-align:center">
+          Kliniğin oluşturuldu! Süper admin onayladıktan sonra<br>yönetim paneline erişebilirsin.
+        </div>
+        <button class="btn-ghost" onclick="checkClinicStatus()" style="margin-bottom:8px">Durumu Kontrol Et</button>
+        <button class="btn-ghost" onclick="doLogout()">Çıkış Yap</button>
+      </div>
+
+      <!-- ADIM 4: Yükleniyor -->
+      <div class="login-step" id="step-loading">
+        <div style="text-align:center;padding:12px 0">
+          <div class="loading-dots" style="justify-content:center">
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+            <div class="loading-dot"></div>
+          </div>
+          <div style="font-size:12px;color:var(--w3)" id="loadingText">Yükleniyor...</div>
+        </div>
+      </div>
+
+    </div>
+    <div class="login-footer">
+      <span><span class="login-footer-dot"></span>ACİLX v0.4</span>
+      <span>ACİL TIP · FİREBASE</span>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ══ SPLASH EKG ANİMASYONU ══ -->
 <script>
-// ── Splash status & EKG animasyonu ──
 var _agSteps=['Sisteme baglaniyor...','Kullanici dogrulaniyor...','Veriler yukleniyor...'];
 function agSetStep(n){
   var el=document.getElementById('agStatus');
@@ -583,7 +557,6 @@ function agFadeOut(){
   setTimeout(function(){ gate.style.display='none'; },500);
 }
 
-// ── EKG JS animasyonu — tam döngü, düzgün loop ──
 var _ekgRaf=0, _ekgRunning=false;
 function _ekgStart(){
   var path=document.querySelector('.ag-ekg-line');
@@ -593,7 +566,7 @@ function _ekgStart(){
   path.style.strokeDashoffset=len;
   path.style.opacity='0';
   _ekgRunning=true;
-  var DRAW=1800, HOLD=400, FADE=400, PAUSE=200; // toplam ~2.8s
+  var DRAW=1800, HOLD=400, FADE=400, PAUSE=200;
   var TOTAL=DRAW+HOLD+FADE+PAUSE;
   var start=0;
   function tick(ts){
@@ -601,21 +574,17 @@ function _ekgStart(){
     if(!start) start=ts;
     var elapsed=(ts-start)%TOTAL;
     if(elapsed<DRAW){
-      // Çizim fazı
       var p=elapsed/DRAW;
       path.style.strokeDashoffset=len*(1-p);
       path.style.opacity=Math.min(1,p*3);
     } else if(elapsed<DRAW+HOLD){
-      // Tam görünür bekleme
       path.style.strokeDashoffset='0';
       path.style.opacity='0.8';
     } else if(elapsed<DRAW+HOLD+FADE){
-      // Kaybolma
       var fp=(elapsed-DRAW-HOLD)/FADE;
       path.style.strokeDashoffset='0';
       path.style.opacity=0.8*(1-fp);
     } else {
-      // Kısa pause — döngü %TOTAL ile otomatik sıfırlanır
       path.style.strokeDashoffset=len;
       path.style.opacity='0';
     }
@@ -624,305 +593,12 @@ function _ekgStart(){
   _ekgRaf=requestAnimationFrame(tick);
 }
 function _ekgStop(){ _ekgRunning=false; cancelAnimationFrame(_ekgRaf); }
-// Sayfa yüklenince başlat
 document.addEventListener('DOMContentLoaded', _ekgStart);
 </script>
 
-<div class="screen" id="loginScreen" style="opacity:0;transition:opacity .3s ease">
-  <div class="login-glow"></div>
-  <div class="login-card" id="loginCard" style="position:relative;z-index:10">
-    <div class="login-bar"></div>
-    <div class="login-body">
-
-      <div class="login-logo">
-        <div class="login-logo-icon">
-          <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-            <line x1="4" y1="4" x2="18" y2="18" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
-            <line x1="18" y1="4" x2="4" y2="18" stroke="white" stroke-width="2.8" stroke-linecap="round"/>
-          </svg>
-        </div>
-        <div>
-          <div class="login-logo-name">ACİLX</div>
-          <div class="login-logo-sub">Acil Tıp Platformu</div>
-        </div>
-      </div>
-
-      <!-- ADIM 0: Google giriş -->
-      <div class="login-step active" id="step-auth">
-        <div class="login-headline">ACİLX'e<br><span>Hoş Geldin.</span></div>
-        <div class="login-sub">Acil tıp nöbet yönetim platformu.<br>Google hesabınla saniyeler içinde başla.</div>
-        <div class="login-error" id="authError"></div>
-        <button class="btn-google" onclick="doGoogleLogin()">
-          <svg width="16" height="16" viewBox="0 0 48 48">
-            <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.2l6.8-6.8C35.8 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.6 13.3l7.9 6.1C12.4 13.2 17.7 9.5 24 9.5z"/>
-            <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v8.5h12.7c-.6 3-2.3 5.5-4.8 7.2l7.6 5.9c4.4-4.1 7-10.1 7-17.1z"/>
-            <path fill="#FBBC05" d="M10.5 28.6A14.8 14.8 0 019.5 24c0-1.6.3-3.2.8-4.6L2.4 13.3A23.8 23.8 0 000 24c0 3.8.9 7.4 2.5 10.6l8-6z"/>
-            <path fill="#34A853" d="M24 48c6.2 0 11.4-2 15.2-5.5l-7.6-5.9c-2 1.4-4.6 2.2-7.6 2.2-6.3 0-11.6-3.7-13.5-9l-8 6.1C6.5 42.6 14.6 48 24 48z"/>
-          </svg>
-          Google ile Giriş Yap
-        </button>
-      </div>
-
-      <!-- ADIM 1: 3 seçenek -->
-      <div class="login-step" id="step-choose">
-        <div class="login-headline" style="font-size:18px">Ne yapmak istiyorsun?</div>
-        <div class="login-sub">Sonradan değiştirebilirsin.</div>
-        <div class="option-cards">
-          <div class="option-card" onclick="selectOption('solo')">
-            <div class="option-icon" style="background:rgba(232,87,42,0.12)">📋</div>
-            <div>
-              <div class="option-title">Manuel Liste</div>
-              <div class="option-desc">Kendi nöbetlerini kendin gir ve takip et</div>
-            </div>
-          </div>
-          <div class="option-card" onclick="selectOption('create')">
-            <div class="option-icon" style="background:rgba(128,80,200,0.12)">👑</div>
-            <div>
-              <div class="option-title">Grup Kur</div>
-              <div class="option-desc">Başasistan olarak ekibini yönet</div>
-            </div>
-          </div>
-          <div class="option-card" onclick="selectOption('join')">
-            <div class="option-icon" style="background:rgba(60,160,100,0.12)">🏥</div>
-            <div>
-              <div class="option-title">Gruba Katıl</div>
-              <div class="option-desc">Başasistanından aldığın kodla katıl</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ADIM 2: Grup kodu gir (join) -->
-      <div class="login-step" id="step-joincode">
-        <button class="step-back" onclick="showStep('step-choose')">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 4 7 10 13 16"/></svg>
-          Geri
-        </button>
-        <div class="login-headline" style="font-size:17px">Grup Kodunu Gir</div>
-        <div class="login-sub">Başasistanından aldığın kodu gir. İstek gönderilecek.</div>
-        <div class="login-error" id="codeError"></div>
-        <input class="code-input" id="groupCodeInput" type="text" maxlength="8"
-          placeholder="ACL-447" autocomplete="off" autocorrect="off" spellcheck="false"
-          oninput="this.value=this.value.toUpperCase()"
-          onkeydown="if(event.key==='Enter')submitGroupCode()">
-        <button class="btn-primary" onclick="submitGroupCode()">İstek Gönder</button>
-      </div>
-
-      <!-- ADIM 3: Onay bekleniyor -->
-      <div class="login-step" id="step-pending">
-        <div class="pending-icon">⏳</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px;text-align:center">Onay Bekleniyor</div>
-        <div style="font-size:12px;color:var(--w3);line-height:1.6;margin-bottom:20px;text-align:center">
-          İsteğin alındı. Başasistan onayladıktan sonra sisteme erişebilirsin.
-        </div>
-        <button class="btn-ghost" onclick="doLogout()">Çıkış Yap</button>
-      </div>
-
-      <!-- ADIM 4: Yükleniyor -->
-      <div class="login-step" id="step-loading">
-        <div style="text-align:center;padding:12px 0">
-          <div class="loading-dots" style="justify-content:center">
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
-            <div class="loading-dot"></div>
-          </div>
-          <div style="font-size:12px;color:var(--w3)">Yükleniyor...</div>
-        </div>
-      </div>
-
-    </div>
-    <div class="login-footer">
-      <span><span class="login-footer-dot"></span>ACİLX v0.3</span>
-      <span>ACİL TIP · FİREBASE</span>
-    </div>
-  </div><!-- /loginCard -->
-</div><!-- /loginScreen -->
-
-<!-- ══ APP SCREEN ══ -->
-<div class="screen hidden" id="appScreen">
-
-  <!-- Header -->
-  <div class="app-header">
-    <div class="app-header-title" id="headerTitle">ACİLX</div>
-    <span class="header-chip" id="headerChip"></span>
-    <span class="header-badge" id="headerBadge"></span>
-    <span class="header-group-code" id="headerGroupCode" onclick="copyGroupCode()" title="Kopyala"></span>
-    <div class="header-btn" onclick="doLogout()" title="Çıkış">
-      <svg viewBox="0 0 20 20"><path d="M14 10H3M7 6l-4 4 4 4M12 4h4a1 1 0 011 1v10a1 1 0 01-1 1h-4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-  </div>
-
-  <!-- Content -->
-  <div class="app-content">
-
-    <!-- Skeleton loader — Firestore yüklenirken gösterilir -->
-    <div id="appSkeleton" style="position:absolute;inset:0;z-index:50;background:var(--bg0);padding:16px;display:none">
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div style="height:14px;width:40%;background:var(--bg3);border-radius:6px;animation:skPulse 1.2s ease-in-out infinite"></div>
-        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .1s"></div>
-        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .2s"></div>
-        <div style="height:120px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .3s"></div>
-        <div style="height:48px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .4s"></div>
-        <div style="height:80px;background:var(--bg2);border:1px solid var(--bord);border-radius:12px;animation:skPulse 1.2s ease-in-out infinite .5s"></div>
-      </div>
-    </div>
-
-    <!-- Nöbet modülü iframe yükleme overlay -->
-    <div id="nobetLoadingOverlay" class="hidden">
-      <div class="nlo-icon-wrap">
-        <div class="nlo-ring"></div>
-        <div class="nlo-ring2"></div>
-        <div class="nlo-center"><div class="nlo-cross"></div></div>
-      </div>
-      <svg class="nlo-ekg" width="120" height="32" viewBox="0 0 120 32">
-        <path class="nlo-ekg-path" d="M0,16 L28,16 L34,4 L40,28 L46,10 L52,22 L58,16 L92,16 L98,4 L104,28 L110,10 L116,22 L120,16" fill="none" stroke="rgba(232,87,42,0.8)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <div class="nlo-name">ACİLX</div>
-      <div class="nlo-sub">Acil Tıp Platformu</div>
-      <div class="nlo-tip">Yükleniyor…</div>
-    </div>
-
-    <!-- Nöbet modülü iframe -->
-    <iframe class="module-frame" id="nobetFrame" src="" title="Nöbet Listesi"></iframe>
-
-    <!-- Nöbet onboarding — grup durumu yoksa -->
-    <div class="module-placeholder" id="nobetOnboarding">
-      <div style="width:100%;max-width:320px">
-        <div style="text-align:center;margin-bottom:24px">
-          <div style="width:52px;height:52px;border-radius:14px;background:rgba(232,87,42,0.12);display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--acc)" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
-          </div>
-          <div style="font-size:16px;font-weight:800;margin-bottom:6px">Nöbet Listesi</div>
-          <div style="font-size:12px;color:var(--w3);line-height:1.6">Nasıl kullanmak istiyorsun?</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div class="option-card" style="opacity:.5;cursor:not-allowed" onclick="showToast('Manuel Liste yakında açılıyor!')">
-            <div class="option-icon" style="background:rgba(232,87,42,0.08)">📋</div>
-            <div>
-              <div class="option-title">Manuel Liste <span style="font-size:9px;padding:1px 5px;border-radius:3px;background:rgba(232,87,42,0.15);color:var(--acc);font-weight:700;margin-left:4px">Yakında</span></div>
-              <div class="option-desc">Kendi nöbetlerini kendin gir ve takip et</div>
-            </div>
-          </div>
-          <div class="option-card" onclick="chooseNobetMode('create')">
-            <div class="option-icon" style="background:rgba(128,80,200,0.12)">👑</div>
-            <div>
-              <div class="option-title">Grup Kur</div>
-              <div class="option-desc">Başasistan olarak ekibini yönet</div>
-            </div>
-          </div>
-          <div class="option-card" onclick="chooseNobetMode('join')">
-            <div class="option-icon" style="background:rgba(60,160,100,0.12)">🏥</div>
-            <div>
-              <div class="option-title">Gruba Katıl</div>
-              <div class="option-desc">Başasistanından aldığın kodla katıl</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Grup kodu giriş modal -->
-    <div class="module-placeholder" id="joinCodePage">
-      <div style="width:100%;max-width:320px">
-        <button class="step-back" onclick="switchModule('nobet')" style="margin-bottom:16px">
-          <svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="13 4 7 10 13 16"/></svg>
-          Geri
-        </button>
-        <div style="font-size:16px;font-weight:800;margin-bottom:6px">Grup Kodunu Gir</div>
-        <div style="font-size:12px;color:var(--w3);margin-bottom:16px;line-height:1.5">Başasistanından aldığın kodu gir. İstek gönderilecek, onaylanınca erişebilirsin.</div>
-        <div class="login-error" id="inlineCodeError"></div>
-        <input class="code-input" id="inlineGroupCodeInput" type="text" maxlength="8"
-          placeholder="ACL-447" autocomplete="off" autocorrect="off" spellcheck="false"
-          oninput="this.value=this.value.toUpperCase()"
-          onkeydown="if(event.key==='Enter')submitInlineGroupCode()">
-        <button class="btn-primary" onclick="submitInlineGroupCode()">İstek Gönder</button>
-      </div>
-    </div>
-
-    <!-- Profil sayfası (inline) -->
-    <div class="module-placeholder" id="profilePage">
-      <div style="width:64px;height:64px;border-radius:50%;background:rgba(232,87,42,0.15);display:flex;align-items:center;justify-content:center;margin-bottom:16px;font-size:24px;font-weight:800;color:var(--acc)" id="profileAvatar"></div>
-      <div style="font-size:16px;font-weight:700;margin-bottom:4px" id="profileName"></div>
-      <div style="font-size:12px;color:var(--w3);margin-bottom:4px" id="profileEmail"></div>
-      <div style="font-size:11px;color:var(--w4);margin-bottom:24px" id="profileGroup"></div>
-
-      <!-- Sonraki nöbet kartı -->
-      <div id="nextShiftCard" style="display:none;width:100%;max-width:320px;background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px 16px;margin-bottom:8px">
-        <div style="font-size:10px;font-weight:700;color:var(--w3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Sonraki Nöbet</div>
-        <div style="font-size:18px;font-weight:800;color:var(--acc);font-family:'DM Mono',monospace" id="nextShiftDate">—</div>
-        <div style="font-size:11px;color:var(--w4);margin-top:4px" id="nextShiftArea"></div>
-      </div>
-
-      <!-- Tercihler butonu -->
-      <button id="openTercihBtn" onclick="openTercihFromProfile()" style="display:none;width:100%;max-width:320px;background:rgba(232,87,42,0.08);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px;font-size:13px;font-weight:600;color:var(--acc);cursor:pointer;font-family:'Inter',sans-serif;margin-bottom:8px">📋 Tercihlerimi Düzenle</button>
-
-      <div style="width:100%;max-width:320px;display:flex;flex-direction:column;gap:8px">
-
-        <!-- Grup kodu kartı (sadece başasistan) -->
-        <div id="groupCodeCard" style="display:none;background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px 16px">
-          <div style="font-size:10px;font-weight:700;color:var(--w3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Grup Kodu</div>
-          <div style="display:flex;align-items:center;justify-content:space-between">
-            <div style="font-size:22px;font-weight:800;font-family:'DM Mono',monospace;color:var(--w1);letter-spacing:3px" id="profileGroupCode"></div>
-            <button onclick="copyGroupCode()" style="background:var(--bg3);border:1px solid var(--bord2);border-radius:7px;padding:6px 12px;font-size:11px;color:var(--w2);cursor:pointer;font-family:'Inter',sans-serif">Kopyala</button>
-          </div>
-          <div style="font-size:10px;color:var(--w4);margin-top:6px">Asistanlar bu kodla gruba katılır</div>
-        </div>
-
-        <!-- Abonelik durumu -->
-        <div style="background:var(--bg2);border:1px solid var(--bord);border-radius:12px;padding:14px 16px">
-          <div style="font-size:10px;font-weight:700;color:var(--w3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Plan</div>
-          <div style="font-size:13px;font-weight:600;color:var(--w1)" id="profilePlan">Ücretsiz</div>
-        </div>
-
-        <button onclick="resetNobetMode()" style="background:var(--bg2);border:1px solid var(--bord);border-radius:12px;padding:14px;font-size:13px;font-weight:600;color:var(--w3);cursor:pointer;font-family:'Inter',sans-serif;width:100%">🔄 Nöbet Modunu Değiştir</button>
-        <button onclick="leaveGroup()" id="leaveGroupBtn" style="display:none;background:var(--bg2);border:1px solid rgba(232,87,42,0.2);border-radius:12px;padding:14px;font-size:13px;font-weight:600;color:var(--acc);cursor:pointer;font-family:'Inter',sans-serif;width:100%">Gruptan Ayrıl</button>
-        <button onclick="doLogout()" style="background:var(--bg2);border:1px solid var(--bord);border-radius:12px;padding:14px;font-size:13px;font-weight:600;color:var(--w3);cursor:pointer;font-family:'Inter',sans-serif;width:100%">Çıkış Yap</button>
-
-      </div>
-    </div>
-
-    <!-- Onay bekleniyor placeholder -->
-    <div class="module-placeholder" id="pendingPage">
-      <div class="upgrade-card">
-        <div style="font-size:28px;margin-bottom:12px">⏳</div>
-        <div style="font-size:15px;font-weight:700;margin-bottom:8px">Onay Bekleniyor</div>
-        <div style="font-size:12px;color:var(--w3);line-height:1.6">Başasistan henüz seni onaylamadı.<br>Onaylandıktan sonra nöbet listesine erişebilirsin.</div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Bottom Nav -->
-  <div class="bottom-nav">
-    <div class="nav-item active" id="nav-nobet" onclick="switchModule('nobet')">
-      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="1.8">
-        <rect x="3" y="4" width="18" height="18" rx="2"/>
-        <path d="M16 2v4M8 2v4M3 10h18"/>
-      </svg>
-      <span class="nav-label">Nöbet</span>
-    </div>
-<div class="nav-item" id="nav-profil" onclick="switchModule('profil')">
-      <svg class="nav-icon" viewBox="0 0 24 24" stroke-width="1.8">
-        <circle cx="12" cy="8" r="4"/>
-        <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-      </svg>
-      <span class="nav-label">Profil</span>
-    </div>
-  </div>
-
-</div>
-
-<!-- Toast -->
-<div id="toast"></div>
-
-<!-- Splash JS -->
+<!-- ══ ANA UYGULAMA KODU ══ -->
 <script>
-function startSplash(){}
-function hideSplash(){} // Artık authGate splash görevini üstleniyor
-</script>
-
-<script>
-/* ── FIREBASE ── */
+/* ── FIREBASE CONFIG ── */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyB84OiA8dA8MqIDhp2mVPHbOwbfM7hXkcw",
   authDomain: "acilx-d3635.firebaseapp.com",
@@ -932,7 +608,7 @@ const FIREBASE_CONFIG = {
   appId: "1:539148511591:web:4ca4f0eb49a1345c4fa7c2"
 };
 
-let app, auth, db;
+let app, auth, db, functions;
 
 // ── Production log kontrolü ──
 (function(){
@@ -945,7 +621,6 @@ let app, auth, db;
 // ── PWA algılama ──
 const _isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
 const _isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-console.log('[ACİLX] Mod:', _isPWA ? 'PWA standalone' : _isMobile ? 'Mobil tarayıcı' : 'Desktop', '| UA:', navigator.userAgent.substring(0,60));
 
 // ── IndexedDB flag — sessionStorage PWA'da güvenilmez ──
 function _idbSet(key,val){
@@ -981,27 +656,30 @@ function _idbDel(key){
   }catch(e){}
 }
 
-// Redirect flag — hem sessionStorage hem IndexedDB
 function _setRedirectFlag(){
   try{sessionStorage.setItem('acilx_redirect','1')}catch(e){}
   _idbSet('redirect','1');
-  console.log('[ACİLX] Redirect flag SET');
 }
 function _clearRedirectFlag(){
   try{sessionStorage.removeItem('acilx_redirect')}catch(e){}
   _idbDel('redirect');
 }
 
-// ── Auth state yönetimi ──
+/* ── STATE ── */
+let currentUser = null;
 let _authResolved = false;
 let _authGateTimer = null;
 let _lastAuthUser = undefined;
 
-// Yardımcı: Login ekranını göster
-function _showLogin(reason){
-  console.log('[ACİLX] _showLogin:', reason||'');
+/* ── UI HELPERS ── */
+function showStep(stepId) {
+  document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
+  const el = document.getElementById(stepId);
+  if (el) el.classList.add('active');
+}
+
+function _showLogin(reason) {
   agFadeOut();
-  hideSplash();
   const loginEl = document.getElementById('loginScreen');
   if(loginEl){
     loginEl.style.display = '';
@@ -1011,27 +689,92 @@ function _showLogin(reason){
   }
 }
 
-// Yardımcı: App ekranını göster
-function _showApp(reason){
-  console.log('[ACİLX] _showApp:', reason||'');
-  agFadeOut();
-  const loginEl = document.getElementById('loginScreen');
-  if(loginEl){ loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
-  const appEl = document.getElementById('appScreen');
-  if(appEl) appEl.classList.remove('hidden');
+let _toastTimer;
+window.showToast = function(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
-function _handleAuth(user){
-  console.log('[ACİLX] onAuthStateChanged:', user ? user.email : 'null', '| resolved:', _authResolved);
+/* ── ROLE-BASED REDIRECT ── */
+function redirectByRole(userData) {
+  const role = userData.role;
+  if (role === 'chief_resident' || role === 'super_admin') {
+    window.location.href = 'admin.html';
+  } else {
+    window.location.href = 'resident.html';
+  }
+}
+
+/* ── AUTH STATE HANDLER ── */
+async function onAuthChange(user) {
+  if (!user) {
+    showStep('step-auth');
+    _showLogin();
+    return;
+  }
+  currentUser = user;
+  showStep('step-loading');
+  document.getElementById('loadingText').textContent = 'Veriler yükleniyor...';
+
+  try {
+    const snap = await db.collection('users').doc(user.uid).get();
+
+    if (!snap.exists) {
+      // Yeni kullanıcı — users doc oluştur, onboarding göster
+      await db.collection('users').doc(user.uid).set({
+        displayName: user.displayName || user.email.split('@')[0],
+        email: user.email,
+        role: 'resident',
+        clinicId: null,
+        pgy: 1,
+        fcmToken: null,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      showStep('step-choose');
+      return;
+    }
+
+    const data = snap.data();
+
+    // clinicId varsa → role'e göre yönlendir
+    if (data.clinicId) {
+      // Klinik onaylı mı kontrol et (pending ise beklet)
+      try {
+        const clinicSnap = await db.collection('clinics').doc(data.clinicId).get();
+        if (clinicSnap.exists && clinicSnap.data().status === 'pending' && data.role === 'chief_resident') {
+          showStep('step-pending');
+          return;
+        }
+      } catch(e) { /* devam et, yönlendir */ }
+
+      document.getElementById('loadingText').textContent = 'Yönlendiriliyor...';
+      redirectByRole(data);
+      return;
+    }
+
+    // clinicId yok → onboarding göster
+    showStep('step-choose');
+  } catch(e) {
+    console.error('onAuthChange:', e);
+    showStep('step-auth');
+    _showLogin();
+    const errEl = document.getElementById('authError');
+    if (errEl) errEl.textContent = 'Veri yüklenemedi: ' + (e.message || 'Bağlantı hatası');
+  }
+}
+
+/* ── AUTH STATE CHANGE HANDLER ── */
+function _handleAuth(user) {
   clearTimeout(_authGateTimer);
 
-  // İlk auth çözümü
   if(!_authResolved){
     _authResolved = true;
     _lastAuthUser = user;
     if(user){
       agSetStep(2);
-      _showApp('auth-initial-user');
     } else {
       _showLogin('auth-initial-no-user');
     }
@@ -1039,249 +782,139 @@ function _handleAuth(user){
     return;
   }
 
-  // Sonraki değişimler
   if(!user && _lastAuthUser){
-    // Logout
     _lastAuthUser = null;
-    nobetFrameLoaded = false;
-    window._iframeReadyBound = false;
-    const fr = document.getElementById('nobetFrame');
-    if(fr){ fr.onload = null; }
-    if(typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
     onAuthChange(null);
   } else if(user && !_lastAuthUser){
-    // Login (giriş ekranından veya redirect dönüşü)
     _lastAuthUser = user;
-    _showApp('auth-login');
     onAuthChange(user);
   }
-  // user→user (token refresh) → sessiz geç
 }
 
+/* ── FIREBASE INIT ── */
 window.addEventListener('load', async () => {
-  console.log('[ACİLX] === SAYFA YÜKLENDİ ===', new Date().toISOString());
-  console.log('[ACİLX] PWA:', _isPWA, '| Mobile:', _isMobile, '| URL:', location.href);
-
   try {
-    // ADIM 0: Firebase başlat
     agSetStep(0);
-    console.log('[ACİLX] Firebase init başlıyor...');
     app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
     auth = firebase.auth(app);
     db   = firebase.firestore(app);
-    console.log('[ACİLX] Firebase app OK');
+    functions = firebase.functions(app);
 
-    // Persistence — LOCAL (IndexedDB tabanlı, PWA için güvenilir)
-    console.log('[ACİLX] Persistence ayarlanıyor...');
     await Promise.all([
       auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL),
-      db.enablePersistence({synchronizeTabs:true}).catch(e => console.warn('[ACİLX] Firestore persistence:', e.code))
+      db.enablePersistence({synchronizeTabs:true}).catch(e => {})
     ]);
-    console.log('[ACİLX] Persistence OK');
 
     agSetStep(1);
 
-    // ── HER ZAMAN getRedirectResult çağır ──
-    // PWA'da sessionStorage güvenilmez, bu yüzden flag olsun olmasın dene
-    console.log('[ACİLX] getRedirectResult çağrılıyor...');
     try {
       const result = await auth.getRedirectResult();
       if(result && result.user){
-        console.log('[ACİLX] Redirect BAŞARILI:', result.user.email);
         _clearRedirectFlag();
-      } else {
-        console.log('[ACİLX] getRedirectResult: kullanıcı yok (redirect dönüşü değil)');
       }
     } catch(err) {
-      console.warn('[ACİLX] getRedirectResult hata:', err.code, err.message);
       _clearRedirectFlag();
-      // credential-already-in-use gibi hatalarda login göster
       if(err.code !== 'auth/popup-closed-by-user'){
         const errEl = document.getElementById('authError');
         if(errEl) errEl.textContent = 'Giriş hatası: ' + (err.code || err.message);
       }
     }
 
-    // ── currentUser hızlı kontrol — Firebase zaten cache'de tutuyorsa ──
     if(auth.currentUser && !_authResolved){
-      console.log('[ACİLX] currentUser zaten var (cache):', auth.currentUser.email);
       _handleAuth(auth.currentUser);
     }
 
-    // onAuthStateChanged — TEK dinleyici (cache'den gelen user'ı da yakalar)
-    console.log('[ACİLX] onAuthStateChanged dinleyicisi kuruluyor...');
     auth.onAuthStateChanged(_handleAuth);
 
-    // ── Timeout: auth gelmezse login + "Tekrar Giriş Yap" butonu göster ──
     _authGateTimer = setTimeout(() => {
       if(!_authResolved){
-        console.warn('[ACİLX] Auth 5sn TIMEOUT — login gösteriliyor');
-        console.warn('[ACİLX] currentUser:', auth.currentUser ? auth.currentUser.email : 'null');
         _authResolved = true;
         _showLogin('timeout');
-        // Timeout mesajı göster
         const errEl = document.getElementById('authError');
         if(errEl) errEl.textContent = 'Bağlantı zaman aşımına uğradı.';
       }
     }, 5000);
 
   } catch(e) {
-    console.error('[ACİLX] FATAL Firebase init:', e);
     _showLogin('init-error');
     const errEl = document.getElementById('authError');
     if(errEl) errEl.textContent = 'Firebase başlatılamadı: ' + (e.message || e.code || 'Bilinmeyen hata');
   }
 });
 
-/* ── STATE ── */
-let currentUser = null;
-let currentRole = null; // 'basasistan' | 'asistan'
-let currentGroupId = null;
-let currentGroupCode = null;
-let nobetFrameLoaded = false;
-let currentModule = 'nobet';
-
-/* ── AUTH ── */
-async function onAuthChange(user) {
-  if (!user) { showStep('step-auth'); showScreen('login'); _hideSkeleton(); return; }
-  currentUser = user;
-  showStep('step-loading');
-  _showSkeleton();
-
-  try {
-    const snap = await db.collection('users').doc(user.uid).get();
-
-    if (!snap.exists) {
-      // Yeni kullanıcı — kaydet, direkt uygulamaya gir
-      await db.collection('users').doc(user.uid).set({
-        email:     user.email,
-        name:      user.displayName || user.email.split('@')[0],
-        role:      'asistan',
-        status:    'active',
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      await launchApp({ role: 'asistan', status: 'active' });
-      return;
-    }
-
-    const data = snap.data();
-    currentRole    = data.role || 'asistan';
-    currentGroupId = data.groupId || null;
-
-    // Tüm durumlarda uygulamaya gir — pending durumu nöbet modülünde gösterilir
-    await launchApp(data);
-  } catch(e) {
-    console.error('onAuthChange:', e);
-    _hideSkeleton();
-    showStep('step-auth');
-    showScreen('login');
-    const errEl = document.getElementById('authError');
-    if (errEl) errEl.textContent = 'Veri yüklenemedi: ' + (e.message || 'Bağlantı hatası');
-  }
-}
-
-async function launchApp(userData) {
-  window._userData = userData;
-  if (currentRole === 'basasistan' && currentGroupId) {
-    try {
-      const gsnap = await db.collection('groups').doc(currentGroupId).get();
-      if (gsnap.exists) currentGroupCode = gsnap.data().code;
-    } catch(e) {}
-  }
-  updateAppUI(userData);
-  showScreen('app');
-  _hideSkeleton();
-  // switchModule çağır ki frame active sınıfı alsın
-  switchModule('nobet');
-}
-
-function _showSkeleton(){ const el=document.getElementById('appSkeleton'); if(el) el.style.display='block'; }
-function _hideSkeleton(){ const el=document.getElementById('appSkeleton'); if(el) el.style.display='none'; }
-
-/* ── SEÇENEK ── */
-let selectedOption = null;
-function selectOption(opt) {
-  selectedOption = opt;
-  if (opt === 'join') {
-    // Direkt uygulamaya gir, onboarding orada cikacak
-    showStep('step-loading');
-    launchApp(window._userData || { role: 'asistan', status: 'active' });
-  } else if (opt === 'solo') {
-    // Manuel kilitli
-    showToast('Manuel Liste yakinda aciliyor!');
-    showStep('step-choose');
-  } else if (opt === 'create') {
-    confirmOption('create');
-  }
-}
-
-async function confirmOption(opt) {
-  showStep('step-loading');
-  try {
-    if (opt === 'solo') {
-      await db.collection('users').doc(currentUser.uid).update({ status: 'solo' });
-      await launchApp({ role: 'asistan', status: 'solo' });
-    } else if (opt === 'create') {
-      // Grup oluştur
-      const code = generateGroupCode();
-      const groupRef = await db.collection('groups').add({
-        name: currentUser.displayName || 'Yeni Grup',
-        code,
-        createdBy: currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      currentGroupId   = groupRef.id;
-      currentGroupCode = code;
-      await db.collection('users').doc(currentUser.uid).update({
-        status:  'approved',
-        role:    'basasistan',
-        groupId: groupRef.id
-      });
-      currentRole = 'basasistan';
-      await launchApp({ role: 'basasistan', status: 'approved' });
-    }
-  } catch(e) {
-    console.error('confirmOption:', e);
-    showStep('step-choose');
-  }
-}
-
-async function submitGroupCode() {
-  const code = document.getElementById('groupCodeInput').value.trim().toUpperCase();
-  const errEl = document.getElementById('codeError');
+/* ── EMAIL/PASS AUTH ── */
+function toggleAuthForm() {
+  const login = document.getElementById('loginForm');
+  const reg   = document.getElementById('registerForm');
+  const errEl = document.getElementById('authError');
   errEl.textContent = '';
-  if (!code || code.length < 3) { errEl.textContent = 'Geçerli bir kod girin.'; return; }
-
-  showStep('step-loading');
-  try {
-    const snap = await db.collection('groups').where('code', '==', code).limit(1).get();
-    if (snap.empty) {
-      document.getElementById('codeError').textContent = 'Kod bulunamadı. Kontrol edin.';
-      showStep('step-joincode');
-      return;
-    }
-    const groupId = snap.docs[0].id;
-    await db.collection('users').doc(currentUser.uid).update({
-      status:  'pending',
-      groupId,
-      groupCode: code,
-      requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    showStep('step-pending');
-    showScreen('login');
-  } catch(e) {
-    console.error('submitGroupCode:', e);
-    document.getElementById('codeError').textContent = 'Hata oluştu. Tekrar deneyin.';
-    showStep('step-joincode');
+  if (login.style.display === 'none') {
+    login.style.display = '';
+    reg.style.display   = 'none';
+  } else {
+    login.style.display = 'none';
+    reg.style.display   = '';
   }
 }
 
-/* ── GOOGLE LOGIN / LOGOUT ── */
+function _authError(code) {
+  const map = {
+    'auth/user-not-found':       'Bu e-posta ile kayıtlı hesap bulunamadı.',
+    'auth/wrong-password':       'Şifre hatalı.',
+    'auth/invalid-email':        'Geçersiz e-posta adresi.',
+    'auth/too-many-requests':    'Çok fazla deneme. Biraz bekleyin.',
+    'auth/invalid-credential':   'E-posta veya şifre hatalı.',
+    'auth/email-already-in-use': 'Bu e-posta zaten kayıtlı. Giriş yapmayı deneyin.',
+    'auth/weak-password':        'Şifre en az 6 karakter olmalı.',
+  };
+  return map[code] || null;
+}
+
+async function doEmailLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pass  = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('authError');
+  const btn   = document.getElementById('emailLoginBtn');
+  errEl.textContent = '';
+
+  if (!email || !pass) { errEl.textContent = 'E-posta ve şifre gerekli.'; return; }
+
+  btn.disabled = true;
+  try {
+    await auth.signInWithEmailAndPassword(email, pass);
+  } catch(e) {
+    errEl.textContent = _authError(e.code) || ('Giriş başarısız: ' + e.code);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+async function doEmailRegister() {
+  const name  = document.getElementById('regName').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass  = document.getElementById('regPassword').value;
+  const errEl = document.getElementById('authError');
+  const btn   = document.getElementById('emailRegBtn');
+  errEl.textContent = '';
+
+  if (!name || !email || !pass) { errEl.textContent = 'Tüm alanları doldurun.'; return; }
+
+  btn.disabled = true;
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, pass);
+    await cred.user.updateProfile({ displayName: name });
+  } catch(e) {
+    errEl.textContent = _authError(e.code) || ('Kayıt başarısız: ' + e.code);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+/* ── GOOGLE LOGIN ── */
 async function doGoogleLogin() {
   const errEl = document.getElementById('authError');
   errEl.textContent = '';
   const btn = document.querySelector('.btn-google');
-  console.log('[ACİLX] doGoogleLogin başladı | PWA:', _isPWA, '| Mobile:', _isMobile);
 
   try {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -1289,8 +922,6 @@ async function doGoogleLogin() {
     provider.addScope('profile');
 
     if(_isPWA){
-      // PWA standalone: popup çalışmaz — doğrudan redirect
-      console.log('[ACİLX] PWA: redirect kullanılıyor');
       _setRedirectFlag();
       if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
       errEl.textContent = 'Google\'a yönlendiriliyorsunuz...';
@@ -1299,19 +930,14 @@ async function doGoogleLogin() {
     }
 
     if(_isMobile){
-      // Mobil tarayıcı: popup dene, başarısızsa redirect
-      console.log('[ACİLX] Mobil: popup deneniyor...');
       try {
         if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
         await auth.signInWithPopup(provider);
-        console.log('[ACİLX] Popup başarılı');
         if(btn) { btn.disabled=false; btn.style.opacity='1'; }
       } catch(popupErr) {
         if(btn) { btn.disabled=false; btn.style.opacity='1'; }
-        console.warn('[ACİLX] Popup hatası:', popupErr.code);
         if(popupErr.code === 'auth/popup-closed-by-user' || popupErr.code === 'auth/cancelled-popup-request') return;
         if(popupErr.code === 'auth/popup-blocked' || popupErr.code === 'auth/operation-not-supported-in-this-environment'){
-          console.log('[ACİLX] Popup engellendi → redirect\'e düşülüyor');
           _setRedirectFlag();
           if(btn) { btn.disabled=true; btn.style.opacity='.6'; }
           errEl.textContent = 'Google\'a yönlendiriliyorsunuz...';
@@ -1321,419 +947,140 @@ async function doGoogleLogin() {
         throw popupErr;
       }
     } else {
-      // Desktop: popup
-      console.log('[ACİLX] Desktop: popup kullanılıyor');
       await auth.signInWithPopup(provider);
-      console.log('[ACİLX] Desktop popup başarılı');
     }
   } catch(e) {
     _clearRedirectFlag();
     if(btn) { btn.disabled=false; btn.style.opacity='1'; }
-    console.error('[ACİLX] Login HATA:', e.code, e.message);
     if(e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') return;
     if(e.code === 'auth/popup-blocked') {
-      errEl.textContent = 'Popup engellendi. Tekrar deneyin veya tarayıcı ayarlarından izin verin.';
+      errEl.textContent = 'Popup engellendi. Tekrar deneyin.';
     } else if(e.code === 'auth/network-request-failed') {
-      errEl.textContent = 'İnternet bağlantısı yok. Bağlantınızı kontrol edin.';
+      errEl.textContent = 'İnternet bağlantısı yok.';
     } else if(e.code === 'auth/unauthorized-domain') {
       errEl.textContent = 'Bu domain yetkili değil. Firebase Console > Auth > Authorized domains\'e ' + location.hostname + ' ekleyin.';
     } else {
-      errEl.textContent = 'Giriş başarısız: ' + (e.code || e.message || 'Bilinmeyen hata');
+      errEl.textContent = 'Giriş başarısız: ' + (e.code || e.message);
     }
   }
 }
 
-
-window.resetNobetMode = async function() {
-  if (!confirm("Nöbet modunu sıfırlamak istediğinden emin misin? Grup bağlantın kaldırılacak.")) return;
-  try {
-    await db.collection('users').doc(currentUser.uid).update({
-      status:  'active',
-      groupId: firebase.firestore.FieldValue.delete(),
-      groupCode: firebase.firestore.FieldValue.delete()
-    });
-    currentGroupId   = null;
-    currentGroupCode = null;
-    nobetFrameLoaded = false;
-    window._iframeReadyBound = false;
-    // Listener temizliği
-    if (window._nobetReadyListener) {
-      window.removeEventListener('message', window._nobetReadyListener);
-      window._nobetReadyListener = null;
-    }
-    if (window._nobetFallbackTimer) { clearTimeout(window._nobetFallbackTimer); }
-    // Frame temizliği
-    const resetFrame = document.getElementById('nobetFrame');
-    if (resetFrame) { resetFrame.onload = null; resetFrame.src = 'about:blank'; resetFrame.classList.remove('active'); }
-    // Overlay'i sıfırla
-    _hideNobetOverlay();
-    window._userData = { ...(window._userData||{}), status: 'active', groupId: null };
-    // Profil güncelle
-    document.getElementById('profileGroup').textContent = 'Bireysel';
-    document.getElementById('groupCodeCard').style.display = 'none';
-    document.getElementById('headerGroupCode').style.display = 'none';
-    // Nöbet sekmesine geç — onboarding çıksın
-    switchModule('nobet');
-    showToast('Mod sıfırlandı. Yeni seçim yap.');
-  } catch(e) { showToast('Hata oluştu.'); }
-}
-
-window.leaveGroup = async function() {
-  if (!confirm("Gruptan ayrılmak istediğinden emin misin?")) return;
-  await resetNobetMode();
-}
-
+/* ── LOGOUT ── */
 function doLogout() {
-  nobetFrameLoaded = false;
-  window._iframeReadyBound = false;
-  if (window._nobetReadyListener) {
-    window.removeEventListener('message', window._nobetReadyListener);
-    window._nobetReadyListener = null;
-  }
-  if (window._nobetFallbackTimer) { clearTimeout(window._nobetFallbackTimer); }
-  const frame = document.getElementById('nobetFrame');
-  if (frame) { frame.onload = null; frame.src = 'about:blank'; frame.classList.remove('active'); }
-  _hideNobetOverlay();
   auth.signOut();
 }
 
-/* ── APP UI ── */
-function updateAppUI(userData) {
-  const name = currentUser?.displayName || currentUser?.email?.split('@')[0] || 'Kullanıcı';
-  const initials = name.split(' ').map(p => p[0] || '').join('').toUpperCase().slice(0, 2) || '?';
+/* ── KLİNİK OLUŞTUR (createClinic CF) ── */
+async function submitCreateClinic() {
+  const name = document.getElementById('createClinicName').value.trim();
+  const hospitalName = document.getElementById('createHospitalName').value.trim();
+  const errEl = document.getElementById('createError');
+  const btn = document.getElementById('createBtn');
+  errEl.textContent = '';
 
-  // Header
-  document.getElementById('headerTitle').textContent = 'ACİLX';
-  const now = new Date();
-  document.getElementById('headerChip').textContent =
-    now.toLocaleString('tr-TR', { month: 'short', year: 'numeric' }).replace(' ', ' ');
+  if (!name) { errEl.textContent = 'Klinik adı gerekli.'; return; }
+  if (!hospitalName) { errEl.textContent = 'Hastane adı gerekli.'; return; }
 
-  const badge = document.getElementById('headerBadge');
-  if (currentRole === 'basasistan') {
-    badge.textContent = 'BAŞ';
-    badge.style.display = 'inline';
-  } else {
-    badge.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Oluşturuluyor...';
+
+  try {
+    const createClinic = functions.httpsCallable('createClinic');
+    const result = await createClinic({ name, hospitalName, shiftModel: '24h', trainingMode: 'within_shift' });
+
+    if (result.data.status === 'pending') {
+      showToast('Klinik oluşturuldu! Onay bekleniyor.');
+      showStep('step-pending');
+    } else {
+      showToast('Klinik oluşturuldu!');
+      document.getElementById('loadingText').textContent = 'Admin paneline yönlendiriliyor...';
+      showStep('step-loading');
+      setTimeout(() => { window.location.href = 'admin.html'; }, 800);
+    }
+  } catch(e) {
+    console.error('createClinic:', e);
+    errEl.textContent = e.message || 'Klinik oluşturulamadı. Tekrar deneyin.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Klinik Oluştur';
   }
-
-  const gcEl = document.getElementById('headerGroupCode');
-  if (currentRole === 'basasistan' && currentGroupCode) {
-    gcEl.textContent = currentGroupCode;
-    gcEl.style.display = 'inline';
-  }
-
-  // Profil sayfası
-  document.getElementById('profileAvatar').textContent = initials;
-  document.getElementById('profileName').textContent = name;
-  document.getElementById('profileEmail').textContent = currentUser?.email || '';
-  document.getElementById('profileGroup').textContent =
-    currentRole === 'basasistan' ? 'Başasistan' :
-    currentGroupId ? 'Grup Üyesi' : 'Bireysel';
-  document.getElementById('profilePlan').textContent = 'Ücretsiz';
-
-  // Gruptan ayrıl butonu — asistan + grup varsa
-  const leaveBtn = document.getElementById('leaveGroupBtn');
-  if (leaveBtn) {
-    leaveBtn.style.display = (currentGroupId && currentRole !== 'basasistan') ? 'block' : 'none';
-  }
-
-  // Grup kodu kartı
-  const gcCard = document.getElementById('groupCodeCard');
-  if (currentRole === 'basasistan' && currentGroupCode) {
-    gcCard.style.display = 'block';
-    document.getElementById('profileGroupCode').textContent = currentGroupCode;
-  }
-
-  // Sonraki nöbet bilgisi + tercih butonu
-  loadNextShiftInfo();
-  var tercihBtn = document.getElementById('openTercihBtn');
-  if(tercihBtn) tercihBtn.style.display = 'block';
 }
 
-/* ── PROFİL: Sonraki nöbet ── */
-async function loadNextShiftInfo(){
-  var card = document.getElementById('nextShiftCard');
-  if(!card || !db || !currentUser) return;
+/* ── KLİNİĞE KATIL (joinClinic CF) ── */
+async function submitJoinClinic() {
+  const hospitalCode = document.getElementById('joinHospitalCode').value.trim().toUpperCase();
+  const residentCode = document.getElementById('joinResidentCode').value.trim().toUpperCase();
+  const errEl = document.getElementById('joinError');
+  const btn = document.getElementById('joinBtn');
+  errEl.textContent = '';
+
+  if (!hospitalCode) { errEl.textContent = 'Hastane kodu gerekli.'; return; }
+  if (!residentCode) { errEl.textContent = 'Asistan kodu gerekli.'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Katılınıyor...';
+
   try {
-    var gId = currentGroupId || 'default';
-    var now = new Date();
-    var y = now.getFullYear(), m = now.getMonth();
-    var snap = await db.collection('groups').doc(gId).collection('schedule').doc(y+'_'+m).get();
-    if(!snap.exists){ card.style.display='none'; return; }
-    var data = snap.data();
-    var schedule = data.schedule || {};
-    // ASSISTANTS'dan kendi index'imi bul
-    var astSnap = await db.collection('groups').doc(gId).collection('assistants').doc('list').get();
-    if(!astSnap.exists){ card.style.display='none'; return; }
-    var astList = astSnap.data().list || [];
-    var myIdx = astList.findIndex(function(a){ return a.uid === currentUser.uid; });
-    if(myIdx < 0){
-      var uSnap = await db.collection('users').doc(currentUser.uid).get();
-      if(uSnap.exists && uSnap.data().astIdx !== undefined) myIdx = uSnap.data().astIdx;
+    const joinClinic = functions.httpsCallable('joinClinic');
+    const result = await joinClinic({ hospitalCode, residentCode });
+
+    showToast(result.data.clinicName + ' kliniğine katıldın!');
+    document.getElementById('loadingText').textContent = 'Asistan paneline yönlendiriliyor...';
+    showStep('step-loading');
+    setTimeout(() => { window.location.href = 'resident.html'; }, 800);
+  } catch(e) {
+    console.error('joinClinic:', e);
+    if (e.code === 'not-found') {
+      errEl.textContent = 'Geçersiz hastane kodu veya klinik onaylanmamış.';
+    } else if (e.code === 'permission-denied') {
+      errEl.textContent = 'Geçersiz asistan kodu.';
+    } else if (e.code === 'already-exists') {
+      errEl.textContent = e.message || 'Bu kod zaten kullanılmış veya zaten kayıtlısınız.';
+    } else {
+      errEl.textContent = e.message || 'Katılım başarısız. Tekrar deneyin.';
     }
-    if(myIdx < 0){ card.style.display='none'; return; }
-    // Bugünden sonraki ilk nöbeti bul
-    var today = now.getDate();
-    var days = new Date(y, m+1, 0).getDate();
-    var aylar = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
-    for(var d = today; d <= days; d++){
-      var key = myIdx + '_' + d;
-      if(schedule[key]){
-        card.style.display = 'block';
-        document.getElementById('nextShiftDate').textContent = d + ' ' + aylar[m];
-        // Alanları yükle
-        var areasSnap = await db.collection('groups').doc(gId).collection('areas').doc('list').get();
-        var areaName = schedule[key];
-        if(areasSnap.exists){
-          var areas = areasSnap.data().list || [];
-          var found = areas.find(function(a){ return a.id === schedule[key]; });
-          if(found) areaName = found.name;
-        }
-        document.getElementById('nextShiftArea').textContent = areaName;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Kliniğe Katıl';
+  }
+}
+
+/* ── KLİNİK DURUMU KONTROL ── */
+async function checkClinicStatus() {
+  if (!currentUser) return;
+  try {
+    const snap = await db.collection('users').doc(currentUser.uid).get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    if (data.clinicId) {
+      const clinicSnap = await db.collection('clinics').doc(data.clinicId).get();
+      if (clinicSnap.exists && clinicSnap.data().status === 'approved') {
+        showToast('Klinik onaylandı! Yönlendiriliyorsun...');
+        showStep('step-loading');
+        setTimeout(() => { redirectByRole(data); }, 800);
         return;
       }
     }
-    card.style.display = 'none';
-  } catch(e){ console.warn('nextShift:', e); }
-}
-
-function openTercihFromProfile(){
-  // Nöbet modülüne geç ve profil sekmesini aç
-  switchModule('nobet');
-  setTimeout(function(){
-    var frame = document.getElementById('nobetFrame');
-    if(frame && frame.contentWindow){
-      try {
-        var tabBtn = frame.contentWindow.document.getElementById('tab-btn-astprofile');
-        if(tabBtn) {
-          frame.contentWindow.switchTab(tabBtn, 'astprofile');
-        }
-      } catch(e){ /* cross-origin fallback */ }
-    }
-  }, 1500);
-}
-
-/* ── NÖBET FRAME ── */
-function loadNobetFrame() {
-  const userData = window._userData || {};
-
-  // Pending — onay bekleniyor ekranı göster
-  if (userData.status === 'pending') {
-    showPendingInApp();
-    return;
+    showToast('Henüz onaylanmadı. Bekleyin.');
+  } catch(e) {
+    showToast('Kontrol başarısız. Tekrar deneyin.');
   }
-
-  // Grup yok ve solo değil — onboarding göster
-  if (!userData.groupId && userData.role !== 'basasistan' && userData.status !== 'solo') {
-    showNobetOnboarding();
-    return;
-  }
-  _loadNobetFrameActual();
-}
-
-function showPendingInApp() {
-  document.querySelectorAll('.module-placeholder, .module-frame').forEach(el => el.classList.remove('active'));
-  const p = document.getElementById('pendingPage');
-  if(p) p.classList.add('active');
-}
-
-// Tek global postMessage listener — birden fazla eklenmesini önle
-window._iframeReadyBound = false;
-
-function _hideNobetOverlay() {
-  const overlay = document.getElementById('nobetLoadingOverlay');
-  if (!overlay || overlay.classList.contains('hidden')) return;
-  overlay.classList.add('fadeout');
-  setTimeout(() => { overlay.classList.remove('fadeout'); overlay.classList.add('hidden'); }, 380);
-}
-
-async function _loadNobetFrameActual() {
-  if (nobetFrameLoaded) {
-    _hideNobetOverlay();
-    const frame = document.getElementById('nobetFrame');
-    if (frame) frame.classList.add('active');
-    return;
-  }
-
-  const frame   = document.getElementById('nobetFrame');
-  const overlay = document.getElementById('nobetLoadingOverlay');
-  if (!frame) return;
-
-  // Rolü her iframe yüklemesinde Firestore'dan doğrula
-  if (currentUser && db) {
-    try {
-      const snap = await db.collection('users').doc(currentUser.uid).get();
-      if (snap.exists) {
-        currentRole    = snap.data().role || 'asistan';
-        currentGroupId = snap.data().groupId || currentGroupId;
-      }
-    } catch(e) { /* mevcut currentRole kullanılır */ }
-  }
-
-  const role    = currentRole || 'asistan';
-  const uid     = currentUser?.uid || '';
-  const groupId = currentGroupId || '';
-  const newSrc  = `mod-nobet.html?role=${encodeURIComponent(role)}&uid=${encodeURIComponent(uid)}&groupId=${encodeURIComponent(groupId)}&t=${Date.now()}`;
-
-  // Overlay göster
-  if (overlay) { overlay.classList.remove('hidden', 'fadeout'); }
-
-  // Frame hemen görünür yap
-  frame.classList.add('active');
-
-  // Fallback timer referansı — her yükleme için ayrı
-  if (window._nobetFallbackTimer) clearTimeout(window._nobetFallbackTimer);
-  window._nobetFallbackTimer = setTimeout(() => {
-    console.warn('[ACİLX] iframe fallback tetiklendi (10sn)');
-    nobetFrameLoaded = true;
-    _hideNobetOverlay();
-  }, 10000);
-
-  function _onReady() {
-    if (nobetFrameLoaded) return;
-    clearTimeout(window._nobetFallbackTimer);
-    nobetFrameLoaded = true;
-    _hideNobetOverlay();
-    const fr = document.getElementById('nobetFrame');
-    if (fr) fr.classList.add('active');
-  }
-
-  // postMessage dinleyici — her yeni yüklemede yeniden bağla
-  // Eski listener varsa önce kaldır
-  if (window._nobetReadyListener) {
-    window.removeEventListener('message', window._nobetReadyListener);
-  }
-  window._nobetReadyListener = function(e) {
-    if (e.data === 'acilx_nobet_ready') _onReady();
-  };
-  window.addEventListener('message', window._nobetReadyListener);
-
-  // onload fallback — postMessage gelmezse
-  frame.onload = function() {
-    setTimeout(() => { if (!nobetFrameLoaded) _onReady(); }, 600);
-  };
-
-  frame.src = newSrc;
-}
-
-function showNobetOnboarding() {
-  document.getElementById('nobetOnboarding').classList.add('active');
-  document.getElementById('nobetFrame').classList.remove('active');
-}
-
-function hideNobetOnboarding() {
-  document.getElementById('nobetOnboarding').classList.remove('active');
-}
-
-/* ── MODÜL GEÇIŞI ── */
-function switchModule(mod) {
-  currentModule = mod;
-
-  // Nav aktif güncelle
-  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-  const navEl = document.getElementById('nav-' + mod);
-  if (navEl) navEl.classList.add('active');
-
-  // Başlık güncelle
-  const titles = { nobet: 'Nöbet Listesi', profil: 'Profil' };
-  document.getElementById('headerTitle').textContent = titles[mod] || 'ACİLX';
-
-  // İçerik göster
-  document.querySelectorAll('.module-frame, .module-placeholder').forEach(el => {
-    el.classList.remove('active');
-  });
-
-  // Overlay yönetimi
-  const overlay = document.getElementById('nobetLoadingOverlay');
-
-  if (mod === 'nobet') {
-    document.getElementById('nobetFrame').classList.add('active');
-    loadNobetFrame();
-    // Overlay yönetimi loadNobetFrame / _loadNobetFrameActual içinde yapılıyor
-  } else {
-    // Başka sekmeye geçince overlay'i gizle
-    if (overlay) overlay.classList.add('hidden');
-
-    if (mod === 'profil') {
-      document.getElementById('profilePage').classList.add('active');
-    }
-  }
-}
-
-/* ── EKRAN GEÇİŞİ ── */
-function showScreen(s) {
-  const gate    = document.getElementById('authGate');
-  const loginEl = document.getElementById('loginScreen');
-  const appEl   = document.getElementById('appScreen');
-
-  if(s === 'app') {
-    // Gate: yumuşak fade out
-    if(typeof agFadeOut==='function') agFadeOut();
-    if(loginEl) { loginEl.style.cssText = 'display:none!important;opacity:0!important'; }
-    appEl.classList.remove('hidden');
-  } else {
-    // App gizle, login göster
-    appEl.classList.add('hidden');
-    if (typeof _hideNobetOverlay === 'function') _hideNobetOverlay();
-    if(typeof agFadeOut==='function') agFadeOut();
-    if(loginEl){
-      loginEl.style.cssText = '';
-      loginEl.classList.remove('hidden');
-      requestAnimationFrame(()=>{ loginEl.style.opacity = '1'; });
-    }
-  }
-}
-
-function showStep(stepId) {
-  document.querySelectorAll('.login-step').forEach(el => el.classList.remove('active'));
-  const el = document.getElementById(stepId);
-  if (el) el.classList.add('active');
-}
-
-/* ── YARDIMCI ── */
-function generateGroupCode() {
-  const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let s = '';
-  for (let i = 0; i < 3; i++) s += c[Math.floor(Math.random() * c.length)];
-  s += '-';
-  for (let i = 0; i < 3; i++) s += c[Math.floor(Math.random() * c.length)];
-  return s;
-}
-
-window.copyGroupCode = function() {
-  if (!currentGroupCode) return;
-  navigator.clipboard.writeText(currentGroupCode).then(() => {
-    showToast('Kod kopyalandı: ' + currentGroupCode);
-  }).catch(() => showToast('Kod: ' + currentGroupCode));
-}
-
-let _toastTimer;
-window.showToast = function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
 }
 
 /* ── SW ── */
 if ('serviceWorker' in navigator) {
-  // Tek bir load handler'da: önce temizle, sonra kaydet
   window.addEventListener('load', async () => {
     try {
-      // Eski cache'leri temizle
       if ('caches' in window) {
         const cacheNames = await caches.keys();
         await Promise.all(cacheNames.map(n => caches.delete(n)));
       }
-      // Eski SW'leri unregister et
       const registrations = await navigator.serviceWorker.getRegistrations();
       for (const r of registrations) {
         await r.unregister().catch(() => {});
       }
-    } catch (e) { /* sessiz geç */ }
+    } catch (e) {}
 
-    // Yeni SW'yi kaydet (temizlik bittikten sonra)
     try {
       const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
       reg.update();
@@ -1745,7 +1092,7 @@ if ('serviceWorker' in navigator) {
           }
         });
       });
-    } catch(e) { console.warn('SW kayıt:', e); }
+    } catch(e) {}
   });
 
   let refreshing = false;
@@ -1753,71 +1100,6 @@ if ('serviceWorker' in navigator) {
     if (!refreshing) { refreshing = true; window.location.reload(); }
   });
 }
-
-/* ── NÖBET ONBOARDING ── */
-window.chooseNobetMode = async function(mode) {
-  if (mode === 'join') {
-    document.querySelectorAll('.module-placeholder, .module-frame').forEach(el => el.classList.remove('active'));
-    document.getElementById('joinCodePage').classList.add('active');
-    return;
-  }
-  if (mode === 'solo') {
-    try {
-      await db.collection('users').doc(currentUser.uid).update({ status: 'solo' });
-      window._userData = { ...(window._userData||{}), status: 'solo' };
-    } catch(e) {}
-    hideNobetOnboarding();
-    _loadNobetFrameActual();
-    document.getElementById('nobetFrame').classList.add('active');
-    return;
-  }
-  if (mode === 'create') {
-    try {
-      const code = generateGroupCode();
-      const groupRef = await db.collection('groups').add({
-        name: currentUser.displayName || 'Yeni Grup',
-        code,
-        createdBy: currentUser.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
-      currentGroupId   = groupRef.id;
-      currentGroupCode = code;
-      currentRole      = 'basasistan';
-      await db.collection('users').doc(currentUser.uid).update({
-        status:  'approved',
-        role:    'basasistan',
-        groupId: groupRef.id
-      });
-      window._userData = { role: 'basasistan', status: 'approved', groupId: groupRef.id };
-      updateAppUI(window._userData);
-      hideNobetOnboarding();
-      _loadNobetFrameActual();
-      document.getElementById('nobetFrame').classList.add('active');
-      showToast('Grup oluşturuldu: ' + code);
-    } catch(e) { console.error('create group:', e); }
-  }
-};
-
-window.submitInlineGroupCode = async function() {
-  const code = document.getElementById('inlineGroupCodeInput').value.trim().toUpperCase();
-  const errEl = document.getElementById('inlineCodeError');
-  errEl.textContent = '';
-  if (!code || code.length < 3) { errEl.textContent = 'Geçerli bir kod girin.'; return; }
-  try {
-    const snap = await db.collection('groups').where('code', '==', code).limit(1).get();
-    if (snap.empty) { errEl.textContent = 'Kod bulunamadı.'; return; }
-    const groupId = snap.docs[0].id;
-    await db.collection('users').doc(currentUser.uid).update({
-      status: 'pending', groupId,
-      requestedAt: firebase.firestore.FieldValue.serverTimestamp()
-    });
-    document.querySelectorAll('.module-placeholder, .module-frame').forEach(el => el.classList.remove('active'));
-    const _pp = document.getElementById('pendingPage');
-    if(_pp) _pp.classList.add('active');
-    showToast('Istek gonderildi!');
-  } catch(e) { errEl.textContent = 'Hata olustu.'; }
-};
-
 </script>
 </body>
 </html>

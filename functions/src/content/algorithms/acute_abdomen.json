@@ -1,0 +1,194 @@
+{
+  "name": "Akut Karın Ağrısı Yaklaşımı",
+  "category": "Gastrointestinal",
+  "steps": [
+    {
+      "stepId": "step_1",
+      "question": "Hasta hemodinamik olarak stabil mi?",
+      "description": "Vital bulguları değerlendirin: TA, nabız, kapiller dolum, bilinç. Şok bulguları (taşikardi, hipotansiyon, soğuk-nemli cilt) arayın.",
+      "options": [
+        { "label": "Evet, hemodinamik stabil", "nextStepId": "step_2" },
+        { "label": "Hayır, şok bulguları mevcut", "nextStepId": "step_end_shock" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_shock",
+      "question": "Hemodinamik İnstabilite — Acil Resüsitasyon",
+      "description": "Karın ağrısı ile birlikte şok tablosu: intraabdominal kanama, perfore organ veya sepsis düşündürür.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "İki geniş çaplı IV damar yolu açın. Agresif kristaloid resüsitasyonu başlayın. Tam kan sayımı, cross-match, laktat, koagülasyon gönderin. Acil cerrahi konsültasyonu isteyin. Bedside USG (FAST) ile serbest sıvı arayın. Masif transfüzyon protokolünü hazırlayın. Antibiyotik (sepsis şüphesinde) başlayın."
+    },
+    {
+      "stepId": "step_2",
+      "question": "Ağrının lokalizasyonu nedir?",
+      "description": "Karın bölgesini değerlendirin. Ağrının en yoğun olduğu kadranı belirleyin.",
+      "options": [
+        { "label": "Sağ üst kadran (RUQ)", "nextStepId": "step_ruq" },
+        { "label": "Sağ alt kadran (RLQ)", "nextStepId": "step_rlq" },
+        { "label": "Sol alt kadran (LLQ)", "nextStepId": "step_llq" },
+        { "label": "Epigastrik bölge", "nextStepId": "step_epigastric" },
+        { "label": "Diffüz / yaygın karın ağrısı", "nextStepId": "step_diffuse" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_ruq",
+      "question": "Sağ üst kadran ağrısı — Murphy bulgusu var mı?",
+      "description": "Murphy bulgusu: inspirasyonda sağ subkostal palpasyonla ağrı ve inspirasyonun kesilmesi. Ateş ve lökositoz eşlik ediyor mu?",
+      "options": [
+        { "label": "Murphy (+), ateş, lökositoz → Akut kolesistit", "nextStepId": "step_end_cholecystitis" },
+        { "label": "Kolik tarzında ağrı, Murphy (−), ateş yok → Safra koliği", "nextStepId": "step_end_biliary_colic" },
+        { "label": "Sarılık, kolanjiit bulguları (Charcot triadı)", "nextStepId": "step_end_cholangitis" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_cholecystitis",
+      "question": "Akut Kolesistit Yönetimi",
+      "description": "Safra kesesi inflamasyonu, genellikle safra taşına bağlı.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "IV sıvı, analjezi (NSAİİ veya opioid) ve antiemetik verin. IV antibiyotik başlayın (Seftriakson + Metronidazol veya Piperasilin-Tazobaktam). Abdominal USG ile doğrulayın. Genel cerrahi konsültasyonu isteyin. Erken laparoskopik kolesistektomi (<72 saat) planlanmalıdır."
+    },
+    {
+      "stepId": "step_end_biliary_colic",
+      "question": "Safra Koliği Yönetimi",
+      "description": "Safra taşının geçici olarak safra kanalını tıkamasına bağlı kolik ağrı.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "NSAİİ (Diklofenak 75 mg IM) ilk tercih analjeziktir. Antiemetik verin. Abdominal USG isteyin. Komplikasyon yoksa ağrı kontrolü ile taburculuk. Elektif kolesistektomi için genel cerrahi poliklinik randevusu verin."
+    },
+    {
+      "stepId": "step_end_cholangitis",
+      "question": "Akut Kolanjit — Acil Tedavi",
+      "description": "Charcot triadı: ateş, sarılık, sağ üst kadran ağrısı. Reynold pentadı: + hipotansiyon, konfüzyon.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Geniş spektrumlu IV antibiyotik acil başlayın (Piperasilin-Tazobaktam veya Meropenem). IV sıvı resüsitasyonu yapın. Karaciğer fonksiyon testleri, bilirubin, amilaz, lipaz, kan kültürü gönderin. Acil ERCP için gastroenteroloji konsültasyonu isteyin. Ağır olgularda YBÜ takibi gerekir."
+    },
+    {
+      "stepId": "step_rlq",
+      "question": "Sağ alt kadran ağrısı — Klinik değerlendirme",
+      "description": "En sık neden akut apandisittir. Kadın hastalarda jinekolojik patolojiler de düşünülmelidir.",
+      "options": [
+        { "label": "Alvarado/AIR skoru yüksek → Apandisit şüphesi kuvvetli", "nextStepId": "step_end_appendicitis" },
+        { "label": "Kadın hasta, jinekolojik semptomlar mevcut", "nextStepId": "step_end_gyn" },
+        { "label": "Tanı belirsiz, görüntüleme gerekli", "nextStepId": "step_end_rlq_imaging" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_appendicitis",
+      "question": "Akut Apandisit Yönetimi",
+      "description": "Klinik bulgular akut apandisiti kuvvetle düşündürmektedir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "IV sıvı ve analjezi başlayın. Tam kan sayımı, CRP isteyin. Tanı şüpheliyse abdominal BT (IV kontrastlı) çekin. Genel cerrahi konsültasyonu yapın. Laparoskopik apendektomi standart tedavidir. Preoperatif antibiyotik profilaksisi (Sefazolin + Metronidazol) verin."
+    },
+    {
+      "stepId": "step_end_gyn",
+      "question": "Jinekolojik Patoloji Değerlendirmesi",
+      "description": "Kadın hastada sağ alt kadran ağrısının jinekolojik nedenleri: ektopik gebelik, over torsiyonu, rüptüre over kisti.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Beta-hCG isteyin (ektopik gebelik ekartasyonu). Transvajinal USG çektirin. Over torsiyonu şüphesinde Doppler USG yapın. Ektopik gebelik rüptürü: acil cerrahi. Over torsiyonu: acil laparoskopi. Kadın doğum konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_end_rlq_imaging",
+      "question": "RLQ Ağrısı — Görüntüleme ile Değerlendirme",
+      "description": "Klinik olarak kesin tanı konulamamıştır, görüntüleme gereklidir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Abdominal BT (IV kontrastlı) ilk tercih görüntülemedir. USG özellikle çocuk, gebe ve genç kadın hastalarda tercih edilir. Sonuca göre cerrahi veya medikal tedavi planlanır. Tanı hala belirsizse klinik gözlem ve seri muayene yapın."
+    },
+    {
+      "stepId": "step_llq",
+      "question": "Sol alt kadran ağrısı — Divertikülit düşünülüyor mu?",
+      "description": "50 yaş üstü hastalarda en sık neden akut divertikülittir. Ateş, lökositoz ve sol alt kadran hassasiyeti tipiktir.",
+      "options": [
+        { "label": "Komplike olmayan divertikülit (ateş hafif, peritonit yok)", "nextStepId": "step_end_diverticulitis_simple" },
+        { "label": "Komplike divertikülit (apse, peritonit, obstrüksiyon)", "nextStepId": "step_end_diverticulitis_complicated" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_diverticulitis_simple",
+      "question": "Komplike Olmayan Divertikülit",
+      "description": "Lokalize sol alt kadran hassasiyeti, hafif ateş, peritonit bulgusu yok.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Abdominal BT ile tanıyı doğrulayın. Oral antibiyotik (Siprofloksasin + Metronidazol veya Amoksisilin-Klavulanat) başlayın. Berrak sıvı diyeti önerip tolere ettikçe ilerletin. Ağrı kontrolü sağlayın. Hafif olgularda ayaktan tedavi mümkündür. 6-8 hafta sonra kolonoskopi planlayın."
+    },
+    {
+      "stepId": "step_end_diverticulitis_complicated",
+      "question": "Komplike Divertikülit",
+      "description": "Apse, perforasyon, fistül veya obstrüksiyon ile komplike divertikülit.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "IV geniş spektrumlu antibiyotik başlayın (Piperasilin-Tazobaktam veya Meropenem). Abdominal BT ile apse boyutunu değerlendirin. Apse >4 cm ise perkütan drenaj yapın. Diffüz peritonit varsa acil cerrahi (Hartmann prosedürü veya primer anastomoz) gerekir. Genel cerrahi konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_epigastric",
+      "question": "Epigastrik ağrı — Pankreatit mi, peptik ülser mi?",
+      "description": "Epigastrik ağrının en sık nedenleri: akut pankreatit, peptik ülser, gastrit, akut koroner sendrom (inferior MI).",
+      "options": [
+        { "label": "Amilaz/lipaz yüksek → Akut pankreatit", "nextStepId": "step_end_pancreatitis" },
+        { "label": "Serbest hava (ayakta direk grafi) → Perfore ülser", "nextStepId": "step_end_perforation" },
+        { "label": "Normal enzimler, serbest hava yok → Dispepsi/Gastrit", "nextStepId": "step_end_dyspepsia" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_pancreatitis",
+      "question": "Akut Pankreatit Yönetimi",
+      "description": "Epigastrik ağrı, sırta yayılım, bulantı-kusma ve amilaz/lipazın normalin 3 katından fazla yükselmesi.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Agresif IV kristaloid sıvı resüsitasyonu (ilk 24 saatte 250-500 mL/saat Ringer Laktat) yapın. Analjezi (opioid ağrı kontrolü için gerekirse) verin. Oral alımı tolere ettikçe erken oral beslenmeye geçin. Ranson/BISAP/APACHE-II ile şiddet değerlendirmesi yapın. Biliyer pankreatitte ERCP endikasyonunu değerlendirin. Ağır pankreatitte YBÜ takibi gerekir."
+    },
+    {
+      "stepId": "step_end_perforation",
+      "question": "Perfore Peptik Ülser — Acil Cerrahi",
+      "description": "Ani başlangıçlı şiddetli epigastrik ağrı, tahta karın, direk grafide diyafram altı serbest hava.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "NPO yapın, nazogastrik sonda takın. IV sıvı resüsitasyonu ve geniş spektrumlu antibiyotik başlayın. Analjezi verin. Acil genel cerrahi konsültasyonu isteyin. Onarım ameliyatı (primer kapama + omentum yaması veya laparoskopik onarım) planlanmalıdır. PPI infüzyonu başlayın."
+    },
+    {
+      "stepId": "step_end_dyspepsia",
+      "question": "Dispepsi / Gastrit Yönetimi",
+      "description": "Ciddi patoloji dışlanmış, fonksiyonel dispepsi veya gastrit düşünülmektedir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "PPI (Pantoprazol 40 mg IV/PO) başlayın. Antasid verin. NSAİİ ve alkol kullanımını sorgulayın. Alarm semptomları (kilo kaybı, kanama, disfaji, 55 yaş üstü yeni başlangıç) varsa endoskopi planlayın. H. pylori testi düşünün. Ayaktan takip ile taburculuk."
+    },
+    {
+      "stepId": "step_diffuse",
+      "question": "Diffüz karın ağrısı — Peritoneal irritasyon bulguları var mı?",
+      "description": "Yaygın karın ağrısında defans, rebound ve rijidite değerlendirin. Bağırsak sesleri dinleyin.",
+      "options": [
+        { "label": "Peritonit bulguları (+), akut karın", "nextStepId": "step_end_peritonitis" },
+        { "label": "Bağırsak sesleri metalik, distansiyon → İleus/Obstrüksiyon", "nextStepId": "step_end_obstruction" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_peritonitis",
+      "question": "Peritonit — Acil Cerrahi Değerlendirme",
+      "description": "Yaygın peritoneal irritasyon bulguları ile akut karın tablosu.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "IV sıvı resüsitasyonu ve geniş spektrumlu antibiyotik (Piperasilin-Tazobaktam veya Meropenem) acil başlayın. Analjezi verin. Tam kan sayımı, laktat, koagülasyon gönderin. Ayakta direk karın grafisi ve/veya BT çekin. Acil genel cerrahi konsültasyonu isteyin. Genellikle eksplorativatris laparotomi gerekir."
+    },
+    {
+      "stepId": "step_end_obstruction",
+      "question": "İntestinal Obstrüksiyon Yönetimi",
+      "description": "Kramp tarzında karın ağrısı, distansiyon, kusma, gaita-gaz çıkaramama.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "NPO yapın, nazogastrik sonda (dekompresyon) takın. IV sıvı ve elektrolit replasmanı başlayın. Ayakta direk karın grafisi ve abdominal BT isteyin. Strangülasyon bulguları (ateş, taşikardi, lokalize hassasiyet, laktat yüksekliği) varsa acil cerrahi gerekir. Basit obstrüksiyonda konservatif tedavi denenebilir. Genel cerrahi konsültasyonu isteyin."
+    }
+  ]
+}

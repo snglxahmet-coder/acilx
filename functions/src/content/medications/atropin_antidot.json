@@ -1,0 +1,30 @@
+{
+  "name": "Atropin (Zehirlenme Dozu)",
+  "category": "Antidot",
+  "adultDosing": "Organofosfor/karbamat zehirlenmesi: Başlangıç 2-4 mg IV bolus, ardından her 5-10 dakikada bir doz iki katına çıkarılarak tekrarlanır (sekresyonlar kuruyuncaya kadar). Ciddi vakalarda yüzlerce mg gerekebilir. Hedef: Pulmoner sekresyonların kontrolü ve yeterli oksijenasyon.",
+  "pediatricDosing": "0.02-0.05 mg/kg IV, her 5-10 dakikada bir tekrarlanır. Minimum tek doz 0.1 mg (paradoks bradikardi riski nedeniyle daha düşük doz verilmez). Sekresyonlar kuruyuncaya kadar doz artırılır.",
+  "contraindications": [
+    "Relatif — organofosfor/karbamat zehirlenmesi tedavisinde mutlak kontrendikasyon yoktur",
+    "Zehirlenme dışı kullanımda: Dar açılı glokom, obstrüktif üropati, miyastenia gravis, paralitik ileus"
+  ],
+  "warnings": [
+    "Zehirlenme tedavisinde toksik doz kavramı yoktur — klinik yanıta göre titre edilir",
+    "Hedef: Pulmoner sekresyonların kuruması ve bronkospazmın çözülmesi (pupil değil!)",
+    "Pupil dilatasyonu atropinizasyon göstergesi olarak kullanılmamalıdır — sadece sekresyonlara göre titre et",
+    "Hipoksi düzeltilmeden atropin verilmesi ventriküler fibrilasyona yol açabilir — önce oksijenasyon sağla",
+    "İnfüzyon: Bolus sonrası sürekli infüzyon gerekebilir (0.02-0.08 mg/kg/saat)",
+    "Pralidoksim (2-PAM) ile birlikte kullanılmalıdır (organofosfor zehirlenmesinde)"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul (IV/IM)",
+      "concentration": "0.5 mg/mL",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Ampul (IV/IM)",
+      "concentration": "1 mg/mL",
+      "volume": "1 mL"
+    }
+  ]
+}

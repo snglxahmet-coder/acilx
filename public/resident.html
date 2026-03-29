@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E1A">
+<title>AcilX — Asistan Paneli</title>
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/calendar.css">
+<style>
+/* Resident page-specific — shared dash-* classes are in components.css */
+body { padding-bottom: calc(60px + env(safe-area-inset-bottom)); }
+
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  background: var(--bg-card);
+  border-top: 1px solid var(--bg-border);
+  padding: 6px 0 calc(6px + env(safe-area-inset-bottom));
+  z-index: 1000;
+}
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 10px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+.tab-item.active { color: var(--accent); }
+.tab-icon { font-size: 20px; }
+.tab-label { font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER (panel aktifken JS ile gösterilir) -->
+  <header class="app-header" id="appHeader" style="display:none">
+    <div class="app-header-logo">
+      <div class="app-header-logo-icon">A</div>
+      <span class="app-header-logo-text">AcilX</span>
+    </div>
+    <div class="app-header-right">
+      <div class="app-header-user">
+        <span id="headerUserName"></span>
+        <span class="badge resident" id="headerBadge">Asistan</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- PANEL (giriş sonrası) -->
+  <div id="panel" style="display:none">
+
+    <!-- KLİNİĞE KATIL (kliniği olmayan asistanlar) -->
+    <div class="card card-enter stagger-1" id="joinCard" style="display:none">
+      <h2>🔗 Kliniğe Katıl</h2>
+      <p class="text-sm" style="margin-bottom:16px">Başasistanınızdan aldığınız iki kodu girin.</p>
+      <label>Hastane Kodu</label>
+      <input type="text" id="hospitalCode" placeholder="HASTANE123" style="text-transform:uppercase">
+      <label>Kişisel Asistan Kodunuz</label>
+      <input type="text" id="residentCode" placeholder="ASISTAN456" style="text-transform:uppercase">
+      <button class="btn-primary" onclick="window.joinClinic()">Kliniğe Katıl</button>
+      <div id="joinMsg" class="msg"></div>
+    </div>
+
+    <!-- ═══ TAB İÇERİKLERİ ═══ -->
+
+    <!-- ANA SAYFA -->
+    <div class="tab-content" id="content-home" style="display:none">
+      <div class="dash-welcome card-enter stagger-1">
+        <div class="dash-welcome-icon">❤️‍🩹</div>
+        <div>
+          <div class="dash-welcome-title">Hoş Geldin 👋</div>
+          <div class="dash-welcome-sub" id="dashResidentInfo">Nöbetlerini takip et</div>
+        </div>
+      </div>
+
+      <!-- Sonraki Nöbet — hero önizleme -->
+      <div class="card hero-card card-enter stagger-2" id="nextShiftCard">
+        <h2>⏱️ Sonraki Nöbetim</h2>
+        <div id="nextShiftContent"></div>
+      </div>
+
+      <!-- Bildirimler -->
+      <div class="card card-enter stagger-3" id="notifCard">
+        <div class="flex justify-between items-center mb-4">
+          <h2 style="margin-bottom:0">🔔 Bildirimler</h2>
+          <button class="btn-outline btn-sm" onclick="window.markAllRead()">Tümünü Okundu İşaretle</button>
+        </div>
+        <div id="notifList"><div class="empty">Yükleniyor...</div></div>
+      </div>
+    </div>
+
+    <!-- NÖBET -->
+    <div class="tab-content" id="content-schedule" style="display:none">
+      <!-- NÖBET ÇİZELGESİ -->
+      <div class="card card-enter" id="shiftsCard">
+        <h2 id="shiftsTitle">📋 Bu Ay Nöbetlerim</h2>
+        <div id="shiftsList"><div class="empty">Yükleniyor...</div></div>
+      </div>
+
+      <!-- TAKAS TALEBİ OLUŞTUR -->
+      <div class="card card-enter" id="swapCreateCard">
+        <h2>🔄 Nöbet Takası Talebi</h2>
+        <p class="text-sm" style="margin-bottom:12px">Takas etmek istediğiniz nöbeti ve karşı tarafı seçin.</p>
+        <label>Benim Nöbetim</label>
+        <select id="swapMyShift"><option value="">Yükleniyor...</option></select>
+        <label>Kimle takas?</label>
+        <select id="swapTarget"><option value="">Yükleniyor...</option></select>
+        <label>Karşı tarafın nöbeti</label>
+        <select id="swapTargetShift"><option value="">Önce asistan seçin</option></select>
+        <button class="btn-primary" onclick="window.createSwap()">Takas Talebi Gönder</button>
+        <div id="swapCreateMsg" class="msg"></div>
+      </div>
+
+      <!-- GELEN TAKAS TALEPLERİ -->
+      <div class="card card-enter" id="swapInboxCard">
+        <h2>📥 Gelen Takas Talepleri</h2>
+        <div id="swapInboxList"><div class="empty">Yükleniyor...</div></div>
+      </div>
+
+      <!-- TAKAS GEÇMİŞİM -->
+      <div class="card card-enter" id="swapHistoryCard">
+        <h2>📜 Takas Geçmişim</h2>
+        <div id="swapHistoryList"><div class="empty">Yükleniyor...</div></div>
+      </div>
+    </div>
+
+    <!-- TERCİH -->
+    <div class="tab-content" id="content-preference" style="display:none">
+      <div class="card card-enter" id="prefCard">
+        <h2 id="prefTitle">🎯 Tercih Girişi</h2>
+        <p class="text-sm" style="margin-bottom:12px" id="prefDeadline"></p>
+        <div class="day-legend">
+          <span><span class="dot dot-prefer"></span> Tercih</span>
+          <span><span class="dot dot-avoid"></span> Kaçın</span>
+          <span><span class="dot dot-off"></span> İzin</span>
+        </div>
+        <div class="day-grid" id="dayGrid"></div>
+        <button class="btn-success mt-2" onclick="window.savePreferences()">Tercihleri Kaydet</button>
+        <div id="prefMsg" class="msg"></div>
+      </div>
+    </div>
+
+    <!-- PROFİLİM -->
+    <div class="tab-content" id="content-profile" style="display:none">
+      <div class="card" id="profileCard">
+        <div class="card-header"><h3>Profilim</h3></div>
+        <div class="card-body">
+          <div id="profileName" style="font-size:16px;font-weight:700;margin-bottom:8px"></div>
+          <div id="profileEmail" style="font-size:13px;color:var(--text-secondary);margin-bottom:12px"></div>
+          <div id="profileClinic" style="font-size:13px;margin-bottom:8px"></div>
+          <div id="profilePgy" style="font-size:13px;margin-bottom:16px"></div>
+          <div id="profileStats"></div>
+          <button class="btn-outline" onclick="window.logout()" style="margin-top:16px;width:100%">Çıkış Yap</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav id="tabBar" class="tab-bar" style="display:none">
+  <button class="tab-item active" onclick="switchTab('home')">
+    <span class="tab-icon">🏠</span>
+    <span class="tab-label">Ana Sayfa</span>
+  </button>
+  <button class="tab-item" onclick="switchTab('schedule')">
+    <span class="tab-icon">📊</span>
+    <span class="tab-label">Nöbet</span>
+  </button>
+  <button class="tab-item" onclick="switchTab('preference')">
+    <span class="tab-icon">📅</span>
+    <span class="tab-label">Tercih</span>
+  </button>
+  <button class="tab-item" onclick="switchTab('profile')">
+    <span class="tab-icon">👤</span>
+    <span class="tab-label">Profilim</span>
+  </button>
+</nav>
+
+<script type="module">
+import { initializeApp }                                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut }                  from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, addDoc,
+         collection, query, where, getDocs, orderBy, limit,
+         writeBatch, serverTimestamp }                            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable }                            from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+
+const app       = initializeApp({
+  apiKey:            "AIzaSyB84OiA8dA8MqIDhp2mVPHbOwbfM7hXkcw",
+  authDomain:        "acilx-d3635.firebaseapp.com",
+  projectId:         "acilx-d3635",
+  storageBucket:     "acilx-d3635.firebasestorage.app",
+  messagingSenderId: "539148511591",
+  appId:             "1:539148511591:web:4ca4f0eb49a1345c4fa7c2",
+});
+const auth      = getAuth(app);
+const db        = getFirestore(app);
+const functions = getFunctions(app, 'us-central1');
+
+let currentUser     = null;
+let currentProfile  = null;
+let activePeriod    = null;   // açık tercih dönemi
+let dayStates       = {};     // { day: 'prefer'|'avoid'|'off'|null }
+let activeTab       = null;
+
+// ── Auth state ───────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUser = user;
+  const snap  = await getDoc(doc(db, 'users', user.uid));
+  currentProfile = snap.exists() ? snap.data() : {};
+  showPanel();
+});
+
+// ── Tab navigasyonu ─────────────────────────────────────────────────────────
+window.switchTab = function(tabName) {
+  // Tüm tab-content gizle
+  document.querySelectorAll('.tab-content').forEach(function(el) {
+    el.style.display = 'none';
+  });
+
+  // Hedef content göster
+  var content = document.getElementById('content-' + tabName);
+  if (content) content.style.display = '';
+
+  // Tab butonlarının active durumunu güncelle
+  document.querySelectorAll('.tab-item').forEach(function(el) {
+    el.classList.remove('active');
+  });
+  var activeBtn = document.querySelector('[onclick="switchTab(\'' + tabName + '\')"]');
+  if (activeBtn) activeBtn.classList.add('active');
+
+  activeTab = tabName;
+
+  // Sekme verisi yükle
+  loadTabData(tabName);
+};
+
+function loadTabData(tabName) {
+  switch (tabName) {
+    case 'home':
+      loadNextShift();
+      loadNotifications();
+      break;
+    case 'schedule':
+      loadShifts();
+      loadSwapForm();
+      loadSwapInbox();
+      loadSwapHistory();
+      break;
+    case 'preference':
+      loadPreferencePeriod();
+      break;
+    case 'profile':
+      loadProfile();
+      break;
+  }
+}
+
+// ── UI ───────────────────────────────────────────────────────────────────────
+function showPanel() {
+  document.getElementById('panel').style.display = 'block';
+
+  var displayName = currentProfile.displayName || currentUser.email;
+
+  // Header
+  document.getElementById('appHeader').style.display = 'flex';
+  document.getElementById('headerUserName').textContent = displayName;
+
+  if (!currentProfile.clinicId || currentProfile.clinicId === '') {
+    document.getElementById('joinCard').style.display = 'block';
+    document.getElementById('tabBar').style.display = 'none';
+    return;
+  }
+  document.getElementById('joinCard').style.display = 'none';
+
+  // Dashboard bilgileri
+  document.getElementById('dashResidentInfo').textContent =
+    displayName + ' — Nöbetlerini takip et';
+
+  // Tab bar göster ve ilk sekmeyi aç
+  document.getElementById('tabBar').style.display = 'flex';
+  switchTab('home');
+
+  loadClinicInfo();
+}
+
+function msg(id, text, type) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.className   = 'msg ' + type;
+}
+
+window.logout = async () => { await signOut(auth); window.location.href = 'index.html'; };
+
+// ── Profil yükle ─────────────────────────────────────────────────────────────
+async function loadProfile() {
+  if (!currentProfile) return;
+  document.getElementById('profileName').textContent = currentProfile.displayName || '';
+  document.getElementById('profileEmail').textContent = currentProfile.email || currentUser.email || '';
+  document.getElementById('profileClinic').textContent = 'Klinik: ' + (currentProfile.clinicName || currentProfile.clinicId || '');
+  document.getElementById('profilePgy').textContent = 'PGY: ' + (currentProfile.pgy || '');
+
+  // Nöbet istatistikleri
+  try {
+    var now = new Date();
+    var schedId = currentProfile.clinicId + '_' + now.getFullYear() + '_' + now.getMonth();
+    var snap = await getDocs(
+      query(collection(db, 'schedules', schedId, 'shifts'),
+            where('residentId', '==', currentUser.uid))
+    );
+    var statsEl = document.getElementById('profileStats');
+    if (snap.empty) {
+      statsEl.innerHTML = '<div class="text-sm" style="color:var(--text-secondary)">Bu ay nöbet verisi yok.</div>';
+    } else {
+      var zones = {};
+      snap.docs.forEach(function(d) {
+        var z = d.data().zoneId || 'Bilinmiyor';
+        zones[z] = (zones[z] || 0) + 1;
+      });
+      var html = '<div class="text-sm" style="margin-bottom:8px;font-weight:600">Bu Ay Nöbet İstatistikleri</div>';
+      html += '<div class="text-sm">Toplam: ' + snap.docs.length + ' nöbet</div>';
+      Object.keys(zones).forEach(function(z) {
+        html += '<div class="text-sm">' + z + ': ' + zones[z] + ' nöbet</div>';
+      });
+      statsEl.innerHTML = html;
+    }
+  } catch(_) {}
+}
+
+// ── Kliniğe katıl ────────────────────────────────────────────────────────────
+window.joinClinic = async () => {
+  var hCode = document.getElementById('hospitalCode').value.trim().toUpperCase();
+  var rCode = document.getElementById('residentCode').value.trim().toUpperCase();
+  if (!hCode || !rCode) return msg('joinMsg', 'Her iki kodu da girin.', 'err');
+  try {
+    var fn   = httpsCallable(functions, 'joinClinic');
+    var res  = await fn({ hospitalCode: hCode, residentCode: rCode });
+    msg('joinMsg', '"' + res.data.clinicName + '" kliniğine katıldınız!', 'ok');
+    // Profili güncelle ve paneli yenile
+    currentProfile.clinicId = res.data.clinicId;
+    setTimeout(function() { location.reload(); }, 1200);
+  } catch(e) {
+    var map = {
+      'not-found':       'Geçersiz hastane kodu.',
+      'permission-denied':'Geçersiz asistan kodu.',
+      'already-exists':  'Bu kliniğe zaten kayıtlısınız.',
+    };
+    msg('joinMsg', map[e.code] || e.message, 'err');
+  }
+};
+
+// ── Sonraki nöbet ────────────────────────────────────────────────────────────
+async function loadNextShift() {
+  var el  = document.getElementById('nextShiftContent');
+  var now = new Date();
+  var today = now.getDate();
+  var year  = now.getFullYear();
+  var month = now.getMonth();
+
+  try {
+    var schedId   = currentProfile.clinicId + '_' + year + '_' + month;
+    var schedSnap = await getDoc(doc(db, 'schedules', schedId));
+    if (!schedSnap.exists()) { el.innerHTML = '<span class="empty">Çizelge henüz yok.</span>'; return; }
+
+    var snap = await getDocs(
+      query(collection(db, 'schedules', schedId, 'shifts'),
+            where('residentId', '==', currentUser.uid))
+    );
+    var upcoming = snap.docs
+      .map(function(d) { return d.data(); })
+      .filter(function(s) { return s.day >= today; })
+      .sort(function(a, b) { return a.day - b.day; });
+
+    if (!upcoming.length) {
+      el.innerHTML = '<span class="empty">Bu ay başka nöbetiniz yok.</span>';
+      return;
+    }
+    var next = upcoming[0];
+    var TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                     'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    var daysLeft = next.day - today;
+    var countdownText = daysLeft === 0 ? 'Bugün!' : daysLeft === 1 ? 'Yarın' : daysLeft + ' gün';
+    var countdownIcon = daysLeft === 0 ? '🔴' : daysLeft === 1 ? '⏰' : '📆';
+    el.innerHTML =
+      '<div style="display:flex;justify-content:space-between;align-items:center">' +
+        '<div>' +
+          '<div class="hero-date">' + next.day + ' ' + TR_MONTHS[month] + '</div>' +
+          '<div class="hero-meta">' + next.zoneId + ' · ' + shiftLabel(next.shiftType) + '</div>' +
+        '</div>' +
+        '<div style="text-align:right">' +
+          '<div class="hero-countdown">' + countdownIcon + ' ' + countdownText + '</div>' +
+        '</div>' +
+      '</div>';
+  } catch(_) { el.innerHTML = '<span class="empty">Yüklenemedi.</span>'; }
+}
+
+// ── Klinik bilgisi ───────────────────────────────────────────────────────────
+async function loadClinicInfo() {
+  try {
+    var snap = await getDoc(doc(db, 'clinics', currentProfile.clinicId));
+    if (!snap.exists()) return;
+    var c = snap.data();
+    document.getElementById('dashResidentInfo').textContent =
+      c.name + ' — ' + c.hospitalName + ' · PGY ' + (currentProfile.pgy || 1);
+  } catch(_) {}
+}
+
+// ── Nöbet çizelgesi ──────────────────────────────────────────────────────────
+async function loadShifts() {
+  var now   = new Date();
+  var year  = now.getFullYear();
+  var month = now.getMonth(); // 0-based
+  var TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                   'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+  document.getElementById('shiftsTitle').textContent =
+    '📋 ' + TR_MONTHS[month] + ' ' + year + ' — Nöbetlerim';
+
+  var scheduleId = currentProfile.clinicId + '_' + year + '_' + month;
+  var el         = document.getElementById('shiftsList');
+
+  try {
+    var schedSnap = await getDoc(doc(db, 'schedules', scheduleId));
+    if (!schedSnap.exists()) {
+      el.innerHTML = '<div class="empty">Bu ay için henüz çizelge oluşturulmadı.</div>';
+      return;
+    }
+
+    var shiftsSnap = await getDocs(
+      query(collection(db, 'schedules', scheduleId, 'shifts'),
+            where('residentId', '==', currentUser.uid))
+    );
+
+    if (shiftsSnap.empty) {
+      el.innerHTML = '<div class="empty">Bu ay nöbetiniz bulunmuyor.</div>';
+      return;
+    }
+
+    var shifts = shiftsSnap.docs
+      .map(function(d) { return d.data(); })
+      .sort(function(a, b) { return a.day - b.day; });
+
+    el.innerHTML = shifts.map(function(s) {
+      return '<div class="shift-item">' +
+        '<span class="shift-day">' + s.day + '</span>' +
+        '<span class="shift-zone">' + s.zoneId + '</span>' +
+        '<span class="shift-type">' + shiftLabel(s.shiftType) + '</span>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="color:#fca5a5">' + e.message + '</div>';
+  }
+}
+
+// ── Tercih dönemi ─────────────────────────────────────────────────────────────
+async function loadPreferencePeriod() {
+  try {
+    var snap = await getDocs(
+      query(collection(db, 'preferencePeriods'),
+            where('clinicId', '==', currentProfile.clinicId),
+            where('status', '==', 'open'),
+            limit(1))
+    );
+    if (snap.empty) {
+      document.getElementById('prefTitle').textContent = '🎯 Tercih Girişi';
+      document.getElementById('prefDeadline').textContent = 'Şu an açık tercih dönemi yok.';
+      document.getElementById('dayGrid').style.display = 'none';
+      document.querySelector('#prefCard button.btn-success').style.display = 'none';
+      return;
+    }
+
+    activePeriod = { id: snap.docs[0].id, ...snap.docs[0].data() };
+    dayStates = {};
+    var { year, month, deadline, scheduleId } = activePeriod;
+    var TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                     'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+    document.getElementById('prefTitle').textContent =
+      '🎯 ' + TR_MONTHS[month] + ' ' + year + ' — Tercih Girişi';
+    document.getElementById('prefDeadline').textContent = deadline
+      ? 'Son gün: ' + new Date(deadline.seconds * 1000).toLocaleDateString('tr-TR')
+      : 'Son gün belirlenmemiş';
+
+    document.getElementById('dayGrid').style.display = '';
+    document.querySelector('#prefCard button.btn-success').style.display = '';
+
+    // Mevcut tercih varsa yükle
+    var existing = await getDoc(
+      doc(db, 'schedules', scheduleId, 'preferences', currentUser.uid)
+    );
+    if (existing.exists()) {
+      var d = existing.data();
+      (d.preferDays || []).forEach(function(day) { dayStates[day] = 'prefer'; });
+      (d.avoidDays  || []).forEach(function(day) { dayStates[day] = 'avoid'; });
+      (d.daysOff    || []).forEach(function(day) { dayStates[day] = 'off'; });
+    }
+
+    renderDayGrid(year, month);
+  } catch(e) {
+    console.error('Tercih dönemi yüklenemedi:', e);
+  }
+}
+
+function renderDayGrid(year, month) {
+  var daysInMonth = new Date(year, month + 1, 0).getDate();
+  var grid = document.getElementById('dayGrid');
+  grid.innerHTML = '';
+  for (var d = 1; d <= daysInMonth; d++) {
+    (function(day) {
+      var btn = document.createElement('button');
+      btn.className = 'day-btn ' + (dayStates[day] || '');
+      btn.textContent = day;
+      btn.onclick = function() {
+        var cycle = { '': 'prefer', 'prefer': 'avoid', 'avoid': 'off', 'off': '' };
+        var cur = dayStates[day] || '';
+        var next = cycle[cur];
+        if (next) dayStates[day] = next; else delete dayStates[day];
+        btn.className = 'day-btn ' + next;
+      };
+      grid.appendChild(btn);
+    })(d);
+  }
+}
+
+window.savePreferences = async () => {
+  if (!activePeriod) return;
+  var { scheduleId } = activePeriod;
+  var preferDays = [], avoidDays = [], daysOff = [];
+  Object.entries(dayStates).forEach(function([d, s]) {
+    var day = Number(d);
+    if (s === 'prefer') preferDays.push(day);
+    else if (s === 'avoid') avoidDays.push(day);
+    else if (s === 'off')  daysOff.push(day);
+  });
+  try {
+    await setDoc(
+      doc(db, 'schedules', scheduleId, 'preferences', currentUser.uid),
+      { userId: currentUser.uid, preferDays, avoidDays, daysOff,
+        submittedAt: serverTimestamp() },
+      { merge: false }
+    );
+    msg('prefMsg', 'Tercihler kaydedildi!', 'ok');
+  } catch(e) {
+    msg('prefMsg', e.message, 'err');
+  }
+};
+
+// ── Bildirimler ───────────────────────────────────────────────────────────────
+let notifDocs = [];
+async function loadNotifications() {
+  var el = document.getElementById('notifList');
+  try {
+    var snap = await getDocs(
+      query(collection(db, 'notifications'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc'),
+            limit(10))
+    );
+    notifDocs = snap.docs;
+    if (snap.empty) {
+      el.innerHTML = '<div class="empty">Bildirim yok.</div>';
+      return;
+    }
+    el.innerHTML = snap.docs.map(function(d) {
+      var n = d.data();
+      return '<div class="notif-item ' + (n.read ? '' : 'unread') + '">' +
+        '<div class="notif-title">' + n.title + '</div>' +
+        '<div class="notif-body">' + n.body + '</div>' +
+      '</div>';
+    }).join('');
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="color:#fca5a5">' + e.message + '</div>';
+  }
+}
+
+window.markAllRead = async () => {
+  var unread = notifDocs.filter(function(d) { return !d.data().read; });
+  if (!unread.length) return;
+  var batch = writeBatch(db);
+  unread.forEach(function(d) { batch.update(d.ref, { read: true }); });
+  await batch.commit();
+  loadNotifications();
+};
+
+// ── Swap — Form yükleme ──────────────────────────────────────────────────────
+let myShiftsMap = {};
+let clinicResidents = [];
+var TR_MONTHS_S = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                   'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+async function loadSwapForm() {
+  var now  = new Date();
+  var year = now.getFullYear(), month = now.getMonth(), today = now.getDate();
+  var scheduleId = currentProfile.clinicId + '_' + year + '_' + month;
+
+  try {
+    var mySelect = document.getElementById('swapMyShift');
+    var schedSnap = await getDoc(doc(db, 'schedules', scheduleId));
+    if (!schedSnap.exists()) {
+      mySelect.innerHTML = '<option value="">Çizelge yok</option>';
+      return;
+    }
+    var mySnap = await getDocs(
+      query(collection(db, 'schedules', scheduleId, 'shifts'),
+            where('residentId', '==', currentUser.uid))
+    );
+    var upcoming = mySnap.docs.filter(function(d) { return d.data().day > today; })
+      .sort(function(a, b) { return a.data().day - b.data().day; });
+    myShiftsMap = {};
+    mySelect.innerHTML = upcoming.length
+      ? '<option value="">Nöbet seçin</option>' + upcoming.map(function(d) {
+          myShiftsMap[d.id] = { ...d.data(), scheduleId };
+          var s = d.data();
+          return '<option value="' + d.id + '">' + s.day + ' ' + TR_MONTHS_S[month] + ' — ' + s.zoneId + '</option>';
+        }).join('')
+      : '<option value="">Gelecek nöbet yok</option>';
+
+    // Klinik asistanları
+    var resSnap = await getDocs(collection(db, 'clinics', currentProfile.clinicId, 'residents'));
+    clinicResidents = [];
+    var targetSelect = document.getElementById('swapTarget');
+    targetSelect.innerHTML = '<option value="">Asistan seçin</option>';
+    for (var rd of resSnap.docs) {
+      if (rd.id === currentUser.uid) continue;
+      var uSnap = await getDoc(doc(db, 'users', rd.id));
+      var name  = uSnap.exists() ? (uSnap.data().displayName || uSnap.data().email) : rd.id;
+      clinicResidents.push({ uid: rd.id, displayName: name });
+      targetSelect.innerHTML += '<option value="' + rd.id + '">' + name + '</option>';
+    }
+
+    // Hedef asistan değiştiğinde onun nöbetlerini yükle
+    targetSelect.onchange = async function() {
+      var targetUid = targetSelect.value;
+      var ts = document.getElementById('swapTargetShift');
+      if (!targetUid) { ts.innerHTML = '<option value="">Önce asistan seçin</option>'; return; }
+      ts.innerHTML = '<option value="">Yükleniyor...</option>';
+      var tSnap = await getDocs(
+        query(collection(db, 'schedules', scheduleId, 'shifts'),
+              where('residentId', '==', targetUid))
+      );
+      var tUpcoming = tSnap.docs.filter(function(d) { return d.data().day > today; })
+        .sort(function(a, b) { return a.data().day - b.data().day; });
+      ts.innerHTML = tUpcoming.length
+        ? '<option value="">Nöbet seçin</option>' + tUpcoming.map(function(d) {
+            var s = d.data();
+            return '<option value="' + d.id + '">' + s.day + ' ' + TR_MONTHS_S[month] + ' — ' + s.zoneId + '</option>';
+          }).join('')
+        : '<option value="">Gelecek nöbeti yok</option>';
+    };
+  } catch(e) {
+    console.error('Swap form yüklenemedi:', e);
+  }
+}
+
+// ── Swap — Talep oluştur ─────────────────────────────────────────────────────
+window.createSwap = async () => {
+  var fromShiftId = document.getElementById('swapMyShift').value;
+  var targetId    = document.getElementById('swapTarget').value;
+  var toShiftId   = document.getElementById('swapTargetShift').value;
+
+  if (!fromShiftId || !targetId || !toShiftId)
+    return msg('swapCreateMsg', 'Tüm alanları seçin.', 'err');
+
+  var fromShift = myShiftsMap[fromShiftId];
+  try {
+    await addDoc(collection(db, 'swapRequests'), {
+      requesterId: currentUser.uid,
+      targetId,
+      fromShiftId,
+      toShiftId,
+      scheduleId:  fromShift.scheduleId,
+      clinicId:    currentProfile.clinicId,
+      fromDay:     fromShift.day,
+      status:      'pending_target',
+      createdAt:   serverTimestamp(),
+      updatedAt:   serverTimestamp(),
+    });
+    msg('swapCreateMsg', 'Takas talebi gönderildi! Meslektaşınızın onayı bekleniyor.', 'ok');
+  } catch(e) {
+    msg('swapCreateMsg', e.message, 'err');
+  }
+};
+
+// ── Swap — Gelen talepler ────────────────────────────────────────────────────
+async function loadSwapInbox() {
+  var el = document.getElementById('swapInboxList');
+  try {
+    var snap = await getDocs(
+      query(collection(db, 'swapRequests'),
+            where('targetId', '==', currentUser.uid),
+            where('status', '==', 'pending_target'),
+            orderBy('createdAt', 'desc'),
+            limit(10))
+    );
+    if (snap.empty) { el.innerHTML = '<div class="empty">Bekleyen takas talebi yok.</div>'; return; }
+
+    var html = '';
+    for (var d of snap.docs) {
+      var sw = d.data();
+      var uSnap = await getDoc(doc(db, 'users', sw.requesterId));
+      var name  = uSnap.exists() ? (uSnap.data().displayName || 'Asistan') : 'Asistan';
+      html +=
+        '<div class="swap-item">' +
+          '<div class="swap-header">' +
+            '<strong style="color:var(--text-primary);font-size:14px">' + name + '</strong>' +
+            '<span class="swap-status pending_target">Onay Bekliyor</span>' +
+          '</div>' +
+          '<div class="swap-detail">Nöbet gününü sizinle takas etmek istiyor.</div>' +
+          '<div class="swap-actions">' +
+            '<button class="btn-success btn-sm" onclick="window.respondSwap(\'' + d.id + '\',\'accept\')">Kabul Et</button>' +
+            '<button class="btn-outline btn-sm" onclick="window.respondSwap(\'' + d.id + '\',\'reject\')">Reddet</button>' +
+          '</div>' +
+        '</div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="color:#fca5a5">' + e.message + '</div>';
+  }
+}
+
+window.respondSwap = async (swapId, action) => {
+  try {
+    var newStatus = action === 'accept' ? 'pending_chief' : 'rejected';
+    await updateDoc(doc(db, 'swapRequests', swapId), {
+      status: newStatus,
+      updatedAt: serverTimestamp(),
+    });
+    loadSwapInbox();
+    loadSwapHistory();
+  } catch(e) {
+    alert(e.message);
+  }
+};
+
+// ── Swap — Geçmiş ───────────────────────────────────────────────────────────
+async function loadSwapHistory() {
+  var el = document.getElementById('swapHistoryList');
+  try {
+    var [sentSnap, recvSnap] = await Promise.all([
+      getDocs(query(collection(db, 'swapRequests'),
+                    where('requesterId', '==', currentUser.uid),
+                    orderBy('createdAt', 'desc'), limit(10))),
+      getDocs(query(collection(db, 'swapRequests'),
+                    where('targetId', '==', currentUser.uid),
+                    orderBy('createdAt', 'desc'), limit(10))),
+    ]);
+
+    var allDocs = [...sentSnap.docs, ...recvSnap.docs]
+      .sort(function(a, b) { return (b.data().createdAt?.seconds || 0) - (a.data().createdAt?.seconds || 0); })
+      .slice(0, 15);
+
+    if (!allDocs.length) { el.innerHTML = '<div class="empty">Henüz takas geçmişi yok.</div>'; return; }
+
+    var statusLabel = {
+      pending_target: 'Asistan Onayı Bekliyor',
+      pending_chief:  'Başasistan Onayı Bekliyor',
+      approved:       'Onaylandı',
+      rejected:       'Reddedildi',
+      cancelled:      'İptal Edildi',
+      expired:        'Süresi Doldu',
+    };
+
+    var html = '';
+    for (var d of allDocs) {
+      var sw    = d.data();
+      var isMine = sw.requesterId === currentUser.uid;
+      var otherId = isMine ? sw.targetId : sw.requesterId;
+      var uSnap  = await getDoc(doc(db, 'users', otherId));
+      var name   = uSnap.exists() ? (uSnap.data().displayName || 'Asistan') : 'Asistan';
+      html +=
+        '<div class="swap-item">' +
+          '<div class="swap-header">' +
+            '<strong style="color:var(--text-primary);font-size:13px">' + (isMine ? '→ ' + name : '← ' + name) + '</strong>' +
+            '<span class="swap-status ' + sw.status + '">' + (statusLabel[sw.status] || sw.status) + '</span>' +
+          '</div>' +
+          '<div class="swap-detail">' + (isMine ? 'Gönderdiğiniz talep' : 'Size gelen talep') + '</div>' +
+        '</div>';
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = '<div class="empty" style="color:#fca5a5">' + e.message + '</div>';
+  }
+}
+
+// ── Yardımcılar ───────────────────────────────────────────────────────────────
+function shiftLabel(type) {
+  return { '24h':'24 Saat', 'day_12':'Gündüz 12h', 'night_12':'Gece 12h',
+           'morning_8':'Sabah 8h', 'afternoon_8':'Öğleden Sonra 8h',
+           'night_8':'Gece 8h' }[type] || type;
+}
+
+</script>
+</body>
+</html>

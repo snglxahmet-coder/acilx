@@ -1,69 +1,270 @@
 // ══════════════════════════════════════════════════════════
-// ACİLX — Firestore Güvenlik Kuralları (Rol Bazlı)
-// Başasistan: tüm koleksiyonlarda tam yetki
-// Asistan: sadece kendi profilini okuyup düzenleyebilir
+// AcilX — Firestore Güvenlik Kuralları v2
+// Roller: super_admin | chief_resident | resident
 // ══════════════════════════════════════════════════════════
 
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── Yardımcı fonksiyonlar ─────────────────────────
+    // ── Yardımcı fonksiyonlar ─────────────────────────────
+
     function isAuth() {
       return request.auth != null;
     }
-    function getUserRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-    }
-    function isBasasistan() {
-      return isAuth() && getUserRole() == 'basasistan';
-    }
-    function isOwner(uid) {
-      return isAuth() && request.auth.uid == uid;
+
+    function uid() {
+      return request.auth.uid;
     }
 
-    // ── Kullanıcılar ──────────────────────────────────
-    // Başasistan: tüm kullanıcıları okuyabilir, yazabilir, silebilir
-    // Asistan: sadece kendi profilini okuyabilir ve düzenleyebilir
-    //          (rol alanını değiştiremez)
-    match /users/{uid} {
-      allow read: if isAuth() && (isOwner(uid) || isBasasistan());
-      allow create: if isAuth() && isOwner(uid);
-      allow update: if isAuth() && (
-        (isOwner(uid) && !('role' in request.resource.data &&
-          request.resource.data.role != resource.data.role)) ||
-        isBasasistan()
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(uid())).data;
+    }
+
+    function role() {
+      return userDoc().role;
+    }
+
+    function isSuperAdmin() {
+      return isAuth() && role() == 'super_admin';
+    }
+
+    function isChief() {
+      return isAuth() && (role() == 'chief_resident' || role() == 'super_admin');
+    }
+
+    function isChiefOf(clinicId) {
+      return isAuth() && (
+        isSuperAdmin() ||
+        (role() == 'chief_resident' && userDoc().clinicId == clinicId)
       );
-      allow delete: if isBasasistan();
     }
 
-    // ── Nöbet çizelgeleri ─────────────────────────────
-    // Herkes okuyabilir, sadece başasistan yazabilir
-    match /schedules/{scheduleId} {
+    function isResidentOf(clinicId) {
+      return isAuth() && userDoc().clinicId == clinicId;
+    }
+
+    function isOwner(userId) {
+      return isAuth() && uid() == userId;
+    }
+
+    // ── Kullanıcılar ──────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isChiefOf(resource.data.clinicId) || isSuperAdmin();
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && !changesRole()
+                    || isSuperAdmin();
+      allow delete: if isSuperAdmin();
+
+      function changesRole() {
+        return 'role' in request.resource.data &&
+               request.resource.data.role != resource.data.role;
+      }
+    }
+
+    // ── Klinikler ─────────────────────────────────────────
+    match /clinics/{clinicId} {
+      // Onaylı klinikleri herkes okuyabilir (katılım için arama)
       allow read: if isAuth();
-      allow write: if isBasasistan();
+      // Yeni klinik başvurusu: giriş yapmış herkes oluşturabilir
+      allow create: if isAuth();
+      // Güncelleme: klinik başasistanı veya süper admin
+      allow update: if isChiefOf(clinicId);
+      allow delete: if isSuperAdmin();
+
+      // Alt koleksiyonlar: zones
+      match /zones/{zoneId} {
+        allow read: if isAuth() && (isResidentOf(clinicId) || isChiefOf(clinicId));
+        allow write: if isChiefOf(clinicId);
+      }
+
+      // Alt koleksiyonlar: residents
+      match /residents/{residentId} {
+        allow read: if isAuth() && (isResidentOf(clinicId) || isChiefOf(clinicId));
+        allow create: if isChiefOf(clinicId);
+        allow update: if isChiefOf(clinicId)
+                      || (isAuth() && resource.data.userId == uid());
+        allow delete: if isChiefOf(clinicId);
+      }
+
+      // Alt koleksiyonlar: pendingResidents (kişiye özel katılım kodları)
+      // email alanı opsiyoneldir — başasistan tarafından eklenebilir
+      // autoMatchResident ve joinClinic CF'leri email ile eşleştirme yapar (Admin SDK)
+      match /pendingResidents/{code} {
+        allow read: if isChiefOf(clinicId);   // Sadece başasistan/admin okuyabilir; joinClinic/autoMatch CF üzerinden doğrular
+        allow create: if isChiefOf(clinicId);
+        allow update: if isChiefOf(clinicId)
+                      && (!('used' in request.resource.data) || request.resource.data.used == resource.data.used);
+                      // used alanını sadece CF değiştirebilir (Admin SDK); başasistan used'ı değiştiremez
+        allow delete: if isChiefOf(clinicId);
+      }
+
+      // Alt koleksiyonlar: trainingBlocks
+      match /trainingBlocks/{blockId} {
+        allow read: if isAuth() && (isResidentOf(clinicId) || isChiefOf(clinicId));
+        allow write: if isChiefOf(clinicId);
+      }
     }
 
-    // ── Asistan tercihleri ────────────────────────────
-    // Asistan kendi tercihini okur/yazar
-    // Başasistan tüm tercihleri okuyabilir/yazabilir
-    match /preferences/{prefId} {
+    // ── Gruplar (nöbet verileri) ────────────────────────────
+    // Uygulama: groups/{clinicId}/schedule, assistants, swaps, preferences
+    match /groups/{groupId} {
+      // Grup dokümanı (varsa)
+      allow read: if isAuth() && isResidentOf(groupId);
+      allow write: if isChiefOf(groupId);
+
+      // Nöbet çizelgesi: groups/{clinicId}/schedule/{y_m}
+      match /schedule/{docId} {
+        allow read: if isAuth() && (isResidentOf(groupId) || isChiefOf(groupId));
+        allow write: if isChiefOf(groupId);
+      }
+
+      // Alan ve asistan listeleri: groups/{clinicId}/assistants/{areas|list}
+      match /assistants/{docId} {
+        allow read: if isAuth() && (isResidentOf(groupId) || isChiefOf(groupId));
+        allow write: if isChiefOf(groupId);
+      }
+
+      // Takas talepleri: groups/{clinicId}/swaps/{swapId}
+      match /swaps/{swapId} {
+        allow read: if isAuth() && (isResidentOf(groupId) || isChiefOf(groupId));
+        allow create: if isAuth() && isResidentOf(groupId);
+        allow update: if isAuth() && (
+          isChiefOf(groupId) ||
+          resource.data.requesterId == uid() ||
+          resource.data.targetId == uid()
+        );
+        allow delete: if isChiefOf(groupId);
+      }
+
+      // Tercihler: groups/{clinicId}/preferences/{uid_y_m}
+      match /preferences/{prefId} {
+        allow read: if isAuth() && (
+          isChiefOf(groupId) ||
+          resource.data.uid == uid()
+        );
+        allow create, update: if isAuth() && request.resource.data.uid == uid();
+        allow delete: if isChiefOf(groupId);
+      }
+    }
+
+    // ── Nöbet çizelgeleri (eski yapı) ────────────────────
+    match /schedules/{scheduleId} {
+      // resource == null → belge yok, izin ver (exists:false döner, hata vermez)
+      allow read: if isAuth() && (resource == null || isResidentOf(resource.data.clinicId) || isChiefOf(resource.data.clinicId));
+      allow create: if isChiefOf(request.resource.data.clinicId);
+      allow update: if isChiefOf(resource.data.clinicId);
+      allow delete: if isChiefOf(resource.data.clinicId);
+
+      // Alt koleksiyonlar: shifts (bireysel nöbet atamaları)
+      match /shifts/{shiftId} {
+        allow read: if isAuth() && (
+          isResidentOf(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.clinicId) ||
+          isChiefOf(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.clinicId)
+        );
+        allow write: if isChiefOf(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.clinicId);
+      }
+
+      // Alt koleksiyonlar: preferences (asistan tercihleri)
+      match /preferences/{prefId} {
+        allow read: if isAuth() && (
+          isChiefOf(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.clinicId) ||
+          resource.data.userId == uid()
+        );
+        allow create, update: if isAuth() && request.resource.data.userId == uid();
+        allow delete: if isChiefOf(get(/databases/$(database)/documents/schedules/$(scheduleId)).data.clinicId);
+      }
+    }
+
+    // ── Tercih dönemleri ──────────────────────────────────
+    match /preferencePeriods/{periodId} {
       allow read: if isAuth() && (
-        isBasasistan() ||
-        prefId.matches(request.auth.uid + '_.*')
+        resource == null ||
+        isResidentOf(resource.data.clinicId) ||
+        isChiefOf(resource.data.clinicId)
       );
-      allow write: if isAuth() && (
-        isBasasistan() ||
-        prefId.matches(request.auth.uid + '_.*')
-      );
-      allow delete: if isBasasistan();
+      allow create, update: if isChiefOf(request.resource.data.clinicId);
+      allow delete: if isChiefOf(resource.data.clinicId);
     }
 
-    // ── Audit log ───────────────────────────────────
-    // Sadece başasistan okuyabilir, herkes kayıt oluşturabilir,
-    // güncelleme/silme yasak
+    // ── Swap talepleri ────────────────────────────────────
+    match /swapRequests/{swapId} {
+      allow read: if isAuth() && (
+        resource.data.requesterId == uid() ||
+        resource.data.targetId == uid() ||
+        isChiefOf(resource.data.clinicId)
+      );
+      // Asistan yeni swap talebi oluşturabilir
+      allow create: if isAuth() && request.resource.data.requesterId == uid();
+      // Talep sahibi (iptal), hedef asistan (kabul/red) veya başasistan güncelleyebilir
+      allow update: if isAuth() && (
+        resource.data.requesterId == uid() ||
+        resource.data.targetId == uid() ||
+        isChiefOf(resource.data.clinicId)
+      );
+      allow delete: if isChiefOf(resource.data.clinicId);
+    }
+
+    // ── Bildirimler ───────────────────────────────────────
+    match /notifications/{notificationId} {
+      allow read: if isAuth() && resource.data.userId == uid();
+      allow create: if isAuth() && request.resource.data.userId == uid(); // Sadece kendi bildirimi oluşturabilir; CF Admin SDK ile bypass eder
+      allow update: if isAuth() && resource.data.userId == uid(); // okundu işaretleme
+      allow delete: if isAuth() && resource.data.userId == uid();
+    }
+
+    // ── Duyurular ─────────────────────────────────────────
+    match /announcements/{announcementId} {
+      allow read: if isAuth() && isResidentOf(resource.data.clinicId);
+      allow write: if isChiefOf(request.resource.data.clinicId);
+    }
+
+    // ── İçerik (premium) ─────────────────────────────────
+    match /articles/{articleId} {
+      allow read: if isAuth() && (
+        !resource.data.isPremium ||
+        userDoc().subscriptionStatus == 'premium'
+      );
+      allow write: if isSuperAdmin();
+    }
+
+    match /scores/{scoreId} {
+      allow read: if isAuth();
+      allow write: if isSuperAdmin();
+    }
+
+    match /algorithms/{algorithmId} {
+      allow read: if isAuth();
+      allow write: if isSuperAdmin();
+    }
+
+    match /medications/{medicationId} {
+      allow read: if isAuth();
+      allow write: if isSuperAdmin();
+    }
+
+    // ── Kişisel takip ─────────────────────────────────────
+    match /logbookEntries/{entryId} {
+      allow read: if isAuth() && resource.data.userId == uid();
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      allow update, delete: if isAuth() && resource.data.userId == uid();
+    }
+
+    match /academicRecords/{recordId} {
+      allow read: if isAuth() && resource.data.userId == uid();
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      allow update, delete: if isAuth() && resource.data.userId == uid();
+    }
+
+    match /burnoutAssessments/{assessmentId} {
+      allow read: if isAuth() && resource.data.userId == uid();
+      allow create: if isAuth() && request.resource.data.userId == uid();
+      allow update, delete: if false; // Geçmişe müdahale yasak
+    }
+
+    // ── Audit log ─────────────────────────────────────────
     match /audit/{logId} {
-      allow read: if isBasasistan();
+      allow read: if isSuperAdmin();
       allow create: if isAuth();
       allow update, delete: if false;
     }

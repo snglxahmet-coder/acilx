@@ -1,0 +1,170 @@
+{
+  "id": "poisoning",
+  "name": "Zehirlenme Genel Yaklaşımı",
+  "category": "Toksikoloji",
+  "description": "Akut zehirlenmelerde genel değerlendirme, dekontaminasyon ve tedavi algoritması.",
+  "steps": [
+    {
+      "stepId": "start",
+      "question": "ABC değerlendirmesi nasıl?",
+      "description": "Havayolu, solunum ve dolaşımı değerlendirin. GKS, vital bulgular, pupil muayenesi, SpO2. Bilinç kapalıysa havayolu güvencesi sağlayın. Monitörize edin.",
+      "options": [
+        { "label": "ABC stabil, bilinç açık", "nextStepId": "toxidrome" },
+        { "label": "ABC instabil veya bilinç kapalı", "nextStepId": "stabilize" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "stabilize",
+      "question": "Stabilizasyon sağlandı mı?",
+      "description": "Havayolu: Entübasyon gerekebilir (GKS ≤8). Solunum: O2 desteği, mekanik ventilasyon. Dolaşım: IV damar yolu, sıvı, vazopressör. COMA cocktail düşünün: Nalokson 0.4-2 mg IV (opioid?), Tiamin 100 mg IV, Dekstroz %50 50 mL IV (hipoglisemi?).",
+      "options": [
+        { "label": "Stabilize edildi", "nextStepId": "toxidrome" },
+        { "label": "Kardiyak arrest", "nextStepId": "cardiac_arrest" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "cardiac_arrest",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Toksik kardiyak arrest: Standart ACLS + uzamış CPR (toksik nedenler geri dönüşümlü olabilir). Sodyum bikarbonat 1-2 mEq/kg IV (Na kanal blokerleri için). Lipid emülsiyon tedavisi (Intralipid %20, 1.5 mL/kg bolus) düşünün (lokal anestezik, lipofilik ilaçlar). ECMO değerlendirin. Zehir danışma merkezi arayın."
+    },
+    {
+      "stepId": "toxidrome",
+      "question": "Hangi toksikolojik sendrom ön planda?",
+      "description": "Vital bulgular, pupil boyutu, cilt (kuru/nemli), barsak sesleri, terleme, ajitasyon/sedasyon değerlendirin. Mümkünse maddeyi ve alım zamanını öğrenin.",
+      "options": [
+        { "label": "Kolinerjik (SLUDGE: Salivasyon, Lakrimasyon, Ürinasyon, Defekasyon, GI kramp, Emezis + miyozis, bradikardi)", "nextStepId": "cholinergic" },
+        { "label": "Antikolinerjik (Midriazis, taşikardi, kuru-sıcak cilt, retansiyon, ajitasyon, halüsinasyon)", "nextStepId": "anticholinergic" },
+        { "label": "Sempatomimetik (Midriazis, taşikardi, hipertansiyon, terleme, hipertermi, ajitasyon)", "nextStepId": "sympathomimetic" },
+        { "label": "Opioid (Miyozis, solunum depresyonu, bilinç kaybı, bradikardi)", "nextStepId": "opioid" },
+        { "label": "Sedatif-hipnotik (Bilinç bulanıklığı, solunum depresyonu, hipotansiyon, hiporefleksi)", "nextStepId": "sedative" },
+        { "label": "Belirsiz veya mikst tablo", "nextStepId": "decontamination" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "cholinergic",
+      "question": "Kolinerjik sendrom — ajan nedir?",
+      "description": "Organofosfat/karbamat insektisitler, sinir ajanları, bazı mantarlar. SLUDGE bulguları + miyozis + bradikardi + bronkospazm + fasikülasyonlar.",
+      "options": [
+        { "label": "Organofosfat/Karbamat (pestisit maruziyeti)", "nextStepId": "cholinergic_tx" },
+        { "label": "Diğer kolinerjik ajan", "nextStepId": "cholinergic_tx" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "cholinergic_tx",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Kolinerjik zehirlenme tedavisi: Atropin 2-4 mg IV, 5 dk arayla ikiye katlayarak devam (sekresyonlar kuruyana kadar, yüzlerce mg gerekebilir). Pralidoksim (2-PAM) 1-2 g IV/30 dk (organofosfatlarda, ilk 24-48 saat). Dekontaminasyon: Giysilerini çıkarın, bol su ile yıkayın. Benzodiazepinler (nöbet profilaksisi). Yoğun bakım yatışı. Zehir danışma: 114."
+    },
+    {
+      "stepId": "anticholinergic",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Antikolinerjik sendrom tedavisi: Fizostigmin 1-2 mg yavaş IV (kardiyak monitörizasyon altında, relatif kontrendikasyonlar: QRS >120 ms, TCA zehirlenmesi). Ajitasyon için benzodiazepinler (Diazepam 5-10 mg IV). Hipertermi için aktif soğutma. Üriner retansiyon için kateterizasyon. Aktif kömür düşünün (ilk 1-2 saat). Monitörize gözlem."
+    },
+    {
+      "stepId": "sympathomimetic",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Sempatomimetik sendrom tedavisi (Kokain, Amfetamin, Sentetik katinonlar): Benzodiazepinler ilk basamak (Diazepam 5-10 mg IV, tekrarlanabilir). Hipertansiyon: Benzodiazepin ile kontrol, dirençliyse Nitrogliserin/Fentoalmin. Beta-blokörlerden KAÇININ (paradoks hipertansiyon riski). Hipertermi için aktif soğutma. Rabdomiyoliz taraması (CK, idrar miyoglobin). Göğüs ağrısı varsa AKS dışlayın."
+    },
+    {
+      "stepId": "opioid",
+      "question": "Nalokson yanıtı nasıl?",
+      "description": "Nalokson 0.4 mg IV, yanıt yoksa 2 mg'a kadar artırın. Sentetik opioidlerde (fentanil, karfentanil) çok yüksek dozlar (10-20 mg) gerekebilir. Solunum depresyonu ana risk.",
+      "options": [
+        { "label": "Nalokson ile yanıt alındı", "nextStepId": "opioid_response" },
+        { "label": "Nalokson ile yanıt alınamadı", "nextStepId": "decontamination" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "opioid_response",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Opioid zehirlenmesi — nalokson yanıtı pozitif: Nalokson yarı ömrü (30-90 dk) opioidinkinden kısa olabilir, resedasyon riski var. Nalokson infüzyonu düşünün (saatlik bolus dozunun 2/3'ü/saat). En az 4-6 saat gözlem (uzun etkili opioidlerde 12-24 saat). Solunum sayısı, SpO2, bilinç düzeyi takibi. Aspirasyon pnömonisi açısından dikkat."
+    },
+    {
+      "stepId": "sedative",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Sedatif-hipnotik zehirlenmesi (Benzodiazepin, Barbitürat, GHB, Etanol): Benzodiazepin zehirlenmesinde Flumazenil 0.2 mg IV (dikkat: kronik kullanıcıda nöbet riski, TCA ile birlikte alımda kontrendike). Barbitüratlarda antidot yok, destek tedavi. Havayolu koruması, aspirasyon önlemi. Hipotermi/hipotansiyon tedavisi. Gözlem süresi ilaca göre ayarlanmalı."
+    },
+    {
+      "stepId": "decontamination",
+      "question": "Dekontaminasyon endikasyonu var mı?",
+      "description": "Aktif kömür: Alımdan sonra ilk 1-2 saat içinde, havayolu korunuyorsa. Kontrendike: Kostik maddeler, hidrokarbon, bilinç kapalı (korumasız havayolu), GI perforasyon. Mide yıkama: Çok nadir endike, sadece hayatı tehdit eden alım + ilk 1 saat.",
+      "options": [
+        { "label": "Aktif kömür uygun (ilk 1-2 saat, kooperan hasta)", "nextStepId": "activated_charcoal" },
+        { "label": "Dekontaminasyon kontrendike veya gereksiz", "nextStepId": "specific_antidote" },
+        { "label": "Tam barsak irrigasyonu gerekli (ağır metal, yutulmuş paket, yavaş salınımlı preparat)", "nextStepId": "wbi" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "activated_charcoal",
+      "question": "Aktif kömür uygulandı. Spesifik antidot gerekli mi?",
+      "description": "Aktif kömür 1 g/kg (maks 50 g) PO veya nazogastrik sonda ile. Sorbitol ile tek doz verilebilir. Çoklu doz aktif kömür: Teofilin, Karbamazepin, Dapson, Kinin zehirlenmelerinde.",
+      "options": [
+        { "label": "Spesifik antidot değerlendirmesine geç", "nextStepId": "specific_antidote" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "wbi",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Tam barsak irrigasyonu (WBI): Polietilen glikol (GoLYTELY) 1-2 L/saat PO/NG (çocuklarda 500 mL/saat) berrak rektal efluent gelene kadar. Endikasyonları: Demir, lityum, ağır metal, yavaş salınımlı preparat, body packing. Monitörize gözlem. Zehir danışma merkezi ile iletişim."
+    },
+    {
+      "stepId": "specific_antidote",
+      "question": "Spesifik antidot gerektiren bir ajan mı?",
+      "description": "Yaygın antidotlar: Parasetamol → N-asetilsistein, Organofosfat → Atropin + Pralidoksim, Benzodiazepin → Flumazenil, Opioid → Nalokson, Beta-blokör → Glukagon, Digoksin → Digoksin-spesifik Fab, Metanol/Etilen glikol → Fomepizol, Demir → Desferoksamin, Warfarin → Vitamin K + PCC.",
+      "options": [
+        { "label": "Spesifik antidot mevcut ve uygulandı", "nextStepId": "monitoring" },
+        { "label": "Spesifik antidot yok, destek tedavi", "nextStepId": "monitoring" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "monitoring",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Monitörizasyon ve destek tedavi: Sürekli kardiyak monitör, SpO2, vital bulgular. Seri EKG (QRS/QTc uzaması takibi). Laboratuvar: Kan gazı, laktat, elektrolitler, BUN/kreatinin, KC fonksiyon, spesifik ilaç düzeyleri. Hemodiyaliz endikasyonlarını değerlendirin (metanol, etilen glikol, lityum, salisilat, metformin). Psikiyatri konsültasyonu (özkıyım girişimi ise). Zehir danışma: 114."
+    }
+  ],
+  "references": [
+    {
+      "title": "Goldfrank's Toxicologic Emergencies, 11th Edition",
+      "authors": "Nelson LS, Howland MA, Lewin NA, et al.",
+      "journal": "McGraw-Hill Education",
+      "year": 2019
+    },
+    {
+      "title": "Position paper: Single-dose activated charcoal",
+      "authors": "Chyka PA, Seger D, Krenzelok EP, et al.",
+      "journal": "Clinical Toxicology",
+      "year": 2005
+    }
+  ]
+}

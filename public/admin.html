@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0A0E1A">
+<title>AcilX — Yönetici Paneli</title>
+<link rel="stylesheet" href="css/design-system.css">
+<link rel="stylesheet" href="css/components.css">
+<link rel="stylesheet" href="css/animations.css">
+<link rel="stylesheet" href="css/calendar.css">
+<style>
+  /* Admin page-specific styles */
+  .pending-list { list-style: none; }
+  .pending-list li {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: var(--sp-3) 0; border-bottom: 1px solid var(--bg-border);
+    font-size: var(--fs-secondary);
+    transition: background var(--duration-fast) var(--ease-default);
+  }
+  .pending-list li:last-child { border-bottom: none; }
+  .pending-list li:hover { background: rgba(242,123,44,0.03); }
+  .row { display: flex; gap: var(--sp-2); }
+  .row button { flex: 1; }
+
+  /* ── Tab Bar ── */
+  .tab-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch;
+    background: var(--bg-card);
+    border-top: 1px solid var(--bg-border);
+    padding: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0);
+    z-index: 100;
+    box-shadow: 0 -2px 12px rgba(0,0,0,0.3);
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    padding: 8px 4px 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--text-secondary);
+    font-family: var(--font-sans);
+    transition: color var(--duration-fast) var(--ease-default);
+    position: relative;
+  }
+  .tab-item::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 20%;
+    right: 20%;
+    height: 2px;
+    background: transparent;
+    border-radius: 0 0 2px 2px;
+    transition: background var(--duration-fast) var(--ease-default);
+  }
+  .tab-item.active { color: var(--accent); }
+  .tab-item.active::after { background: var(--accent); }
+  .tab-icon { font-size: 20px; line-height: 1; }
+  .tab-label { font-size: 10px; font-weight: var(--fw-medium); line-height: 1; }
+
+  /* ── Tab Content ── */
+  .tab-content { padding-bottom: 80px; }
+  .tab-content > .card {
+    animation: fadeIn var(--duration-normal) var(--ease-default) both;
+  }
+
+  /* ── Clinic Select Item ── */
+  .clinic-select-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--sp-3);
+    margin-bottom: var(--sp-2);
+    background: var(--bg-card);
+    border: 1px solid var(--bg-border);
+    border-radius: var(--radius-card);
+    cursor: pointer;
+    transition: border-color var(--duration-fast) var(--ease-default),
+                background var(--duration-fast) var(--ease-default);
+  }
+  .clinic-select-item:hover {
+    border-color: var(--accent);
+    background: rgba(242,123,44,0.04);
+  }
+  .clinic-select-item.selected {
+    border-color: var(--accent);
+    background: rgba(242,123,44,0.08);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+
+  /* ── Toast ── */
+  .toast {
+    position: fixed;
+    bottom: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--bg-border);
+    color: var(--text-primary);
+    padding: 10px 20px;
+    border-radius: var(--radius-tag);
+    font-size: var(--fs-secondary);
+    z-index: 200;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    animation: fadeIn var(--duration-fast) var(--ease-default);
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- HEADER -->
+  <header class="app-header" id="appHeader" style="display:none">
+    <div class="app-header-logo">
+      <div class="app-header-logo-icon">A</div>
+      <span class="app-header-logo-text">AcilX</span>
+    </div>
+    <div class="app-header-right">
+      <div class="app-header-user">
+        <span id="headerUserEmail"></span>
+        <span class="badge" id="headerBadge"></span>
+      </div>
+      <button class="btn-outline btn-sm" onclick="window.logout()">Çıkış</button>
+    </div>
+  </header>
+
+  <!-- PANEL -->
+  <div id="panel" style="display:none">
+
+    <!-- ── TAB: Kliniklerim (super_admin only) ── -->
+    <div class="tab-content" id="content-clinics" style="display:none">
+      <div class="card card-enter stagger-1" id="myClinicsCard">
+        <h2>🏥 Kliniklerim</h2>
+        <p class="text-sm" style="margin-bottom:8px;color:var(--text-secondary)">Yönetmek istediğiniz kliniği seçin:</p>
+        <div id="myClinicsList"></div>
+      </div>
+
+      <div class="card card-enter stagger-2" id="createClinicCard">
+        <h2>➕ Yeni Klinik Oluştur</h2>
+        <label>Klinik Adı</label>
+        <input type="text" id="clinicName" placeholder="Acil Tıp Kliniği">
+        <label>Hastane Adı</label>
+        <input type="text" id="hospitalName" placeholder="Ankara Şehir Hastanesi">
+        <label>Vardiya Modeli</label>
+        <select id="shiftModel">
+          <option value="24h">24 Saat</option>
+          <option value="12-12">12-12</option>
+          <option value="8-8-8">8-8-8</option>
+        </select>
+        <label>Eğitim Modu</label>
+        <select id="trainingMode">
+          <option value="within_shift">Nöbet içinde (izin yok)</option>
+          <option value="full_day_off">Tam gün izin</option>
+        </select>
+        <button class="btn-success" onclick="createClinic()">Klinik Oluştur</button>
+        <div id="clinicMsg" class="msg"></div>
+        <div id="clinicCodes" style="display:none; margin-top:16px">
+          <p class="text-sm" style="margin-bottom:8px">Asistanlara bu kodları verin:</p>
+          <label>Hastane Kodu</label>
+          <div class="code-box" id="codeHospital"></div>
+          <label>Asistan Kodu</label>
+          <div class="code-box" id="codeResident"></div>
+        </div>
+      </div>
+
+      <div class="card card-enter stagger-3" id="pendingCard">
+        <h2>⏳ Onay Bekleyen Klinikler</h2>
+        <ul class="pending-list" id="pendingList">
+          <li class="text-sm">Yükleniyor...</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- ── TAB: Asistan ── -->
+    <div class="tab-content" id="content-residents" style="display:none">
+      <div class="card card-enter stagger-1" id="residentCard">
+        <h2>👥 Asistan Ekle</h2>
+        <p class="text-sm" style="margin-bottom:12px">Her asistana özel kod üretilir. Asistan bu kodla kendi ismine giriş yapar.</p>
+        <label>Asistan Adı Soyadı</label>
+        <input type="text" id="residentName" placeholder="Dr. Mehmet Kaya">
+        <label>Asistanlık Yılı (PGY)</label>
+        <input type="number" id="residentPgy" value="1" min="1" max="6">
+        <button class="btn-primary" onclick="addResident()">Kod Üret</button>
+        <div id="residentMsg" class="msg"></div>
+        <ul class="pending-list" id="residentList" style="margin-top:12px"></ul>
+      </div>
+    </div>
+
+    <!-- ── TAB: Alan ── -->
+    <div class="tab-content" id="content-zones" style="display:none">
+      <div class="card card-enter stagger-1" id="zoneCard">
+        <h2>🗂️ Bölüm (Zone) Yönetimi</h2>
+        <p class="text-sm" style="margin-bottom:12px" id="zoneClinicLabel"></p>
+        <label>Bölüm Adı</label>
+        <input type="text" id="zoneName" placeholder="Triaj, Resüsitasyon, Yatış...">
+        <label>Günlük Minimum Asistan</label>
+        <input type="number" id="zoneMin" value="1" min="1" max="10">
+        <label>Günlük Hedef Asistan</label>
+        <input type="number" id="zoneTarget" value="2" min="1" max="10">
+        <button class="btn-success" onclick="addZone()">Bölüm Ekle</button>
+        <div id="zoneMsg" class="msg"></div>
+        <ul class="pending-list" id="zoneList" style="margin-top:12px"></ul>
+      </div>
+    </div>
+
+    <!-- ── TAB: Nöbet ── -->
+    <div class="tab-content" id="content-schedule" style="display:none">
+      <div class="card card-enter stagger-1" id="prefMgmtCard">
+        <div class="flex justify-between items-center mb-4">
+          <h2 style="margin-bottom:0">📅 Tercih Dönemi</h2>
+          <div class="flex items-center gap-2">
+            <button class="btn-outline btn-sm" onclick="window.prefPrevMonth()">‹</button>
+            <span id="prefMgmtLabel" class="text-sm" style="color:var(--text-primary);min-width:90px;text-align:center"></span>
+            <button class="btn-outline btn-sm" onclick="window.prefNextMonth()">›</button>
+          </div>
+        </div>
+        <div id="prefMgmtStatus" class="text-sm" style="margin-bottom:12px"></div>
+        <input type="date" id="prefDeadlineInput" style="margin-bottom:12px">
+        <div class="row">
+          <button class="btn-success" id="prefOpenBtn" onclick="window.openPrefPeriod()">Tercih Dönemini Aç</button>
+          <button class="btn-danger"  id="prefCloseBtn" onclick="window.closePrefPeriod()" style="display:none">Kapat</button>
+        </div>
+        <div id="prefMgmtMsg" class="msg"></div>
+      </div>
+
+      <div class="card card-enter stagger-2" id="scheduleMgmtCard">
+        <div class="flex justify-between items-center mb-4">
+          <h2 style="margin-bottom:0">📊 Nöbet Çizelgesi</h2>
+          <div class="flex items-center gap-2">
+            <button class="btn-outline btn-sm" onclick="window.schedPrevMonth()">‹</button>
+            <span id="schedMgmtLabel" class="text-sm" style="color:var(--text-primary);min-width:90px;text-align:center"></span>
+            <button class="btn-outline btn-sm" onclick="window.schedNextMonth()">›</button>
+          </div>
+        </div>
+        <div id="schedMgmtStatus" class="text-sm" style="margin-bottom:12px"></div>
+        <div class="row" style="margin-bottom:12px">
+          <button class="btn-primary" onclick="window.runGenerateSchedule()">Çizelge Oluştur</button>
+          <button class="btn-success" id="publishBtn" onclick="window.publishSchedule()" style="display:none">Yayınla</button>
+        </div>
+        <div id="scheduleMgmtMsg" class="msg"></div>
+        <div id="schedShiftList"></div>
+      </div>
+    </div>
+
+    <!-- ── TAB: Takas ── -->
+    <div class="tab-content" id="content-swaps" style="display:none">
+      <div class="card card-enter stagger-1" id="swapApprovalCard">
+        <h2>✅ Onay Bekleyen Takas Talepleri</h2>
+        <div id="swapApprovalList"><div class="text-sm">Yükleniyor...</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- TAB BAR -->
+<nav id="tabBar" class="tab-bar" style="display:none">
+  <button class="tab-item" id="tabClinics" onclick="switchTab('clinics')" data-admin-only="true">
+    <span class="tab-icon">🏥</span>
+    <span class="tab-label">Kliniklerim</span>
+  </button>
+  <button class="tab-item" id="tabResidents" onclick="switchTab('residents')">
+    <span class="tab-icon">👥</span>
+    <span class="tab-label">Asistan</span>
+  </button>
+  <button class="tab-item" id="tabZones" onclick="switchTab('zones')">
+    <span class="tab-icon">🗂️</span>
+    <span class="tab-label">Alan</span>
+  </button>
+  <button class="tab-item" id="tabSchedule" onclick="switchTab('schedule')">
+    <span class="tab-icon">📊</span>
+    <span class="tab-label">Nöbet</span>
+  </button>
+  <button class="tab-item" id="tabSwaps" onclick="switchTab('swaps')">
+    <span class="tab-icon">🔄</span>
+    <span class="tab-label">Takas</span>
+  </button>
+</nav>
+
+<script type="module">
+import { initializeApp }                                        from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+import { getAuth, onAuthStateChanged, signOut }                from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteDoc,
+         collection, query, where, getDocs, orderBy, limit,
+         serverTimestamp }                                      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFunctions, httpsCallable }                          from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js';
+
+const app  = initializeApp({
+  apiKey:            "AIzaSyB84OiA8dA8MqIDhp2mVPHbOwbfM7hXkcw",
+  authDomain:        "acilx-d3635.firebaseapp.com",
+  projectId:         "acilx-d3635",
+  storageBucket:     "acilx-d3635.firebasestorage.app",
+  messagingSenderId: "539148511591",
+  appId:             "1:539148511591:web:4ca4f0eb49a1345c4fa7c2",
+});
+const auth      = getAuth(app);
+const db        = getFirestore(app);
+const functions = getFunctions(app, 'us-central1');
+
+let currentUser      = null;
+let currentRole      = null;
+let activeTab        = null;
+let selectedClinicId = null;
+let activeClinicId   = null;
+let activeScheduleId = null;
+
+// ── Auth state ──────────────────────────────────────────────────────────────
+onAuthStateChanged(auth, async user => {
+  if (!user) { window.location.href = 'index.html'; return; }
+  currentUser = user;
+  const snap  = await getDoc(doc(db, 'users', user.uid));
+  currentRole = snap.exists() ? snap.data().role : 'resident';
+  if (currentRole === 'resident') { window.location.href = 'index.html'; return; }
+  showPanel(user, currentRole);
+});
+
+// ── UI: Show Panel & Init Tabs ──────────────────────────────────────────────
+function showPanel(user, role) {
+  document.getElementById('panel').style.display  = 'block';
+  document.getElementById('tabBar').style.display  = 'flex';
+
+  const badgeClass = role === 'super_admin' ? 'admin' : 'chief';
+  const badgeLabel = role === 'super_admin' ? 'Süper Admin' : 'Başasistan';
+
+  // Header
+  document.getElementById('appHeader').style.display = 'flex';
+  document.getElementById('headerUserEmail').textContent = user.displayName || user.email;
+  const hBadge = document.getElementById('headerBadge');
+  hBadge.className = `badge ${badgeClass}`;
+  hBadge.textContent = badgeLabel;
+
+  // Role-based tab visibility
+  if (role === 'chief_resident') {
+    document.getElementById('tabClinics').style.display = 'none';
+    autoSelectClinicForChief();
+  } else {
+    // super_admin — start on Kliniklerim tab
+    switchTab('clinics');
+  }
+}
+
+async function autoSelectClinicForChief() {
+  try {
+    const snap = await getDocs(query(
+      collection(db, 'clinics'),
+      where('chiefResidentIds', 'array-contains', currentUser.uid)
+    ));
+    if (!snap.empty) {
+      const firstDoc = snap.docs[0];
+      activeClinicId   = firstDoc.id;
+      selectedClinicId = firstDoc.id;
+      const clinicData = firstDoc.data();
+      document.getElementById('zoneClinicLabel').textContent = `Klinik: ${clinicData.name}`;
+    }
+  } catch(_) { /* ignore */ }
+  switchTab('residents');
+}
+
+// ── Tab Navigation ──────────────────────────────────────────────────────────
+const TAB_BUTTONS = {
+  clinics:   'tabClinics',
+  residents: 'tabResidents',
+  zones:     'tabZones',
+  schedule:  'tabSchedule',
+  swaps:     'tabSwaps',
+};
+
+window.switchTab = function switchTab(tabName) {
+  // Super admin must select clinic before other tabs
+  if (currentRole === 'super_admin' && tabName !== 'clinics' && !selectedClinicId) {
+    showToast('Önce bir klinik seçin');
+    return;
+  }
+
+  // Hide all tab contents
+  document.querySelectorAll('.tab-content').forEach(el => el.style.display = 'none');
+
+  // Show target content
+  const content = document.getElementById('content-' + tabName);
+  if (content) content.style.display = '';
+
+  // Update active button
+  document.querySelectorAll('.tab-item').forEach(el => el.classList.remove('active'));
+  const btnId = TAB_BUTTONS[tabName];
+  if (btnId) document.getElementById(btnId).classList.add('active');
+
+  activeTab = tabName;
+  loadTabData(tabName);
+};
+
+function loadTabData(tabName) {
+  switch (tabName) {
+    case 'clinics':
+      loadMyClinics();
+      loadPending();
+      break;
+    case 'residents':
+      if (activeClinicId) loadResidents(activeClinicId);
+      break;
+    case 'zones':
+      if (activeClinicId) loadZones(activeClinicId);
+      break;
+    case 'schedule':
+      if (activeClinicId) initMgmtMonth();
+      break;
+    case 'swaps':
+      if (activeClinicId) loadSwapApprovals();
+      break;
+  }
+}
+
+// ── Toast ────────────────────────────────────────────────────────────────────
+function showToast(text) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.textContent = text;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 2500);
+}
+
+function msg(id, text, type) {
+  const el = document.getElementById(id);
+  el.textContent = text;
+  el.className   = `msg ${type}`;
+}
+
+// ── Clinic Selection (super_admin) ──────────────────────────────────────────
+window.selectClinic = function(clinicId, clinicName) {
+  activeClinicId   = clinicId;
+  selectedClinicId = clinicId;
+  document.getElementById('zoneClinicLabel').textContent = `Klinik: ${clinicName}`;
+
+  // Highlight selected
+  document.querySelectorAll('.clinic-select-item').forEach(el => {
+    el.classList.toggle('selected', el.dataset.clinicId === clinicId);
+  });
+
+  showToast(`${clinicName} seçildi`);
+};
+
+// ── Süper Admin Yap ────────────────────────────────────────────────────────
+window.makeSelfAdmin = async () => {
+  if (!currentUser) return;
+  try {
+    await updateDoc(doc(db, 'users', currentUser.uid), { role: 'super_admin' });
+    msg('adminMsg', 'Süper admin oldunuz! Sayfayı yenileyin.', 'ok');
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    msg('adminMsg', e.message, 'err');
+  }
+};
+
+// ── Klinik Oluştur (Cloud Function) ────────────────────────────────────────
+window.createClinic = async () => {
+  const name         = document.getElementById('clinicName').value.trim();
+  const hospitalName = document.getElementById('hospitalName').value.trim();
+  const shiftModel   = document.getElementById('shiftModel').value;
+  const trainingMode = document.getElementById('trainingMode').value;
+  if (!name || !hospitalName) return msg('clinicMsg', 'Klinik ve hastane adını girin.', 'err');
+  try {
+    const fn  = httpsCallable(functions, 'createClinic');
+    const res = await fn({ name, hospitalName, shiftModel, trainingMode });
+    const { clinicId, joinCode, residentJoinCode, status } = res.data;
+
+    document.getElementById('codeHospital').textContent  = joinCode;
+    document.getElementById('codeResident').textContent  = residentJoinCode;
+    document.getElementById('clinicCodes').style.display = 'block';
+
+    msg('clinicMsg', status === 'approved'
+      ? 'Klinik oluşturuldu ve onaylandı!'
+      : 'Klinik oluşturuldu. Süper admin onayı bekleniyor.', 'ok');
+
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    msg('clinicMsg', hataMetni(e.code) || e.message, 'err');
+  }
+};
+
+// ── Onay Bekleyen Klinikler ────────────────────────────────────────────────
+async function loadPending() {
+  const snap = await getDocs(query(collection(db, 'clinics'), where('status', '==', 'pending')));
+  const list = document.getElementById('pendingList');
+  if (snap.empty) {
+    list.innerHTML = '<li style="color:var(--text-secondary);font-size:13px">Onay bekleyen klinik yok.</li>';
+    return;
+  }
+  list.innerHTML = '';
+  snap.docs.forEach(d => {
+    const c  = d.data();
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <div style="font-weight:600;color:var(--text-primary)">${c.name}</div>
+        <div style="color:var(--text-secondary);font-size:12px">${c.hospitalName}</div>
+      </div>
+      <div class="row" style="gap:6px">
+        <button class="btn-success" style="padding:6px 12px;font-size:12px;width:auto"
+          onclick="approveClinic('${d.id}', this)">Onayla</button>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+window.approveClinic = async (clinicId, btn) => {
+  btn.disabled = true;
+  try {
+    const fn = httpsCallable(functions, 'approveClinic');
+    await fn({ clinicId });
+    btn.closest('li').style.opacity = '.4';
+    btn.textContent = 'Onaylandı ✓';
+  } catch(e) {
+    btn.disabled = false;
+    alert(e.message);
+  }
+};
+
+// ── Mevcut kliniklerimi yükle ──────────────────────────────────────────────
+async function loadMyClinics() {
+  const snap = await getDocs(query(
+    collection(db, 'clinics'),
+    where('chiefResidentIds', 'array-contains', currentUser.uid)
+  ));
+  const container = document.getElementById('myClinicsList');
+  container.innerHTML = '';
+  if (snap.empty) {
+    container.innerHTML = '<p style="color:var(--text-secondary);font-size:13px">Henüz kliniğiniz yok.</p>';
+    return;
+  }
+  snap.docs.forEach(d => {
+    const c   = d.data();
+    const div = document.createElement('div');
+    div.className = 'clinic-select-item' + (selectedClinicId === d.id ? ' selected' : '');
+    div.dataset.clinicId = d.id;
+    div.onclick = () => window.selectClinic(d.id, c.name);
+    div.innerHTML = `
+      <div>
+        <div style="font-weight:600;color:var(--text-primary)">${c.name}</div>
+        <div style="font-size:12px;color:var(--text-secondary)">${c.hospitalName || ''}</div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">
+          Hastane: <span style="color:#facc15;font-family:monospace">${c.joinCode}</span>
+          · Asistan: <span style="color:#facc15;font-family:monospace">${c.residentJoinCode}</span>
+        </div>
+      </div>
+      <span class="badge ${c.status==='approved'?'chief':'resident'}">
+        ${c.status==='approved'?'Onaylı':'Beklemede'}
+      </span>`;
+    container.appendChild(div);
+  });
+}
+
+// ── Zone yönetimi ──────────────────────────────────────────────────────────
+async function loadZones(clinicId) {
+  const snap = await getDocs(collection(db, 'clinics', clinicId, 'zones'));
+  const list = document.getElementById('zoneList');
+  list.innerHTML = '';
+  if (snap.empty) {
+    list.innerHTML = '<li style="color:var(--text-secondary);font-size:13px">Henüz bölüm yok.</li>';
+    return;
+  }
+  snap.docs.forEach(d => {
+    const z  = d.data();
+    const li = document.createElement('li');
+    li.innerHTML = `
+      <div>
+        <div style="font-weight:600;color:var(--text-primary)">${z.name}</div>
+        <div style="color:var(--text-secondary);font-size:12px">Min: ${z.minResidents} — Hedef: ${z.targetResidents}</div>
+      </div>
+      <button onclick="deleteZone('${clinicId}','${d.id}',this)"
+        style="background:#ef444422;border:1px solid #ef444444;color:#fca5a5;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer">
+        Sil
+      </button>`;
+    list.appendChild(li);
+  });
+}
+
+window.addZone = async () => {
+  if (!activeClinicId) return;
+  const name   = document.getElementById('zoneName').value.trim();
+  const minR   = parseInt(document.getElementById('zoneMin').value)    || 1;
+  const target = parseInt(document.getElementById('zoneTarget').value) || 2;
+  if (!name) return msg('zoneMsg', 'Bölüm adı girin.', 'err');
+  try {
+    await setDoc(doc(collection(db, 'clinics', activeClinicId, 'zones')), {
+      name, minResidents: minR, targetResidents: target,
+    });
+    document.getElementById('zoneName').value = '';
+    msg('zoneMsg', `"${name}" eklendi.`, 'ok');
+    loadZones(activeClinicId);
+  } catch(e) {
+    msg('zoneMsg', e.message, 'err');
+  }
+};
+
+window.deleteZone = async (clinicId, zoneId, btn) => {
+  btn.disabled = true;
+  try {
+    await deleteDoc(doc(db, 'clinics', clinicId, 'zones', zoneId));
+    loadZones(clinicId);
+  } catch(e) {
+    btn.disabled = false;
+  }
+};
+
+// ── Asistan yönetimi ───────────────────────────────────────────────────────
+async function loadResidents(clinicId) {
+  const snap = await getDocs(collection(db, 'clinics', clinicId, 'pendingResidents'));
+  const list = document.getElementById('residentList');
+  list.innerHTML = '';
+  if (snap.empty) {
+    list.innerHTML = '<li style="color:var(--text-secondary);font-size:13px">Henüz asistan eklenmedi.</li>';
+    return;
+  }
+  snap.docs.forEach(d => {
+    const r  = d.data();
+    const li = document.createElement('li');
+    li.style.flexDirection = 'column';
+    li.style.alignItems    = 'flex-start';
+    li.style.gap           = '4px';
+    const codeId = d.id;
+    li.innerHTML = `
+      <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+        <span style="font-weight:600;color:var(--text-primary)">${r.name}</span>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:${r.used?'var(--text-secondary)':'var(--success)'}">${r.used ? '✓ Katıldı' : 'Bekliyor'}</span>
+          <button onclick="window.deleteResident('${codeId}','${r.name}')"
+            style="background:#450a0a;color:#fca5a5;border:none;border-radius:6px;padding:3px 8px;font-size:11px;cursor:pointer">Sil</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-secondary)">
+        PGY ${r.pgy} &nbsp;·&nbsp; Asistan kodu: <span style="color:#facc15;font-family:monospace;letter-spacing:.08em">${codeId}</span>
+      </div>`;
+    list.appendChild(li);
+  });
+}
+
+window.addResident = async () => {
+  if (!activeClinicId) return;
+  const name = document.getElementById('residentName').value.trim();
+  const pgy  = parseInt(document.getElementById('residentPgy').value) || 1;
+  if (!name) return msg('residentMsg', 'Asistan adını girin.', 'err');
+
+  const code = randCode(6);
+  try {
+    await setDoc(doc(db, 'clinics', activeClinicId, 'pendingResidents', code), {
+      name, pgy, used: false, createdAt: serverTimestamp(),
+    });
+    document.getElementById('residentName').value = '';
+    msg('residentMsg', `${name} için kod üretildi: ${code}`, 'ok');
+    loadResidents(activeClinicId);
+  } catch(e) {
+    msg('residentMsg', e.message, 'err');
+  }
+};
+
+window.deleteResident = async (code, name) => {
+  if (!confirm(`"${name}" silinsin mi? Bu işlem geri alınamaz.`)) return;
+  try {
+    await deleteDoc(doc(db, 'clinics', activeClinicId, 'pendingResidents', code));
+    loadResidents(activeClinicId);
+  } catch(e) {
+    alert(e.message);
+  }
+};
+
+// ── Tercih Dönemi + Çizelge Yönetimi ──────────────────────────────────────
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran',
+                   'Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+let mgmtYear  = new Date().getFullYear();
+let mgmtMonth = new Date().getMonth();
+
+function initMgmtMonth() {
+  mgmtYear  = new Date().getFullYear();
+  mgmtMonth = new Date().getMonth();
+  refreshMgmt();
+}
+function refreshMgmt() {
+  const label = `${TR_MONTHS[mgmtMonth]} ${mgmtYear}`;
+  document.getElementById('prefMgmtLabel').textContent  = label;
+  document.getElementById('schedMgmtLabel').textContent = label;
+  loadPrefPeriodMgmt();
+  loadScheduleMgmt();
+}
+window.prefPrevMonth  = () => { if (mgmtMonth === 0) { mgmtMonth=11; mgmtYear--; } else mgmtMonth--; refreshMgmt(); };
+window.prefNextMonth  = () => { if (mgmtMonth ===11) { mgmtMonth=0;  mgmtYear++; } else mgmtMonth++; refreshMgmt(); };
+window.schedPrevMonth = () => { if (mgmtMonth === 0) { mgmtMonth=11; mgmtYear--; } else mgmtMonth--; refreshMgmt(); };
+window.schedNextMonth = () => { if (mgmtMonth ===11) { mgmtMonth=0;  mgmtYear++; } else mgmtMonth++; refreshMgmt(); };
+
+async function loadPrefPeriodMgmt() {
+  const periodId  = `${activeClinicId}_${mgmtYear}_${mgmtMonth}`;
+  const statusEl  = document.getElementById('prefMgmtStatus');
+  const openBtn   = document.getElementById('prefOpenBtn');
+  const closeBtn  = document.getElementById('prefCloseBtn');
+  try {
+    const snap = await getDoc(doc(db, 'preferencePeriods', periodId));
+    if (!snap.exists() || snap.data().status === 'closed') {
+      statusEl.textContent = snap.exists() ? 'Durum: Kapalı' : 'Henüz açılmadı.';
+      statusEl.style.color = 'var(--text-secondary)';
+      openBtn.style.display  = 'block';
+      closeBtn.style.display = 'none';
+    } else {
+      const d = snap.data().deadline;
+      statusEl.textContent = `Durum: Açık${d ? ' — Son gün: '+new Date(d.seconds*1000).toLocaleDateString('tr-TR') : ''}`;
+      statusEl.style.color = '#86efac';
+      openBtn.style.display  = 'none';
+      closeBtn.style.display = 'block';
+    }
+  } catch(_) { statusEl.textContent = ''; }
+}
+
+window.openPrefPeriod = async () => {
+  const deadlineVal = document.getElementById('prefDeadlineInput').value;
+  try {
+    const fn = httpsCallable(functions, 'openPreferencePeriod');
+    await fn({ clinicId: activeClinicId, year: mgmtYear, month: mgmtMonth,
+               deadlineDate: deadlineVal || null });
+    msg('prefMgmtMsg', 'Tercih dönemi açıldı. Asistanlara bildirim gönderildi.', 'ok');
+    loadPrefPeriodMgmt();
+  } catch(e) {
+    msg('prefMgmtMsg', e.message, 'err');
+  }
+};
+
+window.closePrefPeriod = async () => {
+  if (!confirm('Tercih dönemini kapatmak istediğinize emin misiniz?')) return;
+  try {
+    const fn = httpsCallable(functions, 'closePreferencePeriod');
+    await fn({ clinicId: activeClinicId, year: mgmtYear, month: mgmtMonth });
+    msg('prefMgmtMsg', 'Tercih dönemi kapatıldı.', 'ok');
+    loadPrefPeriodMgmt();
+  } catch(e) {
+    msg('prefMgmtMsg', e.message, 'err');
+  }
+};
+
+async function loadScheduleMgmt() {
+  const scheduleId = `${activeClinicId}_${mgmtYear}_${mgmtMonth}`;
+  activeScheduleId = scheduleId;
+  const statusEl   = document.getElementById('schedMgmtStatus');
+  const publishBtn = document.getElementById('publishBtn');
+  const listEl     = document.getElementById('schedShiftList');
+  listEl.innerHTML = '';
+  try {
+    const snap = await getDoc(doc(db, 'schedules', scheduleId));
+    if (!snap.exists()) {
+      statusEl.textContent = 'Çizelge henüz oluşturulmadı.';
+      statusEl.style.color = 'var(--text-secondary)';
+      publishBtn.style.display = 'none';
+      return;
+    }
+    const s = snap.data();
+    statusEl.textContent = s.status === 'published' ? '✓ Yayınlandı' : 'Taslak — henüz yayınlanmadı';
+    statusEl.style.color = s.status === 'published' ? '#86efac' : '#fbbf24';
+    publishBtn.style.display = s.status === 'published' ? 'none' : 'block';
+    loadScheduleShifts(scheduleId);
+  } catch(_) { statusEl.textContent = ''; }
+}
+
+async function loadScheduleShifts(scheduleId) {
+  const listEl = document.getElementById('schedShiftList');
+  const snap   = await getDocs(collection(db, 'schedules', scheduleId, 'shifts'));
+  if (snap.empty) { listEl.innerHTML = '<p style="font-size:13px;color:var(--text-secondary)">Nöbet kaydı yok.</p>'; return; }
+  const byDay = {};
+  snap.docs.forEach(d => {
+    const s = d.data();
+    if (!byDay[s.day]) byDay[s.day] = [];
+    byDay[s.day].push(s);
+  });
+  let html = '<div style="margin-top:12px;font-size:12px">';
+  Object.keys(byDay).sort((a,b)=>a-b).forEach(day => {
+    html += `<div style="padding:6px 0;border-bottom:1px solid var(--bg-border)">
+      <span style="color:var(--text-secondary);min-width:28px;display:inline-block">${day}</span>
+      ${byDay[day].map(s=>`<span class="badge badge-info" style="margin:2px;font-size:11px">${s.residentId.slice(0,6)} · ${s.zoneId}</span>`).join('')}
+    </div>`;
+  });
+  html += '</div>';
+  listEl.innerHTML = html;
+}
+
+window.runGenerateSchedule = async () => {
+  const btn = document.querySelector('#scheduleMgmtCard .btn-primary');
+  btn.disabled = true;
+  btn.textContent = 'Oluşturuluyor...';
+  try {
+    const fn  = httpsCallable(functions, 'generateSchedule');
+    const res = await fn({ clinicId: activeClinicId, year: mgmtYear, month: mgmtMonth });
+    msg('scheduleMgmtMsg', `Çizelge oluşturuldu. Toplam ${res.data.totalShifts} nöbet.`, 'ok');
+    loadScheduleMgmt();
+  } catch(e) {
+    msg('scheduleMgmtMsg', e.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Çizelge Oluştur';
+  }
+};
+
+window.publishSchedule = async () => {
+  if (!confirm('Çizelgeyi yayınlamak istediğinize emin misiniz? Asistanlara bildirim gider.')) return;
+  try {
+    await updateDoc(doc(db, 'schedules', activeScheduleId), {
+      status: 'published', publishedAt: serverTimestamp(),
+    });
+    msg('scheduleMgmtMsg', 'Çizelge yayınlandı!', 'ok');
+    loadScheduleMgmt();
+  } catch(e) {
+    msg('scheduleMgmtMsg', e.message, 'err');
+  }
+};
+
+// ── Çıkış ──────────────────────────────────────────────────────────────────
+window.logout = async () => { await signOut(auth); window.location.href = 'index.html'; };
+
+// ── Yardımcılar ────────────────────────────────────────────────────────────
+function randCode(n) {
+  return Math.random().toString(36).substring(2, 2 + n).toUpperCase();
+}
+function hataMetni(code) {
+  const map = {
+    'auth/invalid-email':           'Geçersiz e-posta.',
+    'auth/user-not-found':          'Kullanıcı bulunamadı.',
+    'auth/wrong-password':          'Şifre yanlış.',
+    'auth/invalid-credential':      'E-posta veya şifre hatalı.',
+    'auth/email-already-in-use':    'Bu e-posta zaten kayıtlı.',
+    'auth/weak-password':           'Şifre en az 6 karakter olmalı.',
+  };
+  return map[code] || 'Bir hata oluştu: ' + code;
+}
+
+// ── Swap Onay (başasistan) ───────────────────────────────────────────────────
+async function loadSwapApprovals() {
+  const el = document.getElementById('swapApprovalList');
+  if (!activeClinicId) { el.innerHTML = '<div style="font-size:13px;color:var(--text-secondary)">Klinik seçin.</div>'; return; }
+  try {
+    const snap = await getDocs(
+      query(collection(db, 'swapRequests'),
+            where('clinicId', '==', activeClinicId),
+            where('status', '==', 'pending_chief'),
+            orderBy('createdAt', 'desc'),
+            limit(20))
+    );
+    if (snap.empty) {
+      el.innerHTML = '<div style="font-size:13px;color:var(--text-secondary)">Onay bekleyen takas talebi yok.</div>';
+      return;
+    }
+
+    let html = '';
+    for (const d of snap.docs) {
+      const sw = d.data();
+      const [reqSnap, tgtSnap] = await Promise.all([
+        getDoc(doc(db, 'users', sw.requesterId)),
+        getDoc(doc(db, 'users', sw.targetId)),
+      ]);
+      const reqName = reqSnap.exists() ? (reqSnap.data().displayName || 'Asistan') : 'Asistan';
+      const tgtName = tgtSnap.exists() ? (tgtSnap.data().displayName || 'Asistan') : 'Asistan';
+      html += `
+        <div class="swap-item">
+          <div style="font-size:14px;color:var(--text-primary);font-weight:600;margin-bottom:4px">${reqName} ↔ ${tgtName}</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:8px">Her iki asistan da onayladı. Sizin onayınız bekleniyor.</div>
+          <div style="display:flex;gap:8px">
+            <button class="btn-success" style="flex:1;padding:8px;font-size:13px" onclick="window.chiefSwapDecision('${d.id}','approved')">Onayla</button>
+            <button class="btn-danger" style="flex:1;padding:8px;font-size:13px" onclick="window.chiefSwapDecision('${d.id}','rejected')">Reddet</button>
+          </div>
+        </div>`;
+    }
+    el.innerHTML = html;
+  } catch(e) {
+    el.innerHTML = `<div style="font-size:13px;color:#fca5a5">${e.message}</div>`;
+  }
+}
+
+window.chiefSwapDecision = async (swapId, decision) => {
+  try {
+    await updateDoc(doc(db, 'swapRequests', swapId), {
+      status: decision,
+      decidedBy: auth.currentUser.uid,
+      updatedAt: serverTimestamp(),
+    });
+    loadSwapApprovals();
+  } catch(e) {
+    alert(e.message);
+  }
+};
+</script>
+</body>
+</html>

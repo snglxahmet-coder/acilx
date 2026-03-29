@@ -67,3 +67,23 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+
+# Claude Code / AI tooling
+.claude/
+.agents/
+skills-lock.json
+
+# Husky hooks
+.husky/
+
+# Proje dokumanlari (GitHub'a yuklenmesin)
+AcilX_PRD.md
+ANTIGRAVITY_API_GUIDE.md
+FABRIKA.md
+CLAUDE.md
+fabrika/
+*.excalidraw
+
+# React app
+app/node_modules/
+public-react/

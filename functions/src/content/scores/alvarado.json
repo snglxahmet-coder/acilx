@@ -1,0 +1,129 @@
+{
+  "id": "alvarado",
+  "name": "Alvarado Skoru (MANTRELS)",
+  "description": "Akut apandisit olasılığını klinik ve laboratuvar bulguları ile değerlendirir. Gereksiz cerrahiyi azaltmayı hedefler.",
+  "category": "genel_cerrahi",
+  "parameters": [
+    {
+      "name": "migration_of_pain",
+      "label": "Ağrının göbek çevresinden sağ alt kadrana göçü",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "anorexia",
+      "label": "İştahsızlık (anoreksi)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "nausea_vomiting",
+      "label": "Bulantı / Kusma",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "rif_tenderness",
+      "label": "Sağ alt kadran hassasiyeti",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 2, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "rebound",
+      "label": "Rebound hassasiyeti",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "elevated_temperature",
+      "label": "Ateş (≥ 37.3 °C)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "leukocytosis",
+      "label": "Lökositoz (WBC > 10.000/mm³)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 2, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "shift_to_left",
+      "label": "Nötrofil hakimiyeti (sola kayma, >%75)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 10,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 4,
+      "label": "Düşük Olasılık",
+      "severity": "low",
+      "recommendation": "Apandisit olasılığı düşük. Taburculuk ve 12–24 saat sonra kontrol düşünülebilir. Semptomlar devam ederse tekrar değerlendirme."
+    },
+    {
+      "min": 5,
+      "max": 6,
+      "label": "Orta Olasılık",
+      "severity": "moderate",
+      "recommendation": "Apandisit olası. BT abdomen veya USG ile görüntüleme önerilir. Gözleme alınıp seri muayene yapılabilir."
+    },
+    {
+      "min": 7,
+      "max": 8,
+      "label": "Yüksek Olasılık",
+      "severity": "high",
+      "recommendation": "Apandisit yüksek olasılıklı. Cerrahi konsültasyon önerilir. Görüntüleme ile doğrulama sonrası operasyon planlanmalı."
+    },
+    {
+      "min": 9,
+      "max": 10,
+      "label": "Çok Yüksek Olasılık",
+      "severity": "high",
+      "recommendation": "Apandisit neredeyse kesin. Acil cerrahi konsültasyon ve ameliyathane hazırlığı. Gecikme komplikasyon riskini artırır."
+    }
+  ],
+  "references": [
+    {
+      "title": "A practical score for the early diagnosis of acute appendicitis",
+      "authors": "Alvarado A.",
+      "journal": "Annals of Emergency Medicine",
+      "year": 1986
+    }
+  ]
+}

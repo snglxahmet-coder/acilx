@@ -1,0 +1,39 @@
+{
+  "name": "Diazepam",
+  "category": "Sedatif",
+  "adultDosing": "Anksiyoliz/sedasyon: 2-10 mg IV yavaş veya PO. Status epileptikus: 5-10 mg IV yavaş (2-5 mg/dk hızında), gerekirse 10-15 dakikada tekrar (maksimum toplam 30 mg). Kas gevşetici: 5-10 mg IV/PO her 6-8 saatte bir.",
+  "pediatricDosing": "Status epileptikus IV: 0.1-0.3 mg/kg IV yavaş (maksimum 10 mg/doz), gerekirse 10-15 dakikada tekrar. Rektal: 0.5 mg/kg (maksimum 20 mg). Febril konvülziyon profilaksisi: 0.33 mg/kg PO her 8 saat (ateş süresince).",
+  "contraindications": [
+    "Akut dar açılı glokom",
+    "Miyastenia gravis",
+    "Ciddi hepatik yetmezlik (Child-Pugh C)",
+    "Ciddi solunum yetmezliği",
+    "Uyku apne sendromu (tedavisiz)"
+  ],
+  "warnings": [
+    "Uzun yarı ömür (20-100 saat): aktif metabolitleri (desmetildiazepam) birikim yapabilir",
+    "Solunum depresyonu: özellikle opioidlerle birlikte kullanıldığında risk artar",
+    "Damar dışına kaçırma (ekstravasküler sızma) doku nekrozuna yol açabilir: büyük damardan yavaş verilmelidir",
+    "IV uygulama hızı: 2-5 mg/dakika'yı geçmemelidir",
+    "Yaşlı hastalarda ve karaciğer yetmezliğinde yarı ömür uzar, doz azaltılmalıdır",
+    "Flumazenil (0.2 mg IV) her zaman hazır bulundurulmalıdır",
+    "Propilen glikol içerir: hızlı IV uygulamada hipotansiyon ve kardiyak depresyon riski"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "5 mg/mL",
+      "volume": "2 mL (10 mg)"
+    },
+    {
+      "form": "Tablet",
+      "concentration": "2 mg / 5 mg / 10 mg",
+      "volume": "Tablet"
+    },
+    {
+      "form": "Rektal tüp (pediatrik)",
+      "concentration": "5 mg/2.5 mL veya 10 mg/2.5 mL",
+      "volume": "2.5 mL"
+    }
+  ]
+}

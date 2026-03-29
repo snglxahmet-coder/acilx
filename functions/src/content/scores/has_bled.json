@@ -1,0 +1,125 @@
+{
+  "id": "has_bled",
+  "name": "HAS-BLED",
+  "description": "Atriyal fibrilasyonda antikoagülan tedavi altında majör kanama riskini değerlendirir.",
+  "category": "kardiyoloji",
+  "parameters": [
+    {
+      "name": "hypertension",
+      "label": "Hipertansiyon (kontrolsüz, sistolik > 160 mmHg)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "renal_disease",
+      "label": "Böbrek hastalığı (diyaliz, transplant veya Cr > 2.3 mg/dL)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "liver_disease",
+      "label": "Karaciğer hastalığı (siroz, bilirubin >2× veya AST/ALT >3× normal)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "stroke_history",
+      "label": "İnme öyküsü",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "bleeding",
+      "label": "Kanama öyküsü veya kanama yatkınlığı",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "labile_inr",
+      "label": "Labil INR (terapötik aralıkta kalma süresi < %60)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "elderly",
+      "label": "Yaş > 65",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "drugs",
+      "label": "İlaçlar (antiplatelet, NSAİİ birlikte kullanım)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "alcohol",
+      "label": "Alkol kullanımı (haftada ≥ 8 ünite)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 9,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 2,
+      "label": "Düşük Kanama Riski",
+      "severity": "low",
+      "recommendation": "Yıllık majör kanama riski <%4. Antikoagülan tedaviye devam edilebilir; rutin izlem yeterli."
+    },
+    {
+      "min": 3,
+      "max": 9,
+      "label": "Yüksek Kanama Riski",
+      "severity": "high",
+      "recommendation": "Yıllık majör kanama riski artmış. Antikoagülan tedavi iptal edilmemeli ancak düzeltilebilir faktörler (HT, labil INR, ilaçlar, alkol) optimize edilmeli. Daha sık izlem planlanmalı."
+    }
+  ],
+  "references": [
+    {
+      "title": "A novel user-friendly score (HAS-BLED) to assess 1-year risk of major bleeding in patients with atrial fibrillation",
+      "authors": "Pisters R, Lane DA, Nieuwlaat R, et al.",
+      "journal": "Chest",
+      "year": 2010
+    }
+  ]
+}

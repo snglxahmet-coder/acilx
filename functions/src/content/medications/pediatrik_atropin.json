@@ -1,0 +1,27 @@
+{
+  "name": "Pediatrik Atropin",
+  "category": "Pediatrik",
+  "adultDosing": "Pediatrik kullanım — yetişkin dozu için atropin.json dosyasına bakınız.",
+  "pediatricDosing": "Semptomatik bradikardi: 0.02 mg/kg IV/IO, minimum doz 0.1 mg, maksimum tek doz 0.5 mg. Gerekirse 5 dakika arayla tekrarlanabilir, toplam maksimum doz 1 mg (çocuk), 2 mg (adolesan). Entübasyon premedikasyonu (<1 yaş): 0.02 mg/kg IV. Organofosfor/karbamat zehirlenmesi: 0.02-0.05 mg/kg IV, sekresyonlar kuruyuncaya kadar tekrarlayan dozlarla, atropinizasyon bulguları takip edilir.",
+  "contraindications": [
+    "Taşikardi (supraventriküler veya ventriküler)",
+    "Tirotoksikoz",
+    "Obstrüktif üropati",
+    "Obstrüktif gastrointestinal hastalık",
+    "Dar açılı glokom (relatif)"
+  ],
+  "warnings": [
+    "Minimum doz 0.1 mg'dır — daha düşük dozlar paradoks bradikardiye neden olabilir",
+    "Entübasyon öncesi rutin atropin kullanımı güncel PALS kılavuzlarında artık önerilmemektedir",
+    "Antikolinerjik yan etkiler: ağız kuruluğu, midriyazis, taşikardi, idrar retansiyonu, ateş",
+    "Down sendromlu çocuklarda atropine abartılı yanıt olabilir",
+    "Organofosfor zehirlenmesinde çok yüksek dozlar gerekebilir, atropinizasyon bulguları (kuru cilt, midriyazis, taşikardi) takip edilmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "0.5 mg/mL",
+      "volume": "1 mL"
+    }
+  ]
+}

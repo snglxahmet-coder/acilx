@@ -1,0 +1,37 @@
+{
+  "name": "Midazolam",
+  "category": "Sedatif",
+  "adultDosing": "Prosedürel sedasyon: 1-2.5 mg IV yavaş (2 dakikada), her 2 dakikada 1 mg tekrar edilebilir (maksimum toplam 5 mg). Status epileptikus: 10 mg IM (tek doz). İntranasal: 5 mg (tek seferde).",
+  "pediatricDosing": "IV sedasyon: 0.05-0.1 mg/kg IV yavaş (2-3 dakikada). İntranasal: 0.2 mg/kg (maksimum 5 mg), MAD cihazı ile. Status epileptikus: 0.2 mg/kg IM (maksimum 10 mg). PO: 0.25-0.5 mg/kg (premedikasyon).",
+  "contraindications": [
+    "Akut dar açılı glokom",
+    "Şok veya koma durumu",
+    "Akut alkol intoksikasyonu (vital bulgular depresyonu ile)",
+    "Bilinen benzodiazepin aşırı duyarlılığı"
+  ],
+  "warnings": [
+    "Solunum depresyonu riski: oksijen ve aspirasyon ekipmanı hazır olmalıdır",
+    "Flumazenil (0.2 mg IV) her zaman hazır bulundurulmalıdır",
+    "Yaşlı hastalarda (>65 yaş) başlangıç dozu %50 azaltılmalıdır",
+    "Opioidlerle birlikte kullanıldığında solunum depresyonu riski belirgin artar",
+    "Paradoksal ajitasyon görülebilir (özellikle çocuklarda ve yaşlılarda)",
+    "Etki başlangıcı: IV 1-2 dk, IM 5-15 dk, intranasal 5-10 dk"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "5 mg/mL",
+      "volume": "1 mL (5 mg)"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "5 mg/mL",
+      "volume": "3 mL (15 mg)"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "1 mg/mL",
+      "volume": "5 mL (5 mg)"
+    }
+  ]
+}

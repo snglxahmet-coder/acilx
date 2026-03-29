@@ -1,0 +1,104 @@
+{
+  "id": "heart_score",
+  "name": "HEART Score",
+  "description": "Acil serviste göğüs ağrısı ile başvuran hastalarda majör kardiyak olay (MACE) riskini değerlendirir.",
+  "category": "kardiyoloji",
+  "parameters": [
+    {
+      "name": "history",
+      "label": "Öykü",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Hafif şüpheli" },
+        { "value": 1, "label": "Orta şüpheli" },
+        { "value": 2, "label": "Yüksek şüpheli" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "ecg",
+      "label": "EKG",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Normal" },
+        { "value": 1, "label": "Non-spesifik repolarizasyon bozukluğu" },
+        { "value": 2, "label": "Anlamlı ST deviasyonu" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "age",
+      "label": "Yaş",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "< 45" },
+        { "value": 1, "label": "45–64" },
+        { "value": 2, "label": "≥ 65" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "risk_factors",
+      "label": "Risk Faktörleri",
+      "description": "HT, DM, hiperlipidemi, obezite, sigara, aile öyküsü, ateroskleroz",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Bilinen risk faktörü yok" },
+        { "value": 1, "label": "1–2 risk faktörü" },
+        { "value": 2, "label": "≥ 3 risk faktörü veya ateroskleroz öyküsü" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "troponin",
+      "label": "Troponin",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "≤ Normal sınır" },
+        { "value": 1, "label": "1–3× normal sınır" },
+        { "value": 2, "label": "> 3× normal sınır" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 10,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 3,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "6 haftalık MACE riski %1.6. Erken taburculuk ve poliklinik takibi düşünülebilir."
+    },
+    {
+      "min": 4,
+      "max": 6,
+      "label": "Orta Risk",
+      "severity": "moderate",
+      "recommendation": "6 haftalık MACE riski %12. Gözlem, seri troponin ve ileri kardiyak değerlendirme önerilir."
+    },
+    {
+      "min": 7,
+      "max": 10,
+      "label": "Yüksek Risk",
+      "severity": "high",
+      "recommendation": "6 haftalık MACE riski %65. Erken invaziv strateji ve kardiyoloji konsültasyonu gereklidir."
+    }
+  ],
+  "references": [
+    {
+      "title": "A history of the HEART score and its role in chest pain assessment",
+      "authors": "Backus BE, Six AJ, Kelder JC, et al.",
+      "journal": "Netherlands Heart Journal",
+      "year": 2016
+    },
+    {
+      "title": "Validation of the HEART score for chest pain patients at the emergency department",
+      "authors": "Backus BE, Six AJ, Kelder JC, et al.",
+      "journal": "International Journal of Cardiology",
+      "year": 2013
+    }
+  ]
+}

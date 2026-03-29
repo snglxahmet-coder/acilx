@@ -1,0 +1,65 @@
+{
+  "id": "qsofa",
+  "name": "qSOFA (Quick SOFA)",
+  "description": "Enfeksiyon şüphesi olan hastalarda sepsis riskini hızlıca tarar. Yoğun bakım dışı ortamlar için tasarlanmıştır.",
+  "category": "enfeksiyon",
+  "parameters": [
+    {
+      "name": "altered_mentation",
+      "label": "Mental durum değişikliği (GCS < 15)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "respiratory_rate",
+      "label": "Solunum hızı ≥ 22/dk",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "systolic_bp",
+      "label": "Sistolik kan basıncı ≤ 100 mmHg",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 3,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 1,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "Sepsis riski düşük. Enfeksiyon şüphesi devam ediyorsa klinik takip ve gerekirse tam SOFA skoru hesaplanmalı."
+    },
+    {
+      "min": 2,
+      "max": 3,
+      "label": "Yüksek Risk",
+      "severity": "high",
+      "recommendation": "Sepsis olasılığı yüksek. Organ disfonksiyonu değerlendirmesi (tam SOFA), laktat ölçümü, kan kültürleri ve erken antibiyotik başlanması önerilir."
+    }
+  ],
+  "references": [
+    {
+      "title": "The Third International Consensus Definitions for Sepsis and Septic Shock (Sepsis-3)",
+      "authors": "Singer M, Deutschman CS, Seymour CW, et al.",
+      "journal": "JAMA",
+      "year": 2016
+    }
+  ]
+}

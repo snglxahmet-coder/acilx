@@ -1,0 +1,39 @@
+{
+  "name": "Propofol",
+  "category": "RSI",
+  "adultDosing": "RSI indüksiyon: 1.5-2.5 mg/kg IV (yaşlı/hemodinamik instabil hastalarda 0.5-1 mg/kg). Prosedürel sedasyon: 0.5-1 mg/kg IV bolus, ardından 25-75 mcg/kg/dk infüzyon veya 0.5 mg/kg bolus dozlarla titrasyon. Sedasyon idamesi: 25-75 mcg/kg/dk IV infüzyon.",
+  "pediatricDosing": ">3 yaş: İndüksiyon 2.5-3.5 mg/kg IV. Prosedürel sedasyon: 1 mg/kg IV bolus, ardından 100-200 mcg/kg/dk infüzyon. <3 yaş: Önerilmez (sedasyon idamesi için). Neonatal kullanım kontrendikedir.",
+  "contraindications": [
+    "Propofol veya bileşenlerine karşı alerji",
+    "Yumurta veya soya alerjisi (tartışmalı; yeni formülasyonlarda risk düşük)",
+    "Mitokondriyal hastalık",
+    "Ağır kardiyovasküler instabilite (relatif)",
+    "Gebelik (Kategori B; ancak uzun süreli kullanım önerilmez)"
+  ],
+  "warnings": [
+    "Hipotansiyon yapabilir; hemodinamik instabil hastalarda dikkatli titre edilmelidir",
+    "Apne riski yüksektir; havayolu ekipmanı ve pozitif basınçlı ventilasyon hazır olmalıdır",
+    "Enjeksiyon ağrısı sıktır; lidokain 20-40 mg IV ile önlenebilir",
+    "Propofol infüzyon sendromu: uzun süreli yüksek doz infüzyonlarda (>48 saat, >5 mg/kg/saat) ölümcül olabilir",
+    "Lipid bazlı emülsiyondur; aseptik teknik zorunludur, açıldıktan sonra 12 saat içinde kullanılmalıdır",
+    "Trigliserid düzeylerini artırabilir; total kalori hesabında dikkate alınmalıdır",
+    "Bradikardi riski: özellikle opioidlerle birlikte kullanımda"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon/Ampul",
+      "concentration": "10 mg/mL (%1)",
+      "volume": "20 mL (200 mg)"
+    },
+    {
+      "form": "Flakon",
+      "concentration": "10 mg/mL (%1)",
+      "volume": "50 mL (500 mg)"
+    },
+    {
+      "form": "Flakon",
+      "concentration": "20 mg/mL (%2)",
+      "volume": "50 mL (1000 mg)"
+    }
+  ]
+}

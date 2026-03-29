@@ -1,0 +1,123 @@
+{
+  "id": "perc",
+  "name": "PERC Kuralı (Pulmonary Embolism Rule-out Criteria)",
+  "description": "Düşük klinik şüpheli hastalarda pulmoner emboliyi D-dimer'a gerek kalmadan güvenle dışlamak için kullanılır.",
+  "category": "pulmoner",
+  "parameters": [
+    {
+      "name": "age",
+      "label": "Yaş ≥ 50",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "heart_rate",
+      "label": "Kalp hızı ≥ 100/dk",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "spo2",
+      "label": "SpO₂ < %95 (oda havasında)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "hemoptysis",
+      "label": "Hemoptizi",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "estrogen",
+      "label": "Östrojen kullanımı (OKS, HRT)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "prior_dvt_pe",
+      "label": "Önceden DVT veya PE tanısı",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "surgery_trauma",
+      "label": "Son 4 haftada cerrahi veya travma (hastaneye yatış gerektiren)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "unilateral_leg_swelling",
+      "label": "Tek taraflı bacak şişliği",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "all_zero",
+  "formulaLogic": "Tüm kriterler negatifse PE güvenle dışlanır (PERC negatif). Herhangi biri pozitifse PERC kullanılamaz.",
+  "minScore": 0,
+  "maxScore": 8,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 0,
+      "label": "PERC Negatif — PE Dışlandı",
+      "severity": "low",
+      "recommendation": "Tüm kriterler negatif. PE güvenle dışlanabilir, D-dimer veya BTPA gerekmez. Kaçırma oranı <%2 (test eşiği altında)."
+    },
+    {
+      "min": 1,
+      "max": 8,
+      "label": "PERC Pozitif — PE Dışlanamaz",
+      "severity": "moderate",
+      "recommendation": "En az bir kriter pozitif. PERC ile PE dışlanamaz. Klinik olasılığa göre D-dimer veya BTPA ile ileri değerlendirme yapılmalı."
+    }
+  ],
+  "notes": "PERC kuralı SADECE pretest olasılığı düşük olan hastalarda (hekim gestalt <%15 veya Wells ≤4) uygulanmalıdır. Orta-yüksek şüpheli hastalarda kullanılmamalıdır.",
+  "references": [
+    {
+      "title": "Clinical criteria to prevent unnecessary diagnostic testing in emergency department patients with suspected pulmonary embolism",
+      "authors": "Kline JA, Mitchell AM, Kabrhel C, et al.",
+      "journal": "Journal of Thrombosis and Haemostasis",
+      "year": 2004
+    },
+    {
+      "title": "Prospective multicenter evaluation of the pulmonary embolism rule-out criteria",
+      "authors": "Kline JA, Courtney DM, Kabrhel C, et al.",
+      "journal": "Journal of Thrombosis and Haemostasis",
+      "year": 2008
+    }
+  ]
+}

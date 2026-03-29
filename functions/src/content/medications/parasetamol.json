@@ -1,0 +1,40 @@
+{
+  "name": "Parasetamol (Asetaminofen)",
+  "category": "Analjezik",
+  "adultDosing": "1 g IV infüzyon (15 dakikada) veya PO her 6-8 saatte bir. Vücut ağırlığı >50 kg: maksimum 4 g/gün. Vücut ağırlığı <50 kg: 15 mg/kg/doz, maksimum 3 g/gün.",
+  "pediatricDosing": "15 mg/kg IV infüzyon (15 dakikada) veya PO her 6 saatte bir. Maksimum günlük doz: 75 mg/kg/gün (maksimum 4 g/gün). Neonatal: 10-15 mg/kg PO her 6-8 saat.",
+  "contraindications": [
+    "Ciddi hepatik yetmezlik (Child-Pugh C)",
+    "Aktif karaciğer hastalığı",
+    "Bilinen aşırı duyarlılık"
+  ],
+  "warnings": [
+    "Karaciğer fonksiyon testleri (ALT, AST) düzenli takip edilmelidir",
+    "Kronik alkol kullanımında günlük doz 2 g'yi geçmemelidir",
+    "Birden fazla parasetamol içeren ürünün eş zamanlı kullanımına dikkat edilmelidir",
+    "Doz aşımında N-asetilsistein (NAC) antidot olarak hazır bulundurulmalıdır",
+    "Böbrek yetmezliğinde (GFR <30) doz aralığı 8 saate uzatılmalıdır"
+  ],
+  "preparations": [
+    {
+      "form": "IV infüzyon şişesi",
+      "concentration": "10 mg/mL",
+      "volume": "100 mL (1 g)"
+    },
+    {
+      "form": "Tablet",
+      "concentration": "500 mg",
+      "volume": "Tablet"
+    },
+    {
+      "form": "Süspansiyon (pediatrik)",
+      "concentration": "120 mg/5 mL",
+      "volume": "150 mL şişe"
+    },
+    {
+      "form": "Supozituvar",
+      "concentration": "125 mg / 250 mg / 500 mg",
+      "volume": "Tek doz"
+    }
+  ]
+}

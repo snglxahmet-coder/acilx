@@ -1,0 +1,29 @@
+{
+  "name": "Vankomisin",
+  "category": "Antibiyotik",
+  "adultDosing": "Yükleme dozu: 25-30 mg/kg IV (gerçek vücut ağırlığından hesaplanır, maksimum 2 g tek infüzyon). İdame: 15-20 mg/kg IV her 8-12 saatte bir. Hedef AUC/MIC > 400-600 mg·saat/L. Her doz en az 1 saatte infüze edilir (1 g başına 1 saat).",
+  "pediatricDosing": "15 mg/kg IV her 6 saatte bir. Ciddi enfeksiyonlarda 60-80 mg/kg/gün, 3-4 doza bölünerek. İlaç düzeyi takibi ile doz optimizasyonu yapılmalıdır.",
+  "contraindications": [
+    "Vankomisin alerjisi (anafilaksi öyküsü)"
+  ],
+  "warnings": [
+    "Red man sendromu: Histamin aracılı reaksiyon — hızlı infüzyondan kaçınılmalı, her 1 g en az 1 saatte verilmelidir",
+    "Nefrotoksisite riski: Böbrek fonksiyonları düzenli izlenmelidir (özellikle aminoglikozid veya piperasilin-tazobaktam ile birlikte)",
+    "Ototoksisite: Yüksek serum düzeylerinde işitme kaybı gelişebilir",
+    "İlaç düzeyi (TDM) takibi zorunludur — çukur düzey veya AUC hesaplaması ile",
+    "Nötropeni: Uzun süreli kullanımda (>7 gün) lökosit takibi yapılmalıdır",
+    "Ekstravasküler sızma doku hasarına yol açabilir — santral venöz yol tercih edilmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon (IV)",
+      "concentration": "500 mg",
+      "volume": "Toz — 10 mL enjeksiyonluk su ile sulandırılır, sonra en az 100 mL SF/D5 ile dilüe edilir"
+    },
+    {
+      "form": "Flakon (IV)",
+      "concentration": "1 g",
+      "volume": "Toz — 20 mL enjeksiyonluk su ile sulandırılır, sonra en az 200 mL SF/D5 ile dilüe edilir"
+    }
+  ]
+}

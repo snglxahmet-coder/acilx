@@ -1,0 +1,27 @@
+{
+  "name": "Dobutamin",
+  "category": "Vazoaktif",
+  "adultDosing": "2.5-20 mcg/kg/dk IV infüzyon. Kardiyojenik şok ve düşük kardiyak output durumlarında kullanılır. Düşük dozda başlanıp hemodinamik yanıta göre titre edilir. Genellikle noradrenalin ile kombinasyon halinde kullanılır.",
+  "pediatricDosing": "2-20 mcg/kg/dk IV/IO infüzyon. Düşük dozda başlanıp yanıta göre titre edilir. Kardiyojenik şok ve düşük kardiyak output sendromunda endikedir.",
+  "contraindications": [
+    "İdiyopatik hipertrofik subaortik stenoz (IHSS / HoKMP) — çıkış yolu obstrüksiyonunu artırır",
+    "Ciddi hipotansiyon durumunda tek başına kullanılmamalıdır (vazodilatasyon nedeniyle hipotansiyonu derinleştirebilir)",
+    "Düzeltilmemiş hipovolemi",
+    "Ciddi aort stenozu"
+  ],
+  "warnings": [
+    "Taşikardi gelişebilir, doz ayarlaması gerektirebilir",
+    "Vazodilatasyon nedeniyle hipotansiyon yapabilir, gerekirse vazopressör ile kombine edilmelidir",
+    "Aritmi riski mevcuttur, sürekli kardiyak monitörizasyon gerekir",
+    "Sülfit alerjisi olan hastalarda dikkatli kullanılmalıdır (bazı preparatlar sülfit içerir)",
+    "Ani kesilmemelidir, doz kademeli olarak azaltılmalıdır",
+    "Uzun süreli kullanımda tolerans gelişebilir"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon",
+      "concentration": "250 mg/20 mL (12.5 mg/mL)",
+      "volume": "20 mL"
+    }
+  ]
+}

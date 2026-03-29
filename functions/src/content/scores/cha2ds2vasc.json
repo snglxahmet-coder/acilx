@@ -1,0 +1,122 @@
+{
+  "id": "cha2ds2vasc",
+  "name": "CHA₂DS₂-VASc",
+  "description": "Non-valvüler atriyal fibrilasyonda yıllık tromboembolik inme riskini değerlendirir ve antikoagülan tedavi kararına yardımcı olur.",
+  "category": "kardiyoloji",
+  "parameters": [
+    {
+      "name": "chf",
+      "label": "Konjestif Kalp Yetmezliği (veya sol ventrikül EF ≤ %40)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "hypertension",
+      "label": "Hipertansiyon",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "age_75",
+      "label": "Yaş ≥ 75",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 2, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "diabetes",
+      "label": "Diabetes Mellitus",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "stroke_tia",
+      "label": "İnme / TIA / Tromboembolizm öyküsü",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 2, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "vascular_disease",
+      "label": "Vasküler hastalık (Mİ, periferik arter hast., aort plağı)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "age_65_74",
+      "label": "Yaş 65–74",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "sex_female",
+      "label": "Kadın cinsiyet",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Erkek" },
+        { "value": 1, "label": "Kadın" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 9,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 0,
+      "label": "Düşük Risk",
+      "severity": "low",
+      "recommendation": "Yıllık inme riski ~%0. Antikoagülan tedavi önerilmez."
+    },
+    {
+      "min": 1,
+      "max": 1,
+      "label": "Düşük-Orta Risk",
+      "severity": "low",
+      "recommendation": "Yıllık inme riski ~%1.3. Erkeklerde: OAK düşünülebilir. Kadınlarda (cinsiyet tek faktörse): gözlem yeterli."
+    },
+    {
+      "min": 2,
+      "max": 9,
+      "label": "Orta-Yüksek Risk",
+      "severity": "high",
+      "recommendation": "Yıllık inme riski ≥%2.2. Oral antikoagülan (DOAK veya varfarin) kesinlikle önerilir. HAS-BLED ile kanama riski de değerlendirilmeli."
+    }
+  ],
+  "references": [
+    {
+      "title": "Refining clinical risk stratification for predicting stroke and thromboembolism in atrial fibrillation",
+      "authors": "Lip GY, Nieuwlaat R, Pisters R, et al.",
+      "journal": "Chest",
+      "year": 2010
+    }
+  ]
+}

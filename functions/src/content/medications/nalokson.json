@@ -1,0 +1,33 @@
+{
+  "name": "Nalokson",
+  "category": "Antidot",
+  "adultDosing": "Opioid zehirlenmesi: 0.4-2 mg IV/IM/SC, gerekirse 2-3 dakika arayla tekrarlanır (maksimum toplam 10 mg). İntranazal: 4 mg/sprey (tek nostril). Düşük dozla başlamak yoksunluk şiddetini azaltır — kronik opioid kullananında 0.04-0.1 mg ile titre et.",
+  "pediatricDosing": "0.1 mg/kg IV/IM (maksimum 2 mg/doz). <5 yaş veya <20 kg: 0.1 mg/kg. ≥5 yaş veya ≥20 kg: 2 mg IV/IM. Gerekirse 2-3 dakika arayla tekrarlanır. Neonatal: 0.01 mg/kg IV/IM.",
+  "contraindications": [
+    "Nalokson alerjisi (son derece nadir)"
+  ],
+  "warnings": [
+    "Akut opioid yoksunluk sendromu provoke edebilir: Ajitasyon, kusma, taşikardi, hipertansiyon, pulmoner ödem",
+    "Yarı ömrü (30-90 dk) çoğu opioidlerden kısadır — resedasyonu en az 2-3 saat izle, uzun etkili opioidlerde 4-6 saat",
+    "IV yol bulunamazsa IM, SC, intranazal veya endotrakeal verilebilir",
+    "Kardiyak hastalarda (özellikle opioid bağımlılarda) ani reversal ile aritmi ve pulmoner ödem görülebilir",
+    "Meperidin ve propoksifen zehirlenmesinde nöbet riski artabilir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul (IV/IM/SC)",
+      "concentration": "0.4 mg/mL",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Ampul (IV/IM/SC)",
+      "concentration": "1 mg/mL",
+      "volume": "2 mL"
+    },
+    {
+      "form": "Nazal sprey",
+      "concentration": "4 mg/sprey",
+      "volume": "Tek doz nazal uygulayıcı"
+    }
+  ]
+}

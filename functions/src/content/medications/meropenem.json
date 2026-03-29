@@ -1,0 +1,28 @@
+{
+  "name": "Meropenem",
+  "category": "Antibiyotik",
+  "adultDosing": "Ciddi enfeksiyonlar: 1-2 g IV her 8 saatte bir, 15-30 dakikada infüzyon. Menenjit: 2 g IV her 8 saatte bir. Uzatılmış infüzyon (3 saat) farmakokinetik avantaj sağlar.",
+  "pediatricDosing": "20-40 mg/kg IV her 8 saatte bir (maksimum 2 g/doz). Menenjit: 40 mg/kg IV her 8 saatte bir (maksimum 2 g/doz). 3 aydan küçüklerde güvenilirlik sınırlıdır.",
+  "contraindications": [
+    "Karbapenem alerjisi (anafilaksi öyküsü)",
+    "Ciddi penisilin/beta-laktam anafilaksi öyküsü olanlarda dikkat (çapraz reaktivite düşük ancak mevcut)"
+  ],
+  "warnings": [
+    "Nöbet eşiğini düşürebilir, özellikle SSS enfeksiyonu ve böbrek yetmezliği olan hastalarda",
+    "Valproik asit ile etkileşim: valproat seviyesini ciddi ölçüde düşürür — birlikte kullanımından kaçınılmalıdır",
+    "Böbrek yetmezliğinde doz ayarı gereklidir (GFR'ye göre)",
+    "Uzun süreli kullanımda Clostridium difficile kolitine dikkat edilmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon (IV)",
+      "concentration": "500 mg",
+      "volume": "Toz — 10 mL enjeksiyonluk su ile sulandırılır"
+    },
+    {
+      "form": "Flakon (IV)",
+      "concentration": "1 g",
+      "volume": "Toz — 20 mL enjeksiyonluk su ile sulandırılır"
+    }
+  ]
+}

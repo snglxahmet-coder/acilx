@@ -1,0 +1,200 @@
+{
+  "id": "gi_bleeding",
+  "name": "GI Kanama Yaklaşımı",
+  "category": "Gastrointestinal",
+  "description": "Gastrointestinal kanama tanı, resüsitasyon ve yönetim algoritması.",
+  "steps": [
+    {
+      "stepId": "start",
+      "question": "Hastanın hemodinamik durumu nasıl?",
+      "description": "Vital bulgular: Nabız, tansiyon, ortostatik değişiklik, şok indeksi (nabız/sistolik KB; >1 ise şok düşünün). Bilinç durumu, cilt perfüzyonu, kapiller geri dolum değerlendirin.",
+      "options": [
+        { "label": "Hemodinamik instabil (şok bulguları, sistolik KB <90, nabız >120)", "nextStepId": "resuscitation" },
+        { "label": "Hemodinamik stabil", "nextStepId": "bleeding_type" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "resuscitation",
+      "question": "Resüsitasyon başlatıldı. Kanama tipi nedir?",
+      "description": "2 geniş çaplı (16-18G) IV damar yolu açın. İzotonik NaCl/Ringer laktat bolus. Kan grubu/cross-match, acil hemogram, koagülasyon, BUN, kreatinin, KC fonksiyon isteyin. Masif kanama protokolü: ES:TDP:Trombosit = 1:1:1. Hb <7 g/dL hedefle transfüzyon (aktif KAH'da <8 g/dL).",
+      "options": [
+        { "label": "Hematemez / Kahve telvesi kusma (Üst GI)", "nextStepId": "upper_gi" },
+        { "label": "Melena (Üst GI olası)", "nextStepId": "upper_gi" },
+        { "label": "Hematokezya (parlak kırmızı rektal kanama)", "nextStepId": "hematochezia" },
+        { "label": "Kanama tipi belirsiz", "nextStepId": "ng_tube" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "bleeding_type",
+      "question": "Kanama bulguları nedir?",
+      "description": "Hematemez/kahve telvesi kusma → Üst GI. Melena (katran renkli, kötü kokulu gaita) → genellikle Üst GI. Hematokezya (parlak kırmızı rektal kanama) → genellikle Alt GI (masif üst GI olabilir). Öykü: NSAID, antikoagülan, alkol, karaciğer hastalığı, önceki GI kanama.",
+      "options": [
+        { "label": "Hematemez / Kahve telvesi kusma", "nextStepId": "upper_gi" },
+        { "label": "Melena", "nextStepId": "upper_gi" },
+        { "label": "Hematokezya", "nextStepId": "hematochezia" },
+        { "label": "Kanama tipi belirsiz", "nextStepId": "ng_tube" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "ng_tube",
+      "question": "Nazogastrik sonda aspirasyonu sonucu nedir?",
+      "description": "NG sonda ile mide içeriği değerlendirin. Kanlı/kahve telvesi → Üst GI kanama. Safralı temiz → Üst GI kanama olasılığı düşük (kesin dışlamaz). Not: NG sonda bazı rehberlerde rutin önerilmemektedir.",
+      "options": [
+        { "label": "Kanlı veya kahve telvesi aspirat", "nextStepId": "upper_gi" },
+        { "label": "Temiz veya safralı aspirat", "nextStepId": "hematochezia" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "upper_gi",
+      "question": "Üst GI kanama — Glasgow-Blatchford Skoru (GBS) nedir?",
+      "description": "GBS parametreleri: BUN, Hb, sistolik KB, nabız, melena, senkop, KC hastalığı, kalp yetmezliği. GBS = 0: Çok düşük risk, ayaktan takip düşünülebilir. GBS ≥ 1: Değerlendirme ve endoskopi gerekir.",
+      "options": [
+        { "label": "GBS = 0 (çok düşük risk)", "nextStepId": "low_risk_upper" },
+        { "label": "GBS 1-11 (orta risk)", "nextStepId": "ppi_upper" },
+        { "label": "GBS ≥ 12 veya aktif masif kanama", "nextStepId": "urgent_endoscopy" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "low_risk_upper",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Düşük riskli üst GI kanama (GBS = 0): Ayaktan endoskopi planlanabilir (24-72 saat). PPI başlayın (Omeprazol/Esomeprazol 40 mg PO/gün). Antikoagülan/antiplatelet ilaçları gözden geçirin. Taburculuk: Yeterli oral alım, stabil hemogram, güvenilir hasta. Kötüleşme belirtileri anlatılmalı."
+    },
+    {
+      "stepId": "ppi_upper",
+      "question": "PPI tedavisi başlandı. Varis kanaması şüphesi var mı?",
+      "description": "IV PPI: Esomeprazol/Pantoprazol 80 mg IV bolus, ardından 8 mg/saat infüzyon. Karaciğer hastalığı, portal hipertansiyon, splenomegali, asit, caput medusa → varis kanaması düşünün.",
+      "options": [
+        { "label": "Varis kanaması şüphesi var (KC hastalığı/portal HT)", "nextStepId": "variceal" },
+        { "label": "Non-variseal kanama düşünülüyor", "nextStepId": "endoscopy_timing" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "variceal",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Varis kanaması yönetimi: Terlipressin 2 mg IV bolus, ardından 1 mg IV/4-6s (veya Oktreotid 50 mcg IV bolus + 50 mcg/saat infüzyon). Seftriakson 1 g IV/gün (antibiyotik profilaksisi). Kısıtlı transfüzyon (Hb hedef 7-8 g/dL). ACİL endoskopi (<12 saat): Bant ligasyonu. Endoskopik kontrol sağlanamazsa balon tamponad (Sengstaken-Blakemore, köprü tedavi). TIPS değerlendirmesi. Gastroenteroloji + Hepatoloji konsültasyonu. Yoğun bakım yatışı."
+    },
+    {
+      "stepId": "endoscopy_timing",
+      "question": "Endoskopi zamanlaması nasıl olmalı?",
+      "description": "Endoskopi öncesi eritromisin 250 mg IV (mide boşaltımını hızlandırır, 30-120 dk önce). Koagülopati düzeltilmeli (INR >2.5 ise PCC/TDP, Trombosit <50.000 ise trombosit süspansiyonu).",
+      "options": [
+        { "label": "Yüksek risk (aktif kanama, instabilite) → Acil endoskopi (<12 saat)", "nextStepId": "urgent_endoscopy" },
+        { "label": "Stabil hasta → Erken endoskopi (<24 saat)", "nextStepId": "early_endoscopy" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "urgent_endoscopy",
+      "question": "Endoskopi sonucu ve tedavi nedir?",
+      "description": "Acil endoskopi yapılıyor. Olası bulgular: Peptik ülser (Forrest sınıflaması), Mallory-Weiss yırtığı, eroziv gastrit, anjiyodisplazi, malignite.",
+      "options": [
+        { "label": "Endoskopik hemostaz başarılı", "nextStepId": "post_endoscopy" },
+        { "label": "Endoskopik hemostaz başarısız, kanama devam ediyor", "nextStepId": "failed_endoscopy" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "early_endoscopy",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Erken endoskopi (<24 saat) planlandı: IV PPI infüzyonu devam. NPO (endoskopi hazırlığı). Hemogram 6-8 saatte kontrol. Antikoagülan/antiplatelet yönetimi: Düşük doz ASA devam ettirilebilir. Dual antiplatelet/YOAK → kardiyoloji ile birlikte karar. Gastroenteroloji konsültasyonu. Yatış (monitörize yatak)."
+    },
+    {
+      "stepId": "post_endoscopy",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Endoskopik hemostaz sonrası: Yüksek riskli ülser (Forrest Ia-IIb): IV PPI infüzyonu 72 saat devam (80 mg bolus + 8 mg/saat), ardından PPI 40 mg PO 2x1/gün 2 hafta, sonra 1x1 8 hafta. H. pylori testi → pozitifse eradikasyon. 2. bakı endoskopi tartışmalı (yüksek riskli lezyonda düşünülebilir). Tekrar kanama %10-15 olabilir, dikkatli takip."
+    },
+    {
+      "stepId": "failed_endoscopy",
+      "question": "Endoskopik hemostaz başarısız. Sonraki adım nedir?",
+      "description": "Tekrar endoskopi veya girişimsel radyoloji/cerrahi değerlendirin.",
+      "options": [
+        { "label": "Anjiyografi + embolizasyon uygun", "nextStepId": "angiography" },
+        { "label": "Cerrahi müdahale gerekli", "nextStepId": "surgery" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "angiography",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Transarteriyel embolizasyon: Girişimsel radyoloji konsültasyonu. Kanama hızı >0.5-1 mL/dk ise anjiyografide saptanabilir. Selektif embolizasyon (coil, gelfoam, PVA partikülleri). Başarı oranı %70-90. İskemi riski düşük (zengin kollateral). Embolizasyon başarısız ise cerrahi."
+    },
+    {
+      "stepId": "surgery",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Cerrahi müdahale: Genel cerrahi acil konsültasyon. Endikasyonlar: Endoskopik + anjiyografik hemostaz başarısız, masif transfüzyon ihtiyacı (>6 ünite ES/24s), hemodinamik instabilite devam. Üst GI: Ülser oversew, parsiyel gastrektomi. Perforasyon eşlik ediyorsa onarım. Ameliyat öncesi agresif resüsitasyon devam etmeli."
+    },
+    {
+      "stepId": "hematochezia",
+      "question": "Hematokezya — kanamanın şiddeti nedir?",
+      "description": "Alt GI kanama düşünülüyor. Ancak masif üst GI kanama da hematokezya yapabilir. Hemodinamik instabilite varsa üst GI kaynağı dışlamak için üst endoskopi öncelikli olabilir.",
+      "options": [
+        { "label": "Masif kanama (instabil, hızlı transfüzyon ihtiyacı)", "nextStepId": "massive_lower" },
+        { "label": "Orta şiddette kanama (stabil)", "nextStepId": "stable_lower" },
+        { "label": "Minor kanama (hemoroid/fissür düşünülüyor)", "nextStepId": "minor_lower" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "massive_lower",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Masif alt GI kanama: Önce üst GI kaynağı dışlayın (üst endoskopi veya NG aspirat). Agresif resüsitasyon, masif transfüzyon protokolü. BT anjiyografi aktif kanama odağını lokalize edebilir. Kolonoskopi (hazırlık sonrası) veya anjiyografi + embolizasyon. Cerrahi (subtotal kolektomi) son seçenek. Gastroenteroloji + Genel cerrahi konsültasyonu. Yoğun bakım yatışı."
+    },
+    {
+      "stepId": "stable_lower",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Stabil alt GI kanama: Yatış, monitörizasyon. Kolon temizliği ardından kolonoskopi (<24 saat). Olası nedenler: Divertikül kanaması, anjiyodisplazi, kolon polibi/kanseri, iskemik kolit, IBD. BT anjiyografi kanama lokalizasyonu için düşünülebilir. Antikoagülan/antiplatelet gözden geçirilmeli. Gastroenteroloji konsültasyonu."
+    },
+    {
+      "stepId": "minor_lower",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Minor rektal kanama: Rektal muayene (hemoroid, anal fissür, rektal kitle). Anorektal patoloji düşünülüyorsa: Topikal tedavi, diyet/lif önerisi. >40 yaş veya alarm semptomları (kilo kaybı, anemi, ailede kolorektal kanser): Elektif kolonoskopi planlanmalı. Taburculuk: Stabil hemogram, açık oral alım. Poliklinik kontrolü."
+    }
+  ],
+  "references": [
+    {
+      "title": "ACG Clinical Guideline: Upper Gastrointestinal and Ulcer Bleeding",
+      "authors": "Laine L, Barkun AN, Saltzman JR, et al.",
+      "journal": "American Journal of Gastroenterology",
+      "year": 2021
+    },
+    {
+      "title": "ACG Clinical Guideline: Management of Patients With Acute Lower Gastrointestinal Bleeding",
+      "authors": "Strate LL, Gralnek IM",
+      "journal": "American Journal of Gastroenterology",
+      "year": 2016
+    }
+  ]
+}

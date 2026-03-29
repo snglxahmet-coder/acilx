@@ -1,0 +1,33 @@
+{
+  "name": "Atropin",
+  "category": "ACLS",
+  "adultDosing": "Semptomatik bradikardi: 0.5 mg IV, her 3-5 dakikada tekrar, toplam maks 3 mg. Organofosfor/karbamat zehirlenme: 2-4 mg IV, sekresyonlar kuruyana dek 5-10 dk arayla tekrar (yüksek dozlar gerekebilir). Premedikasyon: 0.4-0.6 mg IV/IM.",
+  "pediatricDosing": "Bradikardi: 0.02 mg/kg IV/IO, minimum doz 0.1 mg, maksimum tek doz 0.5 mg. Organofosfor zehirlenme: 0.02-0.05 mg/kg IV, gerekirse tekrar. Premedikasyon: 0.01-0.02 mg/kg IV (min 0.1 mg, maks 0.5 mg).",
+  "contraindications": [
+    "Dar açılı glokom",
+    "Obstrüktif üropati",
+    "Obstrüktif gastrointestinal hastalıklar",
+    "Miyastenia gravis (relatif)",
+    "Taşiaritmi (relatif)"
+  ],
+  "warnings": [
+    "0.5 mg altı dozlar paradoks bradikardiye neden olabilir",
+    "Çocuklarda minimum doz 0.1 mg'dır (paradoks bradikardi riski)",
+    "Hipertermi riski: özellikle çocuklarda ve sıcak ortamda",
+    "Kardiyak transplant hastalarında etkisizdir (denerve kalp)",
+    "Tip II 2. derece ve 3. derece AV blokta etkisiz olabilir; transkutanöz pacing düşünülmelidir",
+    "Göz içi basıncını artırabilir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "0.5 mg/mL",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "1 mg/mL",
+      "volume": "1 mL"
+    }
+  ]
+}

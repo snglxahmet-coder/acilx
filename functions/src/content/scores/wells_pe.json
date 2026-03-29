@@ -1,0 +1,112 @@
+{
+  "id": "wells_pe",
+  "name": "Wells Kriterleri — Pulmoner Emboli",
+  "description": "Pulmoner emboli (PE) klinik olasılığını değerlendirir.",
+  "category": "pulmoner",
+  "parameters": [
+    {
+      "name": "clinical_dvt",
+      "label": "DVT klinik bulguları (bacak şişliği, palpasyonla ağrı)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 3, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "pe_most_likely",
+      "label": "PE en olası tanı veya alternatif tanı kadar olası",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 3, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "heart_rate",
+      "label": "Kalp hızı > 100/dk",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1.5, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "immobilization_surgery",
+      "label": "İmmobilizasyon (≥3 gün) veya son 4 haftada cerrahi",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1.5, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "previous_dvt_pe",
+      "label": "Daha önce DVT/PE öyküsü",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1.5, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "hemoptysis",
+      "label": "Hemoptizi",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "malignancy",
+      "label": "Aktif kanser (son 6 ay tedavi veya palyatif)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 12.5,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 1,
+      "label": "Düşük Olasılık",
+      "severity": "low",
+      "recommendation": "PE olasılığı ~%1.3. D-dimer ile değerlendir; negatifse PE dışlanabilir."
+    },
+    {
+      "min": 2,
+      "max": 6,
+      "label": "Orta Olasılık",
+      "severity": "moderate",
+      "recommendation": "PE olasılığı ~%16. D-dimer iste; pozitifse BT pulmoner anjiyografi (BTPA) gerekir."
+    },
+    {
+      "min": 7,
+      "max": 12.5,
+      "label": "Yüksek Olasılık",
+      "severity": "high",
+      "recommendation": "PE olasılığı ~%41. D-dimer yetersiz; doğrudan BTPA önerilir."
+    }
+  ],
+  "references": [
+    {
+      "title": "Derivation of a simple clinical model to categorize patients probability of pulmonary embolism",
+      "authors": "Wells PS, Anderson DR, Rodger M, et al.",
+      "journal": "Thrombosis and Haemostasis",
+      "year": 2000
+    }
+  ]
+}

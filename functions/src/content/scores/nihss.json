@@ -1,0 +1,226 @@
+{
+  "id": "nihss",
+  "name": "NIHSS (National Institutes of Health Stroke Scale)",
+  "description": "Akut inme şiddetini nörolojik muayene bulguları üzerinden puanlar. Trombolitik tedavi kararında kritik rol oynar.",
+  "category": "nöroloji",
+  "parameters": [
+    {
+      "name": "consciousness",
+      "label": "1a. Bilinç Düzeyi",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Uyanık, normal yanıt" },
+        { "value": 1, "label": "Uykuya meyilli, minimal uyaranla uyanır" },
+        { "value": 2, "label": "Stupor, tekrarlayan uyaranla yanıt" },
+        { "value": 3, "label": "Koma, yanıtsız" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "consciousness_questions",
+      "label": "1b. Bilinç Soruları (ay ve yaş)",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "İkisini de doğru yanıtlar" },
+        { "value": 1, "label": "Birini doğru yanıtlar" },
+        { "value": 2, "label": "İkisini de yanlış yanıtlar" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "consciousness_commands",
+      "label": "1c. Bilinç Komutları (göz kapat, el sık)",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "İkisini de yapar" },
+        { "value": 1, "label": "Birini yapar" },
+        { "value": 2, "label": "İkisini de yapamaz" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "gaze",
+      "label": "2. Bakış (horizontal göz hareketi)",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Normal" },
+        { "value": 1, "label": "Parsiyel bakış paralizisi" },
+        { "value": 2, "label": "Zorlu deviasyon veya total bakış paralizisi" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "visual_fields",
+      "label": "3. Görme Alanı",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Kayıp yok" },
+        { "value": 1, "label": "Parsiyel hemianopi" },
+        { "value": 2, "label": "Komplet hemianopi" },
+        { "value": 3, "label": "Bilateral hemianopi veya körlük" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "facial_palsy",
+      "label": "4. Yüz Felci",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Normal" },
+        { "value": 1, "label": "Hafif (nazolabial silinme)" },
+        { "value": 2, "label": "Parsiyel (alt yüz)" },
+        { "value": 3, "label": "Komplet (bir veya iki taraf)" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "left_arm_motor",
+      "label": "5a. Sol Kol Motor",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Drift yok, 10 sn tutar" },
+        { "value": 1, "label": "Drift var, 10 sn tutamaz" },
+        { "value": 2, "label": "Yerçekimine karşı kaldıramaz" },
+        { "value": 3, "label": "Yerçekimine karşı hareket yok" },
+        { "value": 4, "label": "Hareket yok" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "right_arm_motor",
+      "label": "5b. Sağ Kol Motor",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Drift yok, 10 sn tutar" },
+        { "value": 1, "label": "Drift var, 10 sn tutamaz" },
+        { "value": 2, "label": "Yerçekimine karşı kaldıramaz" },
+        { "value": 3, "label": "Yerçekimine karşı hareket yok" },
+        { "value": 4, "label": "Hareket yok" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "left_leg_motor",
+      "label": "6a. Sol Bacak Motor",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Drift yok, 5 sn tutar" },
+        { "value": 1, "label": "Drift var, 5 sn tutamaz" },
+        { "value": 2, "label": "Yerçekimine karşı kaldıramaz" },
+        { "value": 3, "label": "Yerçekimine karşı hareket yok" },
+        { "value": 4, "label": "Hareket yok" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "right_leg_motor",
+      "label": "6b. Sağ Bacak Motor",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Drift yok, 5 sn tutar" },
+        { "value": 1, "label": "Drift var, 5 sn tutamaz" },
+        { "value": 2, "label": "Yerçekimine karşı kaldıramaz" },
+        { "value": 3, "label": "Yerçekimine karşı hareket yok" },
+        { "value": 4, "label": "Hareket yok" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "ataxia",
+      "label": "7. Ataksi",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Bir ekstremitede" },
+        { "value": 2, "label": "İki ekstremitede" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "sensory",
+      "label": "8. Duyu",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Normal" },
+        { "value": 1, "label": "Hafif-orta kayıp" },
+        { "value": 2, "label": "Ağır veya total kayıp" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "language",
+      "label": "9. Dil (Afazi)",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Afazi yok" },
+        { "value": 1, "label": "Hafif-orta afazi" },
+        { "value": 2, "label": "Ağır afazi" },
+        { "value": 3, "label": "Mute veya global afazi" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "dysarthria",
+      "label": "10. Dizartri",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "Normal" },
+        { "value": 1, "label": "Hafif-orta dizartri" },
+        { "value": 2, "label": "Ağır dizartri veya anartri" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "neglect",
+      "label": "11. İhmal (Ekstinksiyon / İnattention)",
+      "type": "select",
+      "options": [
+        { "value": 0, "label": "İhmal yok" },
+        { "value": 1, "label": "Bir modalitede kısmi ihmal" },
+        { "value": 2, "label": "Ağır ihmal (birden fazla modalite)" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 42,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 4,
+      "label": "Hafif İnme",
+      "severity": "low",
+      "recommendation": "Minör nörolojik defisit. İnme etyoloji araştırması ve sekonder koruma başlanmalı."
+    },
+    {
+      "min": 5,
+      "max": 15,
+      "label": "Orta İnme",
+      "severity": "moderate",
+      "recommendation": "Anlamlı defisit. Zaman penceresi uygunsa IV tPA (alteplaz) veya mekanik trombektomi değerlendirilmeli."
+    },
+    {
+      "min": 16,
+      "max": 20,
+      "label": "Orta-Ağır İnme",
+      "severity": "moderate",
+      "recommendation": "Belirgin defisit. Reperfüzyon tedavisi acil değerlendirilmeli; nöroloji/girişimsel konsültasyon."
+    },
+    {
+      "min": 21,
+      "max": 42,
+      "label": "Ağır İnme",
+      "severity": "high",
+      "recommendation": "Ciddi nörolojik hasar. Yoğun bakım, havayolu yönetimi ve multidisipliner yaklaşım gereklidir."
+    }
+  ],
+  "references": [
+    {
+      "title": "Design of the National Institute of Neurological Disorders and Stroke rt-PA Stroke Trial",
+      "authors": "NINDS rt-PA Stroke Study Group",
+      "journal": "Stroke",
+      "year": 1995
+    }
+  ]
+}

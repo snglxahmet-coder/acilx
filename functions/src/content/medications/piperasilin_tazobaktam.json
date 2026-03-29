@@ -1,0 +1,29 @@
+{
+  "name": "Piperasilin-Tazobaktam",
+  "category": "Antibiyotik",
+  "adultDosing": "Standart: 4.5 g (piperasilin 4 g + tazobaktam 0.5 g) IV her 6-8 saatte bir, 30 dakikada infüzyon. Ciddi enfeksiyon/sepsis: 4.5 g IV her 6 saatte bir, uzatılmış infüzyon (4 saat) ile daha iyi farmakodinamik etki sağlanır.",
+  "pediatricDosing": "80-100 mg/kg (piperasilin bileşeni üzerinden) IV her 6-8 saatte bir. 2-9 ay arası: 80 mg/kg her 8 saatte bir. Maksimum doz: 4.5 g/doz (yetişkin dozu aşılmaz).",
+  "contraindications": [
+    "Penisilin alerjisi (ciddi/anafilaksi öyküsü)",
+    "Sefalosporin alerjisi olanlarda çapraz reaktivite değerlendirilmelidir"
+  ],
+  "warnings": [
+    "Trombositopeni gelişebilir — özellikle 7 günü aşan tedavilerde trombosit takibi yapılmalıdır",
+    "Vankomisin ile birlikte kullanıldığında akut böbrek hasarı (AKI) riski artmaktadır",
+    "Böbrek yetmezliğinde doz ayarı gereklidir (GFR < 40 mL/dk)",
+    "Yüksek sodyum içeriği nedeniyle sıvı yüklenmesi ve hipernatremiye dikkat edilmelidir",
+    "Koagülasyon testlerini etkileyebilir (yanlış pozitif Coombs, PT uzaması)"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon (IV)",
+      "concentration": "2.25 g (piperasilin 2 g + tazobaktam 0.25 g)",
+      "volume": "Toz — 10 mL çözücü ile sulandırılır"
+    },
+    {
+      "form": "Flakon (IV)",
+      "concentration": "4.5 g (piperasilin 4 g + tazobaktam 0.5 g)",
+      "volume": "Toz — 20 mL çözücü ile sulandırılır"
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+{
+  "name": "Bilinç Değişikliği Yaklaşımı",
+  "category": "Nörolojik",
+  "steps": [
+    {
+      "stepId": "step_1",
+      "question": "ABC (Havayolu-Solunum-Dolaşım) güvenli mi?",
+      "description": "Bilinç değişikliği olan hastada öncelikle havayolu korumasını, solunum yeterliliğini ve dolaşım stabilitesini değerlendirin.",
+      "options": [
+        { "label": "Evet, ABC stabil", "nextStepId": "step_2" },
+        { "label": "Hayır, ABC tehlikede", "nextStepId": "step_end_abc_unstable" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_abc_unstable",
+      "question": "ABC İnstabil — Acil Stabilizasyon",
+      "description": "Havayolu korunamıyor veya hemodinamik instabilite mevcuttur.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "GCS ≤8 ise entübasyon endikasyonu değerlendirin. Oksijen desteği verin, SpO2 >%94 hedefleyin. IV erişim sağlayın, sıvı resüsitasyonu başlayın. Hemen parmak ucu kan şekeri ölçün. Hipoglisemi varsa (%50 Dekstroz 50 mL IV) verin. Opioid şüphesinde Nalokson 0.4-2 mg IV, Wernicke şüphesinde Tiamin 100 mg IV verin."
+    },
+    {
+      "stepId": "step_2",
+      "question": "Glasgow Koma Skalası (GCS) skoru nedir?",
+      "description": "GCS: Göz açma (1-4) + Sözel yanıt (1-5) + Motor yanıt (1-6). Toplam: 3-15.",
+      "options": [
+        { "label": "GCS 13-15 — Hafif bilinç değişikliği (konfüzyon)", "nextStepId": "step_3" },
+        { "label": "GCS 9-12 — Orta derece bilinç bozukluğu", "nextStepId": "step_3" },
+        { "label": "GCS 3-8 — Ağır bilinç bozukluğu (koma)", "nextStepId": "step_3_severe" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_3_severe",
+      "question": "Ağır bilinç bozukluğu — Pupil muayenesi nedir?",
+      "description": "Komatöz hastada pupil boyutu, simetrisi ve ışık refleksi önemli lateralizasyon bilgisi verir.",
+      "options": [
+        { "label": "Unilateral fiks dilate pupil → Herniasyon şüphesi", "nextStepId": "step_end_herniation" },
+        { "label": "Bilateral pinpoint pupil → Opioid/Pontin lezyon", "nextStepId": "step_end_opioid" },
+        { "label": "Bilateral fiks dilate → Anoksi/İlaç/Beyin ölümü", "nextStepId": "step_end_bilateral_fixed" },
+        { "label": "Pupiller normal reaktif → Diğer nedenlere devam", "nextStepId": "step_3" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_herniation",
+      "question": "Transtentoryal Herniasyon Şüphesi",
+      "description": "Unilateral fiks dilate pupil, kontralateral hemiparezi, azalan bilinç düzeyi.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "ACİL BT çekin. Yatak başını 30° yükseltin. Hiperventilasyon (hedef PaCO2 30-35 mmHg) uygulayın. Mannitol %20 1-1.5 g/kg IV bolus veya Hipertonik NaCl %3 150-250 mL IV verin. Beyin cerrahisi acil konsültasyonu isteyin. Operatif kitle lezyonu varsa acil cerrahi dekompresyon gerekir."
+    },
+    {
+      "stepId": "step_end_opioid",
+      "question": "Opioid İntoksikasyonu / Pontin Lezyon",
+      "description": "Bilateral pinpoint pupiller ve solunum depresyonu.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Nalokson 0.4 mg IV verin, yanıt yoksa 2 mg'a kadar tekrarlayın (2-3 dk arayla). Naloksonun yarı ömrü opioidlerden kısa olduğundan tekrar solunum depresyonu gelişebilir, yakın gözlem yapın. Yanıt alınamazsa pontin hemoraji için acil BT çekin. Solunum desteği ve monitörizasyon sağlayın."
+    },
+    {
+      "stepId": "step_end_bilateral_fixed",
+      "question": "Bilateral Fiks Dilate Pupil",
+      "description": "Her iki pupil fiks ve dilate. Ağır anoksik beyin hasarı, ilaç intoksikasyonu veya beyin ölümü düşündürür.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil kranial BT çekin. Antikolinerjik ilaç öyküsünü sorgulayın (atropin, trisiklik antidepresan). Hipotermi ekarte edin. Resüsitasyona devam edin. Nöroloji ve yoğun bakım konsültasyonu isteyin. Geri dönüşümsüz nedenler dışlanana kadar tedaviye devam edin."
+    },
+    {
+      "stepId": "step_3",
+      "question": "Parmak ucu kan şekeri değeri nedir?",
+      "description": "Bilinç değişikliğinin hızlıca tedavi edilebilir en sık nedeni hipoglisemidir. Bedside glukoz ölçümü yapın.",
+      "options": [
+        { "label": "Kan şekeri < 70 mg/dL → Hipoglisemi", "nextStepId": "step_end_hypoglycemia" },
+        { "label": "Kan şekeri > 400 mg/dL → Hiperglisemik kriz", "nextStepId": "step_end_hyperglycemia" },
+        { "label": "Kan şekeri normal (70-200 mg/dL)", "nextStepId": "step_4" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_hypoglycemia",
+      "question": "Hipoglisemi — Acil Tedavi",
+      "description": "Kan şekeri düşüklüğü bilinç değişikliğinin geri dönüşümlü bir nedenidir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "%50 Dekstroz (D50) 50 mL (25 g glukoz) IV bolus verin. IV erişim yoksa Glukagon 1 mg IM uygulayın. 15 dakika sonra kan şekeri kontrolü yapın, gerekirse tekrarlayın. Neden araştırması yapın (insülin/OAD kullanımı, oral alım azlığı, sepsis, karaciğer yetmezliği, adrenal yetmezlik). Oral alım başlayınca kompleks karbonhidrat verin."
+    },
+    {
+      "stepId": "step_end_hyperglycemia",
+      "question": "Hiperglisemik Kriz (DKA / HHS)",
+      "description": "Ciddi hiperglisemi ile bilinç değişikliği: DKA (ketoasidoz) veya HHS (hiperosmolar hiperglisemik durum).",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Agresif IV izotonik NaCl infüzyonu başlayın (ilk saat 1-1.5 L). Regüler insülin 0.1-0.14 Ü/kg/saat infüzyon başlayın. Saatlik kan şekeri, 2-4 saatte bir elektrolitler (özellikle potasyum) takip edin. AKG ile asidozu değerlendirin. K+ <5.3 mEq/L ise insülinle birlikte potasyum replasmanı yapın. Endokrinoloji ve YBÜ konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_4",
+      "question": "Fokal nörolojik defisit var mı?",
+      "description": "Hemiparezi, afazi, fasiyal asimetri, anizokori gibi fokal bulgular intrakranyal yapısal patolojiyi düşündürür.",
+      "options": [
+        { "label": "Evet, fokal nörolojik defisit mevcut", "nextStepId": "step_end_stroke_bleed" },
+        { "label": "Hayır, fokal defisit yok", "nextStepId": "step_5" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_stroke_bleed",
+      "question": "Fokal Defisit — İnme / İntrakranyal Kanama Şüphesi",
+      "description": "Fokal nörolojik bulguların eşlik ettiği bilinç değişikliği, serebrovasküler olay düşündürür.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil kontrastsız kranial BT çekin. İskemik inme: semptom başlangıcı <4.5 saat ise IV tPA (Alteplaz 0.9 mg/kg) değerlendirin, büyük damar oklüzyonunda mekanik trombektomi (<24 saat) düşünün. Hemorajik inme: nöroşirürji konsültasyonu, kan basıncı kontrolü (IV Nikardipin/Labetalol). Nöroloji acil konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_5",
+      "question": "Ateş var mı?",
+      "description": "Ateş + bilinç değişikliği: menenjit, ensefalit veya sepsisi düşündürür. Ense sertliği, Kernig/Brudzinski bulguları arayın.",
+      "options": [
+        { "label": "Evet, ateş ve meningeal irritasyon bulguları var", "nextStepId": "step_end_meningitis" },
+        { "label": "Evet, ateş var ama meningeal bulgular yok → Sepsis", "nextStepId": "step_end_sepsis" },
+        { "label": "Hayır, ateş yok", "nextStepId": "step_6" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_meningitis",
+      "question": "Menenjit / Ensefalit Şüphesi",
+      "description": "Ateş, bilinç değişikliği ve meningeal irritasyon bulguları.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Ampirik antibiyotik HEMEN başlayın (Seftriakson 2 g IV + Vankomisin 15-20 mg/kg IV + ≥50 yaş veya immünsüprese ise Ampisilin 2 g IV). Deksametazon 0.15 mg/kg IV (antibiyotikten önce veya eşzamanlı) verin. HSV ensefaliti düşünülüyorsa Asiklovir 10 mg/kg IV ekleyin. Kranial BT sonrası lomber ponksiyon yapın (BOS analizi). Nöroloji ve enfeksiyon hastalıkları konsültasyonu isteyin."
+    },
+    {
+      "stepId": "step_end_sepsis",
+      "question": "Sepsis İlişkili Ensefalopati",
+      "description": "Enfeksiyon odağına bağlı sistemik inflamatuar yanıt ve bilinç değişikliği.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Kan kültürü alın ve 1 saat içinde ampirik geniş spektrumlu antibiyotik başlayın. 30 mL/kg kristaloid sıvı bolus verin. Laktat ölçün. qSOFA/SOFA skoru ile şiddeti değerlendirin. Enfeksiyon odağını araştırın (akciğer grafisi, idrar, karın BT). Vazopresör gerekirse noradrenalin başlayın. YBÜ takibi planlayın."
+    },
+    {
+      "stepId": "step_6",
+      "question": "Toksikolojik neden düşünülüyor mu?",
+      "description": "İlaç/madde kullanım öyküsü, toksidrom bulguları (pupil, terleme, ajitasyon, solunum paterni) değerlendirin.",
+      "options": [
+        { "label": "Evet, intoksikasyon şüphesi var", "nextStepId": "step_end_toxicology" },
+        { "label": "Hayır, toksikolojik neden düşük olasılıklı", "nextStepId": "step_end_further_workup" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_toxicology",
+      "question": "İntoksikasyon / Toksikolojik Neden",
+      "description": "İlaç veya madde intoksikasyonuna bağlı bilinç değişikliği.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Toksidromu belirleyin (kolinerjik, antikolinerjik, sempatomimetik, opioid, sedatif-hipnotik). Spesifik antidot varsa uygulayın: Nalokson (opioid), Flumazenil (benzodiazepin — dikkatli kullanın), N-Asetilsistein (parasetamol). Aktif kömür alım sonrası 1 saat içindeyse verin. İdrar/kan toksikoloji taraması gönderin. Ulusal Zehir Danışma Merkezini (114) arayın. Destekleyici tedavi ve monitörizasyon yapın."
+    },
+    {
+      "stepId": "step_end_further_workup",
+      "question": "İleri Tetkik Gerekli",
+      "description": "Yaygın nedenler dışlanmış olup ileri araştırma gereklidir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Kranial BT (kontrastsız) çekin. Elektrolitler (Na, Ca, Mg), karaciğer ve böbrek fonksiyonları, amonyak, tiroid fonksiyonları, AKG isteyin. Nonkonvulsif status epileptikus şüphesinde acil EEG çekin. Otoimmün ensefalit düşünülüyorsa BOS analizi ve spesifik antikor paneli gönderin. Nöroloji konsültasyonu isteyin."
+    }
+  ]
+}

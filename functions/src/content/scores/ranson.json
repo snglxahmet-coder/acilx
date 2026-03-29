@@ -1,0 +1,163 @@
+{
+  "id": "ranson",
+  "name": "Ranson Kriterleri",
+  "description": "Akut pankreatitin şiddetini ve mortalite riskini başvuru anında ve 48 saat sonrasında değerlendirir.",
+  "category": "gastroenteroloji",
+  "parameters": [
+    {
+      "name": "age",
+      "label": "Yaş > 55",
+      "type": "checkbox",
+      "description": "Başvuru anında",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "wbc",
+      "label": "Lökosit > 16.000/mm³",
+      "type": "checkbox",
+      "description": "Başvuru anında",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "glucose",
+      "label": "Kan şekeri > 200 mg/dL (11 mmol/L)",
+      "type": "checkbox",
+      "description": "Başvuru anında",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "ldh",
+      "label": "LDH > 350 IU/L",
+      "type": "checkbox",
+      "description": "Başvuru anında",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "ast",
+      "label": "AST > 250 IU/L",
+      "type": "checkbox",
+      "description": "Başvuru anında",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "hct_drop",
+      "label": "Hematokrit düşüşü > %10",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "bun_rise",
+      "label": "BUN artışı > 5 mg/dL",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "calcium",
+      "label": "Serum kalsiyum < 8 mg/dL",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "pao2",
+      "label": "PaO₂ < 60 mmHg",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "base_deficit",
+      "label": "Baz açığı > 4 mEq/L",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "fluid_sequestration",
+      "label": "Sıvı sekestrasyonu > 6 L",
+      "type": "checkbox",
+      "description": "48 saat sonra",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 0,
+  "maxScore": 11,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 2,
+      "label": "Hafif Pankreatit",
+      "severity": "low",
+      "recommendation": "Mortalite ~%1. Konservatif tedavi: IV hidrasyon, ağrı kontrolü, oral beslenmeye erken geçiş."
+    },
+    {
+      "min": 3,
+      "max": 5,
+      "label": "Orta-Ağır Pankreatit",
+      "severity": "moderate",
+      "recommendation": "Mortalite ~%10–20. Yoğun izlem, agresif sıvı resüsitasyonu, BT ile komplikasyon değerlendirmesi. Gerekirse yoğun bakım."
+    },
+    {
+      "min": 6,
+      "max": 11,
+      "label": "Ağır Pankreatit",
+      "severity": "high",
+      "recommendation": "Mortalite >%50. Yoğun bakımda takip, organ destek tedavileri, cerrahi konsültasyon (enfekte nekroz durumunda). Enteral beslenme tercihi."
+    }
+  ],
+  "references": [
+    {
+      "title": "Prognostic signs and the role of operative management in acute pancreatitis",
+      "authors": "Ranson JH, Rifkind KM, Roses DF, et al.",
+      "journal": "Surgery, Gynecology & Obstetrics",
+      "year": 1974
+    }
+  ]
+}

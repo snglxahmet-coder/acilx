@@ -1,0 +1,32 @@
+{
+  "name": "Flumazenil",
+  "category": "Antidot",
+  "adultDosing": "Başlangıç: 0.2 mg IV 30 saniyede. Yanıt yoksa 30 saniye sonra 0.3 mg IV. Ardından gerekirse 0.5 mg IV dozlarla 1 dakika arayla tekrarlanır. Maksimum toplam doz: 3 mg. Tekrar sedasyon olursa 0.2 mg/dk hızla tekrar dozlar verilebilir (1 saatte maksimum 3 mg).",
+  "pediatricDosing": "0.01 mg/kg IV (maksimum 0.2 mg/doz) 15 saniyede. Gerekirse 1 dakika arayla tekrarlanır. Maksimum toplam doz: 0.05 mg/kg veya 1 mg (hangisi düşükse).",
+  "contraindications": [
+    "Kronik benzodiazepin kullanımı (yoksunluk nöbeti riski)",
+    "Trisiklik antidepresan (TCA) zehirlenmesi (nöbet provokasyonu)",
+    "Bilinen nöbet öyküsü veya nöbet riski yüksek hastalar",
+    "İntrakranyal basınç artışı olan hastalar",
+    "Benzodiazepin ile kontrol altında tutulan status epileptikus"
+  ],
+  "warnings": [
+    "Nöbet provokasyonu riski yüksektir — özellikle karma zehirlenmelerde (TCA + benzodiazepin) mutlaka kaçınılmalıdır",
+    "Kısa etki süresi (45-90 dk): Benzodiazepin etkisi flumazenilden daha uzundur — resedasyonu en az 2 saat izle",
+    "Kardiyak aritmi riski olan hastalarda dikkatli kullanılmalıdır",
+    "Nöbet hazırlığı: IV diazepam veya midazolam hazır bulundurulmalıdır",
+    "Rutin bilinç bulanıklığı ayırıcı tanısında diagnostik amaçlı kullanımı önerilmez"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul (IV)",
+      "concentration": "0.1 mg/mL",
+      "volume": "5 mL (0.5 mg)"
+    },
+    {
+      "form": "Ampul (IV)",
+      "concentration": "0.1 mg/mL",
+      "volume": "10 mL (1 mg)"
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "name": "Göğüs Ağrısı Yaklaşımı",
+  "category": "Kardiyovasküler",
+  "steps": [
+    {
+      "stepId": "step_1",
+      "question": "Hasta ABC (Havayolu-Solunum-Dolaşım) açısından stabil mi?",
+      "description": "İlk değerlendirmede havayolu açıklığı, solunum yeterliliği ve hemodinamik stabiliteyi kontrol edin.",
+      "options": [
+        { "label": "Evet, ABC stabil", "nextStepId": "step_2" },
+        { "label": "Hayır, ABC instabil", "nextStepId": "step_end_resus" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_resus",
+      "question": "ABC İnstabil — Acil Resüsitasyon",
+      "description": "Hasta hemodinamik olarak instabildir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil resüsitasyon başlatın. IV erişim sağlayın, monitörizasyon yapın, oksijen verin. Gerekirse entübasyon ve vazopresör desteği hazırlayın. Kardiyoloji ve yoğun bakım ekibini acil çağırın."
+    },
+    {
+      "stepId": "step_2",
+      "question": "Göğüs ağrısının karakteri nedir?",
+      "description": "Tipik kardiyak ağrı: retrosternal, baskı tarzında, kola/çeneye yayılan, eforla artan. Atipik: batıcı, pozisyonla değişen, lokalize.",
+      "options": [
+        { "label": "Tipik kardiyak ağrı", "nextStepId": "step_3" },
+        { "label": "Atipik ağrı", "nextStepId": "step_atipik" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_atipik",
+      "question": "Atipik ağrıda alternatif tanıları değerlendirin",
+      "description": "Plöritik ağrı, pozisyonla değişen ağrı, palpasyonla hassasiyet, keskin-batıcı ağrı gibi özellikler atipik kabul edilir.",
+      "options": [
+        { "label": "Plevritik ağrı, nefes darlığı var → PE şüphesi", "nextStepId": "step_end_pe" },
+        { "label": "Pozisyonla değişen ağrı → Perikardit şüphesi", "nextStepId": "step_end_perikardit" },
+        { "label": "Yine de AKS ekarte edilemedi", "nextStepId": "step_3" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_pe",
+      "question": "Pulmoner Emboli Şüphesi",
+      "description": "Plöritik göğüs ağrısı, dispne ve taşikardi mevcuttur.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "BT pulmoner anjiyografi isteyin. Wells veya Geneva skoru ile risk değerlendirmesi yapın. D-dimer gönderin. PE doğrulanırsa antikoagülan tedavi (Heparin) başlayın. Masif PE'de trombolitik tedaviyi değerlendirin."
+    },
+    {
+      "stepId": "step_end_perikardit",
+      "question": "Akut Perikardit Ön Tanısı",
+      "description": "Pozisyonla değişen göğüs ağrısı, öne eğilmekle rahatlama tipiktir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "EKG'de yaygın konkav ST elevasyonu ve PR depresyonu arayın. Ekokardiyografi ile perikardiyal efüzyon değerlendirin. NSAİİ + Kolşisin tedavisi başlayın. Tamponad bulguları (hipotansiyon, boyun ven dolgunluğu, sessiz kalp sesleri) varsa acil perikardiyosentez."
+    },
+    {
+      "stepId": "step_3",
+      "question": "12 derivasyonlu EKG bulguları nedir?",
+      "description": "Acil çekilmiş 12 derivasyonlu EKG'yi değerlendirin. ST değişiklikleri, T dalga inversiyonu, yeni LBBB arayın.",
+      "options": [
+        { "label": "ST elevasyonu veya yeni LBBB → STEMI", "nextStepId": "step_end_stemi" },
+        { "label": "ST depresyonu veya T inversiyonu", "nextStepId": "step_4" },
+        { "label": "Normal veya nonspesifik değişiklikler", "nextStepId": "step_4" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_stemi",
+      "question": "STEMI Tanısı",
+      "description": "EKG'de ardışık en az 2 derivasyonda anlamlı ST elevasyonu veya yeni sol dal bloğu saptanmıştır.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil kardiyoloji konsültasyonu ve kateter laboratuvarı aktivasyonu yapın. Aspirin 300 mg PO, Tikagrelör 180 mg veya Klopidogrel 600 mg yükleme verin. Heparin bolus uygulayın. Hedef kapı-balon süresi <90 dakika. PKG mümkün değilse fibrinolitik tedaviyi değerlendirin (semptom başlangıcı <12 saat)."
+    },
+    {
+      "stepId": "step_4",
+      "question": "Troponin sonucu nedir?",
+      "description": "Yüksek duyarlıklı troponin (hs-TnI veya hs-TnT) sonucunu değerlendirin. 0-1 saat veya 0-3 saat protokolünü uygulayın.",
+      "options": [
+        { "label": "Troponin yüksek veya yükselme trendi var", "nextStepId": "step_5_nstemi" },
+        { "label": "Troponin normal, seri negatif", "nextStepId": "step_5_risk" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_5_nstemi",
+      "question": "NSTEMI Tanısı — Risk Sınıflaması",
+      "description": "Troponin pozitifliği ile birlikte iskemik semptomlar ve/veya EKG değişiklikleri NSTEMI'yi düşündürür.",
+      "options": [
+        { "label": "Çok yüksek risk (devam eden ağrı, hemodinamik instabilite, malign aritmi)", "nextStepId": "step_end_nstemi_emergent" },
+        { "label": "Yüksek risk (GRACE skoru >140)", "nextStepId": "step_end_nstemi_early" },
+        { "label": "Orta-düşük risk", "nextStepId": "step_end_nstemi_conservative" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_nstemi_emergent",
+      "question": "NSTEMI — Çok Yüksek Risk",
+      "description": "Hemodinamik instabilite, refrakter göğüs ağrısı veya hayatı tehdit eden aritmi mevcuttur.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Acil invaziv strateji (<2 saat) uygulayın. Dual antiplatelet tedavi (Aspirin + P2Y12 inhibitörü) ve antikoagülan başlayın. Koroner anjiyografi ve revaskülarizasyon planlayın. Yoğun bakım takibi gereklidir."
+    },
+    {
+      "stepId": "step_end_nstemi_early",
+      "question": "NSTEMI — Yüksek Risk",
+      "description": "GRACE skoru >140, belirgin troponin yüksekliği veya dinamik EKG değişiklikleri mevcuttur.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Erken invaziv strateji (<24 saat) uygulayın. Aspirin 300 mg + Tikagrelör 180 mg yükleme verin. Enoksaparin veya UFH başlayın. Koroner anjiyografi planlayın. Kardiyoloji yoğun bakımda monitörizasyon yapın."
+    },
+    {
+      "stepId": "step_end_nstemi_conservative",
+      "question": "NSTEMI — Orta/Düşük Risk",
+      "description": "Hemodinamik stabil, sınırlı troponin yüksekliği ve stabil EKG.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Medikal tedavi başlayın: Aspirin, P2Y12 inhibitörü, antikoagülan, beta-bloker, statin. 24-72 saat içinde invaziv değerlendirme planlayın. Noninvaziv iskemi testi alternatif olarak düşünülebilir."
+    },
+    {
+      "stepId": "step_5_risk",
+      "question": "Troponin negatif — HEART Skoru değerlendirmesi",
+      "description": "Seri troponin negatif olan hastalarda HEART skoru ile risk değerlendirmesi yapın (History, EKG, Age, Risk factors, Troponin).",
+      "options": [
+        { "label": "HEART skoru 0-3 → Düşük risk", "nextStepId": "step_end_low_risk" },
+        { "label": "HEART skoru 4-6 → Orta risk", "nextStepId": "step_end_moderate_risk" },
+        { "label": "HEART skoru ≥7 → Yüksek risk", "nextStepId": "step_end_nstemi_early" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "step_end_low_risk",
+      "question": "Düşük Riskli Göğüs Ağrısı",
+      "description": "HEART skoru düşük, seri troponin negatif, EKG normal.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "AKS olasılığı düşüktür. Alternatif tanıları değerlendirin. Hasta taburcu edilebilir. Poliklinik kontrolü planlanmalı, risk faktörü modifikasyonu önerilmelidir. Uyarı semptomları hakkında hastayı bilgilendirin."
+    },
+    {
+      "stepId": "step_end_moderate_risk",
+      "question": "Orta Riskli Göğüs Ağrısı",
+      "description": "HEART skoru orta düzeyde, kesin AKS ekarte edilememiştir.",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Gözlem altına alın. Seri troponin takibi yapın (3-6 saat). Noninvaziv stres testi veya BT koroner anjiyografi planlayın. Kardiyoloji konsültasyonu isteyin. Sonuçlara göre taburculuk veya yatış kararı verin."
+    }
+  ]
+}

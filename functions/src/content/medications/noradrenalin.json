@@ -1,0 +1,33 @@
+{
+  "name": "Noradrenalin (Norepinefrin)",
+  "category": "Vazoaktif",
+  "adultDosing": "Başlangıç: 0.1-0.5 mcg/kg/dk IV infüzyon. Titrasyon aralığı: 0.02-1 mcg/kg/dk. Septik şokta ilk tercih vazopressördür. Hedef OAB ≥65 mmHg olacak şekilde titre edilir. Hazırlama: 4 mg + 250 mL %5 Dekstroz = 16 mcg/mL konsantrasyon.",
+  "pediatricDosing": "Başlangıç: 0.05-0.1 mcg/kg/dk IV/IO infüzyon. Yanıta göre titre edilir. Maksimum: 2 mcg/kg/dk. Santral venöz yol tercih edilir.",
+  "contraindications": [
+    "Hipovolemik şok (önce yeterli sıvı resüsitasyonu yapılmalıdır)",
+    "Mesenterik veya periferik vasküler tromboz riski yüksek hastalarda dikkat",
+    "Periferik iskemisi olan hastalar",
+    "Halotan veya siklopropan anestezisi altındaki hastalar (aritmi riski)"
+  ],
+  "warnings": [
+    "Santral venöz yol (tercihen internal juguler veya subklavyen) tercih edilmelidir",
+    "Damar dışına kaçış halinde ciddi doku nekrozu gelişir — fentolamın (5-10 mg serum fizyolojik ile sulandırılmış) lokal infiltrasyon hazır bulundurulmalıdır",
+    "Periferik damar yolundan verilmek zorunda kalınırsa büyük çaplı ven seçilmeli ve sık kontrol edilmelidir",
+    "Hipotansiyon düzeltilmeden önce hipovolemi mutlaka düzeltilmelidir",
+    "Ciddi taşikardi veya aritmi gelişirse doz azaltılmalıdır",
+    "Alkalin solüsyonlarla (NaHCO₃) geçimsizdir, aynı hattan verilmemelidir",
+    "Ani kesilmemelidir, doz kademeli olarak azaltılmalıdır"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "4 mg/4 mL (1 mg/mL)",
+      "volume": "4 mL"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "8 mg/4 mL (2 mg/mL)",
+      "volume": "4 mL"
+    }
+  ]
+}

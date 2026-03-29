@@ -1,0 +1,32 @@
+{
+  "name": "Magnezyum Sülfat",
+  "category": "ACLS",
+  "adultDosing": "Torsades de Pointes: 1-2 g IV, 15 dakikada infüzyon (arrest sırasında bolus verilebilir). Eklampsi/preeklampsi: 4-6 g IV yükleme 15-20 dk, ardından 1-2 g/saat idame infüzyon. Şiddetli astım: 2 g IV, 20 dakikada infüzyon. Hipomagnezemi: 1-2 g IV, 1 saatte.",
+  "pediatricDosing": "Torsades de Pointes: 25-50 mg/kg IV/IO, 10-20 dakikada (maks 2 g). Şiddetli astım: 25-75 mg/kg IV, 20 dakikada (maks 2 g).",
+  "contraindications": [
+    "Ağır böbrek yetmezliği (GFR <20 mL/dk; doz ayarlaması gerekir)",
+    "Kalp bloğu (pacemaker yoksa)",
+    "Miyokard hasarı",
+    "Aktif doğum öncesi 2 saat içinde (relatif; uterus relaksasyonu)"
+  ],
+  "warnings": [
+    "Hızlı IV bolus hipotansiyon, bradikardi ve kardiyak arreste neden olabilir",
+    "Derin tendon refleksleri, solunum hızı ve idrar çıkışı izlenmelidir",
+    "Patellar refleks kaybı toksisite belirtisidir",
+    "Solunum depresyonu riski: kalsiyum glukonat antidot olarak hazır bulundurulmalıdır",
+    "Nöromüsküler bloker ajanların etkisini potansiyalize eder",
+    "Böbrek yetmezliğinde birikim riski; doz azaltılmalı ve Mg düzeyi izlenmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "%15 (150 mg/mL)",
+      "volume": "10 mL (1.5 g)"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "%20 (200 mg/mL)",
+      "volume": "10 mL (2 g)"
+    }
+  ]
+}

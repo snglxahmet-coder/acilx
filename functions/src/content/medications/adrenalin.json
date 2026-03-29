@@ -1,0 +1,37 @@
+{
+  "name": "Adrenalin (Epinefrin)",
+  "category": "ACLS",
+  "adultDosing": "Kardiyak arrest: 1 mg IV/IO, her 3-5 dakikada bir tekrarlanır. Anafilaksi: 0.3-0.5 mg IM (1:1000) anterolateral uyluğa, gerekirse 5-15 dk arayla tekrarlanır. Şiddetli anafilaksi/şok: 0.1 mg IV (1:10000) yavaş, titrasyonla.",
+  "pediatricDosing": "Kardiyak arrest: 0.01 mg/kg IV/IO (1:10000), maks 1 mg/doz, her 3-5 dk tekrar. Anafilaksi: 0.01 mg/kg IM (1:1000), maks 0.3 mg/doz.",
+  "contraindications": [
+    "Mutlak kontrendikasyon yoktur (hayatı tehdit eden durumlarda)",
+    "Relatif: Dar açılı glokom",
+    "Relatif: Kokain kullanımına bağlı kardiyak aritmi",
+    "Relatif: Dijital toksisitesi"
+  ],
+  "warnings": [
+    "IV yoldan verilecekse mutlaka 1:10000 (0.1 mg/mL) dilüsyon kullanılmalıdır",
+    "IM yolda 1:1000 (1 mg/mL) konsantrasyon kullanılır",
+    "Alkalin solüsyonlarla (sodyum bikarbonat) aynı hattan verilmemelidir",
+    "Hipertiroidili hastalarda dikkatli kullanılmalıdır",
+    "Ekstravasküler sızma doku nekrozuna yol açabilir",
+    "MAO inhibitörü kullanan hastalarda etki artabilir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "1 mg/mL (1:1000)",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Enjektör (hazır)",
+      "concentration": "0.1 mg/mL (1:10000)",
+      "volume": "10 mL"
+    },
+    {
+      "form": "Oto-enjektör (EpiPen)",
+      "concentration": "0.3 mg/doz",
+      "volume": "Tek doz"
+    }
+  ]
+}

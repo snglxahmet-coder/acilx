@@ -1,0 +1,180 @@
+{
+  "id": "stroke",
+  "name": "İnme Hızlı Değerlendirme",
+  "category": "Nörolojik",
+  "description": "Akut inme şüphesinde hızlı tanı ve tedavi algoritması.",
+  "steps": [
+    {
+      "stepId": "start",
+      "question": "Semptom başlangıç zamanı ne?",
+      "description": "İnme semptomları: ani başlangıçlı yüz düşüklüğü, kol/bacak güçsüzlüğü, konuşma bozukluğu, görme kaybı, denge kaybı, şiddetli baş ağrısı. Son normal görülme zamanını kesin olarak belirleyin.",
+      "options": [
+        { "label": "< 4.5 saat (kesin zaman biliniyorsa)", "nextStepId": "nihss" },
+        { "label": "4.5–24 saat veya uyanırken fark edilmiş", "nextStepId": "extended_window" },
+        { "label": "> 24 saat veya belirsiz", "nextStepId": "subacute" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "nihss",
+      "question": "NIHSS skoru kaç?",
+      "description": "National Institutes of Health Stroke Scale uygulayın. Bilinç, bakış, görme alanı, yüz parezi, motor kol/bacak, ataksi, duyu, dil, dizartri, ihmal değerlendirilir.",
+      "options": [
+        { "label": "NIHSS 0-4 (hafif)", "nextStepId": "ct_mild" },
+        { "label": "NIHSS 5-15 (orta)", "nextStepId": "ct_scan" },
+        { "label": "NIHSS 16-42 (ağır)", "nextStepId": "ct_scan" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "ct_mild",
+      "question": "BT görüntüleme sonucu nedir?",
+      "description": "Acil kontrastsız beyin BT çekin. Hemoraji dışlama amacıyla. NIHSS düşük olsa bile büyük damar oklüzyonu olabilir.",
+      "options": [
+        { "label": "Hemoraji yok, iskemik inme düşünülüyor", "nextStepId": "mild_ischemic" },
+        { "label": "Hemoraji saptandı", "nextStepId": "hemorrhagic" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "mild_ischemic",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Hafif iskemik inme (NIHSS 0-4): IV tPA genellikle önerilmez (düşük NIHSS). Antiplatelet tedavi (Asetilsalisilik asit 300 mg yükleme) başlayın. BT anjiyografi ile büyük damar oklüzyonu dışlayın. Nöroloji konsültasyonu. İnme ünitesine yatış."
+    },
+    {
+      "stepId": "ct_scan",
+      "question": "Kontrastsız beyin BT sonucu nedir?",
+      "description": "Acil kontrastsız beyin BT çekin. Kapı-BT süresi <25 dakika hedeflenmelidir. Eş zamanlı BT anjiyografi büyük damar oklüzyonu değerlendirmesi için çekilmeli.",
+      "options": [
+        { "label": "Hemoraji yok, iskemik inme düşünülüyor", "nextStepId": "tpa_contraindication" },
+        { "label": "İntraserebral hemoraji saptandı", "nextStepId": "hemorrhagic" },
+        { "label": "Subaraknoid kanama saptandı", "nextStepId": "sah" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "tpa_contraindication",
+      "question": "IV tPA kontrendikasyonu var mı?",
+      "description": "Kontrendikasyonlar: aktif kanama, son 3 ayda intrakraniyal cerrahi/travma, intrakraniyal neoplazm, INR >1.7, trombosit <100.000, son 21 günde GI/üriner kanama, KB >185/110 kontrol edilemiyorsa, glukoz <50 mg/dL.",
+      "options": [
+        { "label": "Kontrendikasyon yok", "nextStepId": "tpa_admin" },
+        { "label": "Kontrendikasyon var", "nextStepId": "no_tpa" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "tpa_admin",
+      "question": "IV tPA uygulanıyor. Büyük damar oklüzyonu var mı?",
+      "description": "Alteplaz 0.9 mg/kg IV (maks 90 mg): %10'u bolus 1 dk'da, kalanı 60 dk infüzyon. Kapı-iğne süresi <60 dk hedef. BT anjiyografide büyük damar oklüzyonu (ICA, MCA M1/M2) değerlendirin.",
+      "options": [
+        { "label": "Büyük damar oklüzyonu var (LVO+)", "nextStepId": "thrombectomy" },
+        { "label": "Büyük damar oklüzyonu yok", "nextStepId": "post_tpa" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "no_tpa",
+      "question": "BT anjiyografide büyük damar oklüzyonu var mı?",
+      "description": "tPA verilemese bile mekanik trombektomi endikasyonu olabilir. BT anjiyografi ile LVO değerlendirin.",
+      "options": [
+        { "label": "Evet, LVO mevcut", "nextStepId": "thrombectomy" },
+        { "label": "Hayır, LVO yok", "nextStepId": "conservative_ischemic" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "thrombectomy",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Mekanik trombektomi endikasyonu mevcut. Girişimsel nöroradyoloji/nöroloji acil konsültasyon. Trombektomi kapabilite olan merkeze nakil gerekebilir. Hedef: semptom başlangıcından <6 saat (seçilmiş hastalarda 24 saate kadar). KB <185/110 mmHg tutulmalı. İnme ünitesi/yoğun bakım yatışı."
+    },
+    {
+      "stepId": "post_tpa",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "IV tPA sonrası takip: 24 saat yoğun nörolojik monitörizasyon. KB <180/105 mmHg tutulmalı. 24 saat antiplatelet/antikoagülan verilmemeli. 24. saatte kontrol BT çekilmeli. Nörolojik kötüleşme olursa acil BT (hemorajik transformasyon?). İnme ünitesinde takip."
+    },
+    {
+      "stepId": "conservative_ischemic",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Konservatif iskemik inme tedavisi: Asetilsalisilik asit 300 mg yükleme (tPA verilmediyse). Statin başlayın. KB permisif hipertansiyon (ilk 24 saat düşürmeyin, >220/120 ise tedavi). Yutma değerlendirmesi. DVT profilaksisi. Nöroloji konsültasyonu, inme ünitesi yatışı."
+    },
+    {
+      "stepId": "hemorrhagic",
+      "question": "Antikoagülan kullanıyor mu?",
+      "description": "İntraserebral hemoraji saptandı. KB <140 mmHg hedefleyin (Nikardipin veya Labetalol IV). Nöroşirürji acil konsültasyon. GKS ve pupil takibi.",
+      "options": [
+        { "label": "Evet, antikoagülan kullanıyor", "nextStepId": "reversal" },
+        { "label": "Hayır, antikoagülan kullanmıyor", "nextStepId": "hemorrhagic_mgmt" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "reversal",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Antikoagülan reversal: Warfarin ise IV vitamin K 10 mg + PCC (4 faktörlü protrombin kompleks konsantresi) 25-50 IU/kg. YOAK ise: Dabigatran → İdarusizumab 5 g IV; Rivaroksaban/Apiksaban → Andeksanet alfa veya PCC. KB <140 mmHg. Nöroşirürji konsültasyonu. Yoğun bakım yatışı."
+    },
+    {
+      "stepId": "hemorrhagic_mgmt",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "İntraserebral hemoraji yönetimi: KB <140 mmHg (IV Nikardipin/Labetalol). Traneksamik asit ilk 3 saatte düşünülebilir. INR, aPTT, trombosit kontrol. Hematom >30 mL veya serebellar >3 cm ise cerrahi değerlendirme. Yoğun bakım yatışı. 6 saatte kontrol BT."
+    },
+    {
+      "stepId": "sah",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Subaraknoid kanama: Nimodipin 60 mg PO/6 saat (vazospazm profilaksisi). KB <160 mmHg. Acil BT anjiyografi veya DSA ile anevrizma araştırması. Nöroşirürji acil konsültasyon. Hidrosefali takibi. Yoğun bakım yatışı. Yatak istirahati, laksatif, analjezi."
+    },
+    {
+      "stepId": "extended_window",
+      "question": "İleri görüntüleme yapılabilir mi?",
+      "description": "4.5-24 saat pencerede BT perfüzyon veya MR difüzyon/perfüzyon ile kurtarılabilir doku (penumbra) değerlendirmesi yapılmalıdır.",
+      "options": [
+        { "label": "Penumbra mevcut, LVO saptandı", "nextStepId": "thrombectomy" },
+        { "label": "Penumbra yok veya LVO yok", "nextStepId": "conservative_ischemic" },
+        { "label": "Hemoraji saptandı", "nextStepId": "hemorrhagic" }
+      ],
+      "isEndpoint": false
+    },
+    {
+      "stepId": "subacute",
+      "question": "",
+      "description": "",
+      "options": [],
+      "isEndpoint": true,
+      "recommendation": "Subakut inme (>24 saat): Acil reperfüzyon tedavisi endikasyonu yok. Beyin BT/MR çekin. Antiplatelet tedavi başlayın. İnme etiyolojisi araştırması (EKO, karotis USG, Holter). Risk faktörü kontrolü. Nöroloji konsültasyonu. Rehabilitasyon planlaması."
+    }
+  ],
+  "references": [
+    {
+      "title": "2019 Update to the 2018 Guidelines for the Early Management of Acute Ischemic Stroke",
+      "authors": "Powers WJ, Rabinstein AA, Ackerson T, et al.",
+      "journal": "Stroke (AHA/ASA Guidelines)",
+      "year": 2019
+    },
+    {
+      "title": "Guidelines for the Management of Spontaneous Intracerebral Hemorrhage",
+      "authors": "Greenberg SM, Ziai WC, et al.",
+      "journal": "Stroke (AHA/ASA Guidelines)",
+      "year": 2022
+    }
+  ]
+}

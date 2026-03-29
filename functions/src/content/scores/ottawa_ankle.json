@@ -1,0 +1,97 @@
+{
+  "id": "ottawa_ankle",
+  "name": "Ottawa Ayak Bileği Kuralları",
+  "description": "Ayak bileği ve ayak ortası yaralanmalarında radyografi gereksinimini belirler. Gereksiz röntgen çekimini azaltmayı hedefler.",
+  "category": "ortopedi",
+  "parameters": [
+    {
+      "name": "malleolar_zone_tenderness_lateral",
+      "label": "Lateral malleol posterior kenarı boyunca veya ucunda kemik hassasiyeti (6 cm)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "malleolar_zone_tenderness_medial",
+      "label": "Medial malleol posterior kenarı boyunca veya ucunda kemik hassasiyeti (6 cm)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "inability_to_bear_weight_ankle",
+      "label": "Yaralanma anında ve acil serviste 4 adım yürüyememe",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yürüyebiliyor" },
+        { "value": 1, "label": "Yürüyemiyor" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "navicular_tenderness",
+      "label": "Naviküler kemikte kemik hassasiyeti",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "fifth_metatarsal_tenderness",
+      "label": "5. metatars tabanında kemik hassasiyeti",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yok" },
+        { "value": 1, "label": "Var" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "inability_to_bear_weight_foot",
+      "label": "Ayak ortası yaralanmasında 4 adım yürüyememe",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Yürüyebiliyor" },
+        { "value": 1, "label": "Yürüyemiyor" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "conditional",
+  "formulaLogic": "Ayak bileği serisi: İlk 3 kriterden herhangi biri pozitifse grafi gerekli. Ayak serisi: Son 3 kriterden herhangi biri pozitifse grafi gerekli.",
+  "minScore": 0,
+  "maxScore": 6,
+  "interpretationRanges": [
+    {
+      "min": 0,
+      "max": 0,
+      "label": "Grafi Gerekli Değil",
+      "severity": "low",
+      "recommendation": "Hiçbir kriter pozitif değil. Röntgen çekilmesine gerek yok. Sensitivite ~%98. PRICE (Protect, Rest, Ice, Compression, Elevation) ve takip önerilir."
+    },
+    {
+      "min": 1,
+      "max": 6,
+      "label": "Grafi Gerekli",
+      "severity": "moderate",
+      "recommendation": "Pozitif kriter var. İlgili bölgenin röntgenografisi çekilmelidir. Ayak bileği için: AP, lateral ve mortise görüntüleri. Ayak için: AP, lateral ve oblik görüntüler."
+    }
+  ],
+  "notes": "Sadece >18 yaş için valide edilmiştir. Hamile kadınlarda, iletişim kurulamayan hastalarda veya izole cilt yaralanmalarında uygulanamaz.",
+  "references": [
+    {
+      "title": "Implementation of the Ottawa ankle rules",
+      "authors": "Stiell IG, McKnight RD, Greenberg GH, et al.",
+      "journal": "JAMA",
+      "year": 1994
+    }
+  ]
+}

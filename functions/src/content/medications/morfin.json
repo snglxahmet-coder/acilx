@@ -1,0 +1,37 @@
+{
+  "name": "Morfin",
+  "category": "Analjezik",
+  "adultDosing": "2-10 mg IV titrasyon (her 5 dakikada 2-4 mg bolus, ağrı kontrolüne göre titre et). SC/IM: 5-15 mg her 4 saatte bir. Maksimum: klinik yanıta göre titre edilir.",
+  "pediatricDosing": "0.1-0.2 mg/kg IV (maksimum tek doz 5 mg), her 4-6 saatte bir tekrarlanabilir. SC/IM: 0.1-0.2 mg/kg her 4-6 saat.",
+  "contraindications": [
+    "Ciddi solunum depresyonu",
+    "Ciddi bronşial astım (monitörizasyonsuz ortamda)",
+    "Paralitik ileus (bilinen veya şüpheli)",
+    "MAO inhibitörü kullanımı (son 14 gün içinde)"
+  ],
+  "warnings": [
+    "Hipotansiyon riski: hipovolemik hastalarda dikkatli kullanılmalıdır",
+    "Solunum depresyonu monitorizasyonu zorunludur (SpO2, solunum sayısı)",
+    "Nalokson (0.4-2 mg IV) her zaman hazır bulundurulmalıdır",
+    "Yaşlı ve karaciğer/böbrek yetmezliği olan hastalarda doz azaltılmalıdır",
+    "Histamin salınımı yapabilir: bronkospazm ve hipotansiyon riski",
+    "Kafa travması olan hastalarda nörolojik değerlendirmeyi maskeleyebilir"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "10 mg/mL",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "15 mg/mL",
+      "volume": "1 mL"
+    },
+    {
+      "form": "Ampul (seyreltik)",
+      "concentration": "1 mg/mL",
+      "volume": "10 mL"
+    }
+  ]
+}

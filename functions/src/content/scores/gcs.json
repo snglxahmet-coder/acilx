@@ -1,0 +1,81 @@
+{
+  "id": "gcs",
+  "name": "Glasgow Koma Skalası (GCS)",
+  "description": "Bilinç düzeyini göz açma, sözel ve motor yanıt üzerinden değerlendirir.",
+  "category": "nöroloji",
+  "parameters": [
+    {
+      "name": "eye_opening",
+      "label": "Göz Açma",
+      "type": "select",
+      "options": [
+        { "value": 1, "label": "Yanıt yok" },
+        { "value": 2, "label": "Ağrıya açma" },
+        { "value": 3, "label": "Sesli uyarana açma" },
+        { "value": 4, "label": "Spontan açık" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "verbal_response",
+      "label": "Sözel Yanıt",
+      "type": "select",
+      "options": [
+        { "value": 1, "label": "Yanıt yok" },
+        { "value": 2, "label": "Anlamsız sesler" },
+        { "value": 3, "label": "Uygunsuz kelimeler" },
+        { "value": 4, "label": "Konfüze konuşma" },
+        { "value": 5, "label": "Oryante, normal konuşma" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "motor_response",
+      "label": "Motor Yanıt",
+      "type": "select",
+      "options": [
+        { "value": 1, "label": "Yanıt yok" },
+        { "value": 2, "label": "Ekstansiyon yanıt (deserebre)" },
+        { "value": 3, "label": "Fleksiyon yanıt (dekortike)" },
+        { "value": 4, "label": "Ağrıdan kaçınma" },
+        { "value": 5, "label": "Ağrıyı lokalize etme" },
+        { "value": 6, "label": "Komutlara uyma" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": 3,
+  "maxScore": 15,
+  "interpretationRanges": [
+    {
+      "min": 3,
+      "max": 8,
+      "label": "Ağır (Koma)",
+      "severity": "high",
+      "recommendation": "Hava yolu güvenliği sağlanmalı, entübasyon düşünülmeli. Nöroloji/beyin cerrahisi konsültasyonu. GCS ≤8 = entübasyon endikasyonu."
+    },
+    {
+      "min": 9,
+      "max": 12,
+      "label": "Orta",
+      "severity": "moderate",
+      "recommendation": "Yakın nörolojik monitorizasyon gerekli. Etyoloji araştırılmalı, ileri görüntüleme düşünülmeli."
+    },
+    {
+      "min": 13,
+      "max": 15,
+      "label": "Hafif",
+      "severity": "low",
+      "recommendation": "Bilinç korunmuş. Klinik takip yeterli olabilir; GCS 13 ise dikkatli izlem."
+    }
+  ],
+  "references": [
+    {
+      "title": "Assessment of coma and impaired consciousness: a practical scale",
+      "authors": "Teasdale G, Jennett B.",
+      "journal": "The Lancet",
+      "year": 1974
+    }
+  ]
+}

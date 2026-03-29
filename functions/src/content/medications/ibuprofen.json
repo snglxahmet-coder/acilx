@@ -1,0 +1,37 @@
+{
+  "name": "İbuprofen",
+  "category": "Analjezik",
+  "adultDosing": "400-800 mg PO her 6-8 saatte bir. Maksimum günlük doz: 3200 mg/gün (reçeteli), 1200 mg/gün (OTC). IV: 400-800 mg IV infüzyon (30 dakikada) her 6 saatte bir.",
+  "pediatricDosing": "5-10 mg/kg PO her 6-8 saatte bir. Maksimum günlük doz: 40 mg/kg/gün (maksimum 2400 mg/gün). 6 aydan küçük bebeklerde kullanılmamalıdır.",
+  "contraindications": [
+    "Aktif gastrointestinal kanama veya peptik ülser",
+    "Ciddi böbrek yetmezliği (GFR <30 mL/dk)",
+    "Üçüncü trimester gebelik",
+    "Aspirin veya NSAİİ alerjisi (bronkospazm, anjioödem, ürtiker öyküsü)",
+    "Koroner arter bypass greft (KABG) cerrahisi perioperatif dönem"
+  ],
+  "warnings": [
+    "GI kanama riski: özellikle yaşlılar, antikoagülan kullananlar ve peptik ülser öyküsü olanlarda artmıştır",
+    "Böbrek fonksiyonu (BUN, kreatinin) takip edilmelidir, dehidrate hastalarda dikkatli kullanılmalıdır",
+    "Trombosit fonksiyonunu geri dönüşümlü olarak inhibe eder: kanama riski olan hastalarda dikkat",
+    "Kardiyovasküler olay riski: uzun süreli yüksek doz kullanımda artmıştır",
+    "Astım hastalarının %10-20'sinde NSAİİ ile tetiklenen bronkospazm olabilir"
+  ],
+  "preparations": [
+    {
+      "form": "Tablet",
+      "concentration": "200 mg / 400 mg / 600 mg",
+      "volume": "Tablet"
+    },
+    {
+      "form": "Süspansiyon (pediatrik)",
+      "concentration": "100 mg/5 mL",
+      "volume": "150 mL şişe"
+    },
+    {
+      "form": "IV infüzyon",
+      "concentration": "400 mg/100 mL",
+      "volume": "100 mL"
+    }
+  ]
+}

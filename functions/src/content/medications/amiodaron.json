@@ -1,0 +1,35 @@
+{
+  "name": "Amiodaron",
+  "category": "ACLS",
+  "adultDosing": "VF/nabızsız VT (arrest): 300 mg IV/IO bolus, 2. doz 150 mg IV bolus verilebilir. Stabil VT / geniş kompleks taşikardi: 150 mg IV, 10 dakikada infüzyon, ardından 1 mg/dk 6 saat, sonra 0.5 mg/dk 18 saat. Maksimum günlük doz: 2.2 g/24 saat.",
+  "pediatricDosing": "VF/nabızsız VT: 5 mg/kg IV/IO bolus (maks 300 mg), gerekirse 2 kez daha tekrar edilebilir. Perfüzyonlu taşikardi: 5 mg/kg IV, 20-60 dakikada infüzyon (maks 300 mg).",
+  "contraindications": [
+    "Sinüs nodu disfonksiyonu (pacemaker yoksa)",
+    "2. veya 3. derece AV blok (pacemaker yoksa)",
+    "Kardiyojenik şok",
+    "Ağır karaciğer yetmezliği",
+    "İyot alerjisi (relatif)",
+    "Gebelik (Kategori D)"
+  ],
+  "warnings": [
+    "Hipotansiyon yapabilir; yavaş infüzyon verilmelidir (arrest dışında)",
+    "QT süresini uzatır; diğer QT uzatan ilaçlarla dikkatli kullanılmalıdır",
+    "Tiroid fonksiyonlarını etkileyebilir (hipo/hipertiroidi)",
+    "Pulmoner toksisite riski (uzun süreli kullanımda)",
+    "Hepatotoksisite riski: karaciğer fonksiyonları izlenmelidir",
+    "Periferik damardan verilirken flebit riski; santral yol tercih edilmelidir",
+    "%5 Dekstroz ile dilüe edilmelidir (SF ile uyumsuz)"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul",
+      "concentration": "50 mg/mL",
+      "volume": "3 mL (150 mg)"
+    },
+    {
+      "form": "Ampul",
+      "concentration": "50 mg/mL",
+      "volume": "6 mL (300 mg)"
+    }
+  ]
+}

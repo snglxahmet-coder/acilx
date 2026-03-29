@@ -1,0 +1,34 @@
+{
+  "name": "Ketamin",
+  "category": "RSI",
+  "adultDosing": "RSI indüksiyon: 1-2 mg/kg IV (genellikle 1.5 mg/kg). Prosedürel sedasyon: 1-2 mg/kg IV veya 3-5 mg/kg IM. Analjezi (subdisosiyatif doz): 0.1-0.3 mg/kg IV, 15-30 dk infüzyon. İntranasal: 0.5-1 mg/kg.",
+  "pediatricDosing": "İndüksiyon/sedasyon: 1-2 mg/kg IV, 3-5 mg/kg IM. Prosedürel sedasyon: 1.5 mg/kg IV veya 4-5 mg/kg IM. Analjezi: 0.1-0.3 mg/kg IV.",
+  "contraindications": [
+    "6 aydan küçük bebekler (relatif)",
+    "Kontrol altına alınamamış hipertansiyon",
+    "Bilinen ketamin alerjisi",
+    "Aktif psikoz veya şizofreni öyküsü",
+    "Kafa içi basınç artışına yol açabilecek durumlar (tartışmalı; güncel kanıtlar güvenli olduğunu göstermektedir)"
+  ],
+  "warnings": [
+    "Laringospazm riski: aspirasyon ekipmanı hazır bulundurulmalıdır",
+    "Emerjan reaksiyon (çıkış fenomeni) görülebilir; midazolam 0.05 mg/kg ile azaltılabilir",
+    "Hipersalivasyon yapabilir; glikopirolat veya atropin profilaksisi düşünülebilir",
+    "Sempatik stimülasyon: taşikardi ve hipertansiyon yapabilir",
+    "Korneyal refleksler korunur ancak havayolu koruyucu refleksler tam güvenilir değildir",
+    "İntrakraniyal basınç artışına dair eski endişeler güncel literatürle desteklenmemektedir",
+    "Kusma riski: özellikle IM uygulamada ondansetron profilaksisi düşünülmelidir"
+  ],
+  "preparations": [
+    {
+      "form": "Flakon",
+      "concentration": "10 mg/mL",
+      "volume": "20 mL (200 mg)"
+    },
+    {
+      "form": "Flakon",
+      "concentration": "50 mg/mL",
+      "volume": "10 mL (500 mg)"
+    }
+  ]
+}

@@ -1,0 +1,142 @@
+{
+  "id": "wells_dvt",
+  "name": "Wells Kriterleri — Derin Ven Trombozu",
+  "description": "Derin ven trombozu (DVT) klinik olasılığını değerlendirir.",
+  "category": "vasküler",
+  "parameters": [
+    {
+      "name": "active_cancer",
+      "label": "Aktif kanser (son 6 ay tedavi veya palyatif)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "paralysis_paresis",
+      "label": "Paralizi, parezi veya alt ekstremite immobilizasyonu",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "bedridden",
+      "label": "Yatak istirahati (>3 gün) veya son 12 haftada majör cerrahi",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "tenderness",
+      "label": "Derin ven trasesi boyunca hassasiyet",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "entire_leg_swollen",
+      "label": "Tüm bacakta şişlik",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "calf_swelling",
+      "label": "Baldır çapı farkı ≥3 cm (tibial tuberoziteden 10 cm aşağı)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "pitting_edema",
+      "label": "Semptomatik bacakta bası ödemi",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "collateral_veins",
+      "label": "Yüzeyel kollateral venler (varikoz olmayan)",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "previous_dvt",
+      "label": "Daha önce DVT öyküsü",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": 1, "label": "Evet" }
+      ],
+      "weight": 1
+    },
+    {
+      "name": "alternative_diagnosis",
+      "label": "DVT kadar veya daha olası alternatif tanı",
+      "type": "checkbox",
+      "options": [
+        { "value": 0, "label": "Hayır" },
+        { "value": -2, "label": "Evet" }
+      ],
+      "weight": 1
+    }
+  ],
+  "formula": "sum",
+  "minScore": -2,
+  "maxScore": 9,
+  "interpretationRanges": [
+    {
+      "min": -2,
+      "max": 0,
+      "label": "Düşük Olasılık",
+      "severity": "low",
+      "recommendation": "DVT olasılığı ~%5. D-dimer ile değerlendir; negatifse DVT dışlanabilir."
+    },
+    {
+      "min": 1,
+      "max": 2,
+      "label": "Orta Olasılık",
+      "severity": "moderate",
+      "recommendation": "DVT olasılığı ~%17. D-dimer iste; pozitifse kompresyon USG gerekir."
+    },
+    {
+      "min": 3,
+      "max": 9,
+      "label": "Yüksek Olasılık",
+      "severity": "high",
+      "recommendation": "DVT olasılığı ~%53. Doğrudan kompresyon USG önerilir."
+    }
+  ],
+  "references": [
+    {
+      "title": "Evaluation of D-dimer in the diagnosis of suspected deep-vein thrombosis",
+      "authors": "Wells PS, Anderson DR, Bormanis J, et al.",
+      "journal": "New England Journal of Medicine",
+      "year": 2003
+    }
+  ]
+}

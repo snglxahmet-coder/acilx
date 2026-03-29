@@ -1,0 +1,39 @@
+{
+  "name": "Pediatrik Diazepam (Rektal)",
+  "category": "Pediatrik",
+  "adultDosing": "Pediatrik kullanım — yetişkin dozu için diazepam.json dosyasına bakınız.",
+  "pediatricDosing": "Febril konvülziyon: 0.5 mg/kg rektal, <5 yaş maksimum 10 mg, >5 yaş maksimum 20 mg. Status epileptikus: 0.2-0.3 mg/kg IV yavaş (2-5 dk'da), <5 yaş maksimum 5 mg, >5 yaş maksimum 10 mg. IV verildiğinde solunum depresyonu riski nedeniyle yavaş enjeksiyon yapılmalı ve resüsitasyon ekipmanı hazır bulundurulmalıdır.",
+  "contraindications": [
+    "Ciddi solunum depresyonu veya solunum yetmezliği",
+    "Akut dar açılı glokom",
+    "Ağır karaciğer yetmezliği",
+    "Myastenia gravis",
+    "Uyku apnesi sendromu"
+  ],
+  "warnings": [
+    "Solunum depresyonu riski yüksektir — uygulama sırasında oksijen satürasyonu ve solunum hızı yakından izlenmelidir",
+    "IV formülasyon (5 mg/mL) rektal yoldan da kullanılabilir — besleme sondası veya enjektör ile uygulanır",
+    "IV enjeksiyon çok yavaş yapılmalıdır (maks 1 mg/dk çocuklarda)",
+    "Damar dışına kaçış halinde doku hasarı ve tromboflebit riski vardır",
+    "Propilen glikol içerir — yenidoğanlarda toksisite riski",
+    "Flumazenil (benzodiazepin antagonisti) hazır bulundurulmalıdır",
+    "Rektal uygulama sonrası etki 5-10 dakikada başlar"
+  ],
+  "preparations": [
+    {
+      "form": "Ampul (IV/rektal)",
+      "concentration": "5 mg/mL",
+      "volume": "2 mL (10 mg)"
+    },
+    {
+      "form": "Rektal tüp (Diazepam rektiole)",
+      "concentration": "5 mg/2.5 mL",
+      "volume": "2.5 mL"
+    },
+    {
+      "form": "Rektal tüp (Diazepam rektiole)",
+      "concentration": "10 mg/2.5 mL",
+      "volume": "2.5 mL"
+    }
+  ]
+}
